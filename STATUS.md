@@ -13,30 +13,37 @@
 * [Сроки](#markdown-header-terms)
 * [Разработчик](#markdown-header-developer)
 
-# Status
+## Статус
+###### Status
 ---
 
-# Description
+## Описание
+###### Description
 ---
 
-# Analogues
+## Аналоги
+###### Analogues
 ---
 
-# Usage scenario
+## Сценарий использования
+###### Usage scenario
 ---
 
-# Capabilities
+## Планируемые возможности
+###### Capabilities
 ---
 
-# Logical architecture
+## Логическая архитектура
+###### Logical architecture
+---
+## Этапы разработки
+###### Stages of development
+---
+## Сроки
+###### Terms
 ---
 
-# Stages of development
----
-
-# Terms
----
-
-# Developer
+## Разработчик
+###### Developer
 ---
 * [Турцевич Игорь Михайлович](https://vk.com/id159611893) 

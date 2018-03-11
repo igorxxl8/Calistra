@@ -3,40 +3,40 @@
 
 ## Содержание
 ---
-* [Статус](#1)
-* [Описание](#2)
-* [Аналоги](#3)
-* [Сценарий использования](#4)
-* [Планируемые возможности](#5)
-* [Логическая архитектура](#6)
-* [Этапы разработки](#7)
-* [Сроки](#8)
-* [Разработчик](#9)
+* [Статус](#markdown-header-status)
+* [Описание](#markdown-header-description)
+* [Аналоги](#markdown-header-analogues)
+* [Сценарий использования](#markdown-header-usage-scenario)
+* [Планируемые возможности](#markdown-header-capabilities)
+* [Логическая архитектура](#markdown-header-logical-architecture)
+* [Этапы разработки](#markdown-header-stages-of-development)
+* [Сроки](#markdown-header-terms)
+* [Разработчик](#markdown-header-developer)
 
-## <a name="1"></a> Статус 
+# Status
 ---
 
-## <a name="2"></a> Описание
+# Description
 ---
 
-## <a name="3"></a> Аналоги
+# Analogues
 ---
 
-## <a name="4"></a> Сценарий использования
+# Usage scenario
 ---
 
-## <a name="5"></a> Планируемые возможности
+# Capabilities
 ---
 
-## <a name="6"></a> Логическая архитектура
+# Logical architecture
 ---
 
-##<a name="7"></a>Этапы разработки
+# Stages of development
 ---
 
-##<a name=""></a>Сроки
+# Terms
 ---
 
-##<a name="9"></a>Разрботчик
+# Developer
 ---
 * [Турцевич Игорь Михайлович](https://vk.com/id159611893) 

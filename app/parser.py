@@ -1,18 +1,19 @@
-"""This module have a _Parser class for create console arguments parser
-which parsing console input string into dictionary for args_analyzer
+"""This module have a Parser class for create console arguments parser
+which parsing console args string
 
 The following is a simple usage example:
-'>>>' import sys
-'>>>' import parser
-'>>>' parser_ = parser._Parser(sys.argv)
-'>>>' args_dict = parser_.get_args_dict()
-'>>>'
+
+    import sys
+    import parser
+
+    parser_ = parser.Parser(sys.argv)
+    args_dict = parser_.get_args_dict()
 """
 from argparse import ArgumentParser
 
 
-class _ParserConstants:
-    """Constants, which represent main parser commands and settings"""
+class _ParserArgs:
+    """Constants, which using in main parser as commands and settings for arguments"""
     DESCRIPTION = 'Calistra - task tracker'
     TARGET = 'target'
     TARGET_HELP = 'target for working'
@@ -22,7 +23,7 @@ class _ParserConstants:
     EDIT = 'edit'
 
 
-class _UserParserConstants:
+class _UserArgs:
     """Constants, which represent user parser commands and settings"""
     USER = 'user'
     USER_HELP = 'working with user'
@@ -37,7 +38,7 @@ class _UserParserConstants:
     LOGIN_HELP = "login with nickname and password"
 
 
-class _TaskParserConstants:
+class _TaskArgs:
     """Constants, which represent task parser commands and settings"""
     TASK = 'task'
     TASK_HELP = 'working with tasks'
@@ -47,109 +48,127 @@ class _TaskParserConstants:
     TASK_SUBPARSER_HELP = 'work with task'
 
 
-class _Parser:
-    """Object for parsing command line into dictionary"""
+class Parser:
+    """Object for parsing command line string into dictionary of args"""
 
     def __init__(self, console_args):
         """Init parser's attributes, create parsers and subparsers"""
         self.args = console_args
         self.parser = ArgumentParser(
-            description=_ParserConstants.DESCRIPTION)
+            description=_ParserArgs.DESCRIPTION)
         subparsers = self.parser.add_subparsers(
-            dest=_ParserConstants.TARGET,
-            help=_ParserConstants.TARGET_HELP)
+            dest=_ParserArgs.TARGET,
+            help=_ParserArgs.TARGET_HELP)
 
         # create next level parsers for different targets
         user_parser = subparsers.add_parser(
-            name=_UserParserConstants.USER,
-            help=_UserParserConstants.USER_HELP)
+            name=_UserArgs.USER,
+            help=_UserArgs.USER_HELP)
         task_parser = subparsers.add_parser(
-            name=_TaskParserConstants.TASK,
-            help=_TaskParserConstants.TASK_HELP)
+            name=_TaskArgs.TASK,
+            help=_TaskArgs.TASK_HELP)
 
         # check console args and create subparsers for necessary args
-        if _UserParserConstants.USER in self.args:
+        if _UserArgs.USER in self.args:
             self._create_user_subparsers(user_parser)
             # save user parser as active target for show right error message
             self.active_target = user_parser
-        elif _TaskParserConstants.TASK in self.args:
+        elif _TaskArgs.TASK in self.args:
             self._create_task_subparsers(task_parser)
             # save target parser as active target for show right error message
             self.active_target = task_parser
 
     @staticmethod
     def _create_user_subparsers(user_parser):
-        """Create subparsers for processing user's data"""
+        """Create subparsers for processing user's data
+        :return: None
+        """
         user_subparsers = user_parser.add_subparsers(
-            dest=_ParserConstants.ACTION,
-            help=_UserParserConstants.USER_SUBPARSER_HELP)
+            dest=_ParserArgs.ACTION,
+            help=_UserArgs.USER_SUBPARSER_HELP)
 
         # calistra user add <nickname> <password>
         add_subparsers = user_subparsers.add_parser(
-            name=_ParserConstants.ADD,
-            help=_UserParserConstants.ADD_USER_HELP)
+            name=_ParserArgs.ADD,
+            help=_UserArgs.ADD_USER_HELP)
         add_subparsers.add_argument(
-            dest=_UserParserConstants.NICKNAME,
-            help=_UserParserConstants.NICKNAME_HELP)
+            dest=_UserArgs.NICKNAME,
+            help=_UserArgs.NICKNAME_HELP)
         add_subparsers.add_argument(
-            dest=_UserParserConstants.PASSWORD,
-            help=_UserParserConstants.PASSWORD_HELP)
+            dest=_UserArgs.PASSWORD,
+            help=_UserArgs.PASSWORD_HELP)
 
         # calistra user login <nickname> <password>
         login_subparsers = user_subparsers.add_parser(
-            name=_UserParserConstants.LOGIN,
-            help=_UserParserConstants.LOGIN_HELP)
+            name=_UserArgs.LOGIN,
+            help=_UserArgs.LOGIN_HELP)
         login_subparsers.add_argument(
-            dest=_UserParserConstants.NICKNAME,
-            help=_UserParserConstants.NICKNAME_HELP)
+            dest=_UserArgs.NICKNAME,
+            help=_UserArgs.NICKNAME_HELP)
         login_subparsers.add_argument(
-            dest=_UserParserConstants.PASSWORD,
-            help=_UserParserConstants.PASSWORD_HELP)
+            dest=_UserArgs.PASSWORD,
+            help=_UserArgs.PASSWORD_HELP)
 
         # calistra user delete <nickname> <password>
         delete_subparsers = user_subparsers.add_parser(
-            name=_ParserConstants.DELETE,
-            help=_UserParserConstants.DELETE_USER_HELP)
+            name=_ParserArgs.DELETE,
+            help=_UserArgs.DELETE_USER_HELP)
         delete_subparsers.add_argument(
-            dest=_UserParserConstants.NICKNAME,
-            help=_UserParserConstants.NICKNAME_HELP)
+            dest=_UserArgs.NICKNAME,
+            help=_UserArgs.NICKNAME_HELP)
         delete_subparsers.add_argument(
-            dest=_UserParserConstants.PASSWORD,
-            help=_UserParserConstants.PASSWORD_HELP)
+            dest=_UserArgs.PASSWORD,
+            help=_UserArgs.PASSWORD_HELP)
 
     @staticmethod
     def _create_task_subparsers(task_parser):
-        """Create subparsers for processing task's data"""
+        """
+        Create subparsers for processing task's data
+        :arg task_parser
+        :return None
+        """
         task_subparsers = task_parser.add_subparsers(
-            dest=_ParserConstants.ACTION,
-            help=_TaskParserConstants.TASK_SUBPARSER_HELP)
+            dest=_ParserArgs.ACTION,
+            help=_TaskArgs.TASK_SUBPARSER_HELP)
 
         # TODO: подумать над атрибутами task
 
         # calistra task add
         add_subparsers = task_subparsers.add_parser(
-            name=_ParserConstants.ADD,
-            help=_TaskParserConstants.ADD_TASK_HELP)
+            name=_ParserArgs.ADD,
+            help=_TaskArgs.ADD_TASK_HELP)
 
         # calistra task edit
         edit_subparsers = task_subparsers.add_parser(
-            name=_ParserConstants.EDIT,
-            help=_TaskParserConstants.EDIT_TASK_HELP)
+            name=_ParserArgs.EDIT,
+            help=_TaskArgs.EDIT_TASK_HELP)
 
         # calistra task delete
         delete_subparsers = task_subparsers.add_parser(
-            name=_ParserConstants.DELETE,
-            help=_TaskParserConstants.DELETE_TASK_HELP)
+            name=_ParserArgs.DELETE,
+            help=_TaskArgs.DELETE_TASK_HELP)
 
-    def get_args_dict(self):
-        """Return a dict of args and values"""
-        return vars(self.parser.parse_args())
+    def get_commands(self):
+        """
+        Return a dict of args and values:
+
+        Example of console input:
+            >> calistra user add IgorXXL 897897
+            Namespace(action='add', nick='igorxxxl', pasw='8897', target='user')
+
+        :return dict
+        """
+        return self.parser.parse_args()
 
     def show_usage(self, stream, level=1):
-        """Show help message in case incorrect user's input
+        """
+        Show help message in case incorrect user's input
+
         Keyword arguments:
-        stream -- output stream
-        level -- subparsers level (default 1)
+            :arg stream -- output stream
+            :arg level -- subparsers level (default 1)
+
+        :return: None
         """
         if level == 1:
             self.parser.print_help(stream)

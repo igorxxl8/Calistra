@@ -1,176 +1,298 @@
-"""This module have a Parser class for create console arguments parser
-which parsing console args string
-
-The following is a simple usage example:
-
-    import sys
-    import parser
-
-    parser_ = parser.Parser(sys.argv)
-    args_dict = parser_.get_args_dict()
 """
+This module contains functions for work program's instances, recognize user's
+console input and call library's functions for work with program's entities
+"""
+
+# TODO: 1) write docstring for parser module
+# TODO: 2) continue write parser
+
 from argparse import ArgumentParser
+from collections import namedtuple
+from user import *
+import sys
 
 
+def run():
+    """
+    Start program
+    :return: int - exit code
+    """
+    # sub_parser define message which print in case lack of necessary arguments
+    parser, sub_parser = _get_parser()
+    args = parser.parse_args()
+
+    # check target argument
+    if not args.target:
+        parser.print_help(sys.stderr)
+        return 1
+
+    # check action argument
+    if not args.action:
+        sub_parser.print_help(sys.stderr)
+        return 1
+
+    if args.target == _ParserArgs.USER.name:
+        user_handler(args)
+
+    elif args.target == _ParserArgs.TASK.name:
+        task_handler(args)
+
+
+# =================================================
+# functions for work with user's account instance =
+# =================================================
+def user_handler(args):
+    # TODO: сделать библиотечную часть логики пользователей
+    """
+    This procedure recognizes the action that must be performed
+    on the user account and delegates its implementation to the
+    required procedure.
+    :arg args -- contains command and info about user
+    :return: None
+    """
+    if args.action == _ParserArgs.ADD:
+        _add_user(args)
+    elif args.action == _ParserArgs.DELETE:
+        _delete_user()
+    elif args.action == _ParserArgs.LOGIN.name:
+        _login(args)
+    elif args.action == _ParserArgs.LOGOUT.name:
+        _logout()
+
+
+def _add_user(console_args):
+    # TODO: сделать лучшее отображение
+    storage = UserWrapperStorage()
+    user = UserWrapper(
+        nick=console_args.nick,
+        password=console_args.pasw
+    )
+    try:
+        storage.save_user(user)
+    except SaveUserError as e:
+        print(e.message, file=sys.stderr)
+    else:
+        print("User {} successfully created".format(console_args.nick))
+
+
+def _login(console_args):
+    storage = UserWrapperStorage()
+    controller = UserWrapperController(storage)
+    try:
+        controller.login_user(console_args.nick, console_args.pasw)
+    except LoginError as e:
+        print(e.message, file=sys.stderr)
+    else:
+        print("User {} now is online".format(console_args.nick))
+
+
+def _logout():
+    storage = UserWrapperStorage()
+    controller = UserWrapperController(storage)
+    try:
+        controller.logout_user()
+    except LogoutError as e:
+        print(e.message, file=sys.stderr)
+    else:
+        print("All users now offline")
+
+
+def _delete_user():
+    # TODO: подумать над необходимостью метода удаление пользователя
+    """
+    This procedure delete current online user
+    :return: None
+    """
+    pass
+
+
+# =================================================
+# functions for work with single task instance    =
+# =================================================
+def task_handler(task_attr):
+    pass
+
+
+def _add_task():
+    pass
+
+
+def _del_task():
+    pass
+
+
+# =====================================================
+# Private class. Don't use it outside this module!    =
+# =====================================================
 class _ParserArgs:
-    """Constants, which using in main parser as commands and settings for arguments"""
+    """Constants, which using in parser as commands and
+    settings for arguments
+    """
+
+    # tuple for represent arguments
+    Argument = namedtuple('Argument', ['name', 'help'])
+
+    # main parser's arguments
     DESCRIPTION = 'Calistra - task tracker'
-    TARGET = 'target'
-    TARGET_HELP = 'target for working'
+    TARGET = Argument(name='target',
+                      help='select a target to work with')
     ACTION = 'action'
     ADD = 'add'
     DELETE = 'del'
-    EDIT = 'edit'
+    SET = 'set'
 
-
-class _UserArgs:
-    """Constants, which represent user parser commands and settings"""
-    USER = 'user'
-    USER_HELP = 'working with user'
-    USER_SUBPARSER_HELP = 'action with user'
-    NICKNAME = 'nick'
-    NICKNAME_HELP = "user's nickname"
-    PASSWORD = 'pasw'
-    PASSWORD_HELP = "user's password"
+    # Constants, which represent user parser commands and settings
+    USER = Argument(name='user', help='work with user\'s account')
+    USER_ACTION = 'action with user'
+    LOGIN = Argument(name='login', help='login with nickname and password')
+    LOGOUT = Argument(name='logout', help='log out of user\'s session')
+    NICKNAME = Argument(name='nick', help='user\'s nickname')
+    PASSWORD = Argument(name='pasw', help='user\'s password')
     ADD_USER_HELP = 'add new user'
-    DELETE_USER_HELP = 'delete existing user'
-    LOGIN = 'login'
-    LOGIN_HELP = "login with nickname and password"
+    DELETE_USER_HELP = 'delete current user'
+    EDIT_USER_HELP = 'edit current user'
 
-
-class _TaskArgs:
-    """Constants, which represent task parser commands and settings"""
-    TASK = 'task'
-    TASK_HELP = 'working with tasks'
+    # Constants, which represent task parser commands and settings
+    TASK = Argument(name='task', help='work with single task')
+    TASK_ACTION = 'action with task'
     ADD_TASK_HELP = 'add new task'
     DELETE_TASK_HELP = 'delete existing task'
     EDIT_TASK_HELP = 'edit task'
-    TASK_SUBPARSER_HELP = 'work with task'
+
+    # Constants, which represent plan parser commands and settings
+
+    PLAN = Argument(name='plan', help='work with plans')
+    PLAN_ACTION = 'action with plans'
 
 
-class Parser:
-    """Object for parsing command line string into dictionary of args"""
+# ===================================================
+# private functions. Don't use outside this module! =
+# ===================================================
+def _get_parser():
+    """
+    Init parser's attributes, create parsers and subparsers
+    :return parser, active_sub_parser, where
+            parser - main parser,
+            active_sub_parser - current sub_parser which used in program
+    """
+    parser = ArgumentParser(
+        description=_ParserArgs.DESCRIPTION)
+    subparsers = parser.add_subparsers(
+        dest=_ParserArgs.TARGET.name,
+        help=_ParserArgs.TARGET.help)
 
-    def __init__(self, console_args):
-        """Init parser's attributes, create parsers and subparsers"""
-        self.args = console_args
-        self.parser = ArgumentParser(
-            description=_ParserArgs.DESCRIPTION)
-        subparsers = self.parser.add_subparsers(
-            dest=_ParserArgs.TARGET,
-            help=_ParserArgs.TARGET_HELP)
+    # create next level parsers for different targets
+    active_sub_parser = None
+    user_parser = subparsers.add_parser(
+        name=_ParserArgs.USER.name,
+        help=_ParserArgs.USER.help
+    )
 
-        # create next level parsers for different targets
-        user_parser = subparsers.add_parser(
-            name=_UserArgs.USER,
-            help=_UserArgs.USER_HELP)
-        task_parser = subparsers.add_parser(
-            name=_TaskArgs.TASK,
-            help=_TaskArgs.TASK_HELP)
+    task_parser = subparsers.add_parser(
+        name=_ParserArgs.TASK.name,
+        help=_ParserArgs.TASK.help
+    )
 
-        # check console args and create subparsers for necessary args
-        if _UserArgs.USER in self.args:
-            self._create_user_subparsers(user_parser)
-            # save user parser as active target for show right error message
-            self.active_target = user_parser
-        elif _TaskArgs.TASK in self.args:
-            self._create_task_subparsers(task_parser)
-            # save target parser as active target for show right error message
-            self.active_target = task_parser
+    plan_parser = subparsers.add_parser(
+        name=_ParserArgs.PLAN.name,
+        help=_ParserArgs.PLAN.help
+    )
 
-    @staticmethod
-    def _create_user_subparsers(user_parser):
-        """Create subparsers for processing user's data
-        :return: None
-        """
-        user_subparsers = user_parser.add_subparsers(
-            dest=_ParserArgs.ACTION,
-            help=_UserArgs.USER_SUBPARSER_HELP)
+    # check console args, create subparsers for necessary args
+    if _ParserArgs.USER.name in sys.argv:
+        _create_user_subparsers(user_parser)
+        active_sub_parser = user_parser
+    elif _ParserArgs.TASK.name in sys.argv:
+        _create_task_subparsers(task_parser)
+        active_sub_parser = task_parser
 
-        # calistra user add <nickname> <password>
-        add_subparsers = user_subparsers.add_parser(
-            name=_ParserArgs.ADD,
-            help=_UserArgs.ADD_USER_HELP)
-        add_subparsers.add_argument(
-            dest=_UserArgs.NICKNAME,
-            help=_UserArgs.NICKNAME_HELP)
-        add_subparsers.add_argument(
-            dest=_UserArgs.PASSWORD,
-            help=_UserArgs.PASSWORD_HELP)
+    elif _ParserArgs.PLAN.name in sys.argv:
+        _create_plan_subparsers(plan_parser)
 
-        # calistra user login <nickname> <password>
-        login_subparsers = user_subparsers.add_parser(
-            name=_UserArgs.LOGIN,
-            help=_UserArgs.LOGIN_HELP)
-        login_subparsers.add_argument(
-            dest=_UserArgs.NICKNAME,
-            help=_UserArgs.NICKNAME_HELP)
-        login_subparsers.add_argument(
-            dest=_UserArgs.PASSWORD,
-            help=_UserArgs.PASSWORD_HELP)
+    return parser, active_sub_parser
 
-        # calistra user delete <nickname> <password>
-        delete_subparsers = user_subparsers.add_parser(
-            name=_ParserArgs.DELETE,
-            help=_UserArgs.DELETE_USER_HELP)
-        delete_subparsers.add_argument(
-            dest=_UserArgs.NICKNAME,
-            help=_UserArgs.NICKNAME_HELP)
-        delete_subparsers.add_argument(
-            dest=_UserArgs.PASSWORD,
-            help=_UserArgs.PASSWORD_HELP)
 
-    @staticmethod
-    def _create_task_subparsers(task_parser):
-        """
-        Create subparsers for processing task's data
-        :arg task_parser
+def _create_user_subparsers(user_parser):
+    """
+    Create subparsers for processing user's data
+    :return: None
+    """
+    user_subparsers = user_parser.add_subparsers(
+        dest=_ParserArgs.ACTION,
+        help=_ParserArgs.USER_ACTION)
+
+    # calistra user add <nickname> <password>
+    add_subparsers = user_subparsers.add_parser(
+        name=_ParserArgs.ADD,
+        help=_ParserArgs.ADD_USER_HELP)
+    add_subparsers.add_argument(
+        dest=_ParserArgs.NICKNAME.name,
+        help=_ParserArgs.NICKNAME.help)
+    add_subparsers.add_argument(
+        dest=_ParserArgs.PASSWORD.name,
+        help=_ParserArgs.PASSWORD.help)
+
+    # calistra user login <nickname> <password>
+    login_subparsers = user_subparsers.add_parser(
+        name=_ParserArgs.LOGIN.name,
+        help=_ParserArgs.LOGIN.help)
+    login_subparsers.add_argument(
+        dest=_ParserArgs.NICKNAME.name,
+        help=_ParserArgs.NICKNAME.help)
+    login_subparsers.add_argument(
+        dest=_ParserArgs.PASSWORD.name,
+        help=_ParserArgs.PASSWORD.help)
+
+    # calistra user logout (only for online user)
+    user_subparsers.add_parser(
+        name=_ParserArgs.LOGOUT.name,
+        help=_ParserArgs.LOGOUT.help
+    )
+
+    # calistra user delete <password> (only for online user)
+    delete_subparsers = user_subparsers.add_parser(
+        name=_ParserArgs.DELETE,
+        help=_ParserArgs.DELETE_USER_HELP)
+    delete_subparsers.add_argument(
+        dest=_ParserArgs.PASSWORD.name,
+        help=_ParserArgs.PASSWORD.help)
+
+
+def _create_task_subparsers(task_parser):
+    """
+    Create subparsers for processing task's data
+    :arg task_parser
+    :return None
+    """
+    task_subparsers = task_parser.add_subparsers(
+        dest=_ParserArgs.ACTION,
+        help=_ParserArgs.TASK_ACTION)
+
+    # TODO: подумать над атрибутами task
+
+    # calistra task add
+    add_subparsers = task_subparsers.add_parser(
+        name=_ParserArgs.ADD,
+        help=_ParserArgs.ADD_TASK_HELP)
+
+    # calistra task edit
+    edit_subparsers = task_subparsers.add_parser(
+        name=_ParserArgs.SET,
+        help=_ParserArgs.EDIT_TASK_HELP)
+
+    # calistra task delete
+    delete_subparsers = task_subparsers.add_parser(
+        name=_ParserArgs.DELETE,
+        help=_ParserArgs.DELETE_TASK_HELP)
+
+
+def _create_plan_subparsers(plan_parser):
+    """
+        Create subparsers for processing plan's data
+        :arg plan_parser
         :return None
-        """
-        task_subparsers = task_parser.add_subparsers(
-            dest=_ParserArgs.ACTION,
-            help=_TaskArgs.TASK_SUBPARSER_HELP)
-
-        # TODO: подумать над атрибутами task
-
-        # calistra task add
-        add_subparsers = task_subparsers.add_parser(
-            name=_ParserArgs.ADD,
-            help=_TaskArgs.ADD_TASK_HELP)
-
-        # calistra task edit
-        edit_subparsers = task_subparsers.add_parser(
-            name=_ParserArgs.EDIT,
-            help=_TaskArgs.EDIT_TASK_HELP)
-
-        # calistra task delete
-        delete_subparsers = task_subparsers.add_parser(
-            name=_ParserArgs.DELETE,
-            help=_TaskArgs.DELETE_TASK_HELP)
-
-    def get_commands(self):
-        """
-        Return a dict of args and values:
-
-        Example of console input:
-            >> calistra user add IgorXXL 897897
-            Namespace(action='add', nick='igorxxxl', pasw='8897', target='user')
-
-        :return dict
-        """
-        return self.parser.parse_args()
-
-    def show_usage(self, stream, level=1):
-        """
-        Show help message in case incorrect user's input
-
-        Keyword arguments:
-            :arg stream -- output stream
-            :arg level -- subparsers level (default 1)
-
-        :return: None
-        """
-        if level == 1:
-            self.parser.print_help(stream)
-        elif level == 2:
-            self.active_target.print_help(stream)
+    """
+    plan_subparsers = plan_parser.add_subparsers(
+        dest=_ParserArgs.ACTION,
+        help=_ParserArgs.PLAN_ACTION
+    )

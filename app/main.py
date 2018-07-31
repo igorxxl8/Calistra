@@ -1,10 +1,21 @@
 #!/usr/bin/env python3
-"""This module has main function - entry point of program"""
-import program
+"""Main entry point of console app calistra"""
+
+__author__ = "Igor Turcevich <vip.turcevich3@gmail.com>"
+
+import parser
+import sys
 
 
 def main():
-    exit_code = program.run()
+    """Execute program
+    :return: None
+    """
+
+    # TODO: enable logging
+
+    code = parser.run()
+    sys.exit(code)
 
 
 if __name__ == '__main__':

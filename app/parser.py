@@ -12,112 +12,105 @@ from user import *
 import sys
 
 
-def run():
+def run() -> int:
     """
     Start program
     :return: int - exit code
     """
     # sub_parser define message which print in case lack of necessary arguments
     parser, sub_parser = _get_parser()
-    args = parser.parse_args()
+    args_dict = vars(parser.parse_args())
 
+    target = args_dict.pop(_ParserArgs.TARGET.name)
     # check target argument
-    if not args.target:
+    if not target:
         parser.print_help(sys.stderr)
         return 1
 
     # check action argument
-    if not args.action:
+    action = args_dict.pop(_ParserArgs.ACTION)
+    if not action:
         sub_parser.print_help(sys.stderr)
         return 1
 
-    if args.target == _ParserArgs.USER.name:
-        user_handler(args)
+    # check that target is user
+    if target == _ParserArgs.USER.name:
+        if action == _ParserArgs.ADD:
+            return _add_user(args_dict)
+        if action == _ParserArgs.LOGIN.name:
+            return _login(args_dict)
+        if action == _ParserArgs.LOGOUT.name:
+            return _logout()
 
-    elif args.target == _ParserArgs.TASK.name:
-        task_handler(args)
+    # check that target is task
+    if target == _ParserArgs.TASK.name:
+        if action == _ParserArgs.ADD:
+            return _add_task()
 
 
 # =================================================
 # functions for work with user's account instance =
 # =================================================
-def user_handler(args):
-    # TODO: сделать библиотечную часть логики пользователей
-    """
-    This procedure recognizes the action that must be performed
-    on the user account and delegates its implementation to the
-    required procedure.
-    :arg args -- contains command and info about user
-    :return: None
-    """
-    if args.action == _ParserArgs.ADD:
-        _add_user(args)
-    elif args.action == _ParserArgs.DELETE:
-        _delete_user()
-    elif args.action == _ParserArgs.LOGIN.name:
-        _login(args)
-    elif args.action == _ParserArgs.LOGOUT.name:
-        _logout()
-
-
-def _add_user(console_args):
+def _add_user(args_dict) -> int:
     # TODO: сделать лучшее отображение
     storage = UserWrapperStorage()
     user = UserWrapper(
-        nick=console_args.nick,
-        password=console_args.pasw
+        nick=args_dict.pop(_ParserArgs.NICKNAME.name),
+        password=args_dict.pop(_ParserArgs.PASSWORD.name)
     )
     try:
         storage.save_user(user)
     except SaveUserError as e:
         print(e.message, file=sys.stderr)
+        return 1
     else:
-        print("User {} successfully created".format(console_args.nick))
+        storage.record_users()
+        print("User {} successfully created".format(user.nick))
+        return 0
 
 
-def _login(console_args):
+def _login(args_dict) -> int:
     storage = UserWrapperStorage()
     controller = UserWrapperController(storage)
+    user = UserWrapper(
+        nick=args_dict.pop(_ParserArgs.NICKNAME.name),
+        password=args_dict.pop(_ParserArgs.PASSWORD.name)
+    )
     try:
-        controller.login_user(console_args.nick, console_args.pasw)
+        controller.login(user)
     except LoginError as e:
         print(e.message, file=sys.stderr)
+        return 1
     else:
-        print("User {} now is online".format(console_args.nick))
+        print("User {} now is online".format(user.nick))
+        return 0
 
 
-def _logout():
+def _logout() -> int:
     storage = UserWrapperStorage()
     controller = UserWrapperController(storage)
     try:
-        controller.logout_user()
+        controller.logout()
     except LogoutError as e:
         print(e.message, file=sys.stderr)
+        return 1
     else:
         print("All users now offline")
-
-
-def _delete_user():
-    # TODO: подумать над необходимостью метода удаление пользователя
-    """
-    This procedure delete current online user
-    :return: None
-    """
-    pass
+        return 0
 
 
 # =================================================
 # functions for work with single task instance    =
 # =================================================
-def task_handler(task_attr):
+def task_handler(task_attr) -> int:
     pass
 
 
-def _add_task():
+def _add_task() -> int:
     pass
 
 
-def _del_task():
+def _del_task() -> int:
     pass
 
 
@@ -149,7 +142,6 @@ class _ParserArgs:
     NICKNAME = Argument(name='nick', help='user\'s nickname')
     PASSWORD = Argument(name='pasw', help='user\'s password')
     ADD_USER_HELP = 'add new user'
-    DELETE_USER_HELP = 'delete current user'
     EDIT_USER_HELP = 'edit current user'
 
     # Constants, which represent task parser commands and settings
@@ -249,19 +241,11 @@ def _create_user_subparsers(user_parser):
         help=_ParserArgs.LOGOUT.help
     )
 
-    # calistra user delete <password> (only for online user)
-    delete_subparsers = user_subparsers.add_parser(
-        name=_ParserArgs.DELETE,
-        help=_ParserArgs.DELETE_USER_HELP)
-    delete_subparsers.add_argument(
-        dest=_ParserArgs.PASSWORD.name,
-        help=_ParserArgs.PASSWORD.help)
-
 
 def _create_task_subparsers(task_parser):
     """
     Create subparsers for processing task's data
-    :arg task_parser
+    :param task_parser
     :return None
     """
     task_subparsers = task_parser.add_subparsers(
@@ -289,7 +273,7 @@ def _create_task_subparsers(task_parser):
 def _create_plan_subparsers(plan_parser):
     """
         Create subparsers for processing plan's data
-        :arg plan_parser
+        :param plan_parser
         :return None
     """
     plan_subparsers = plan_parser.add_subparsers(

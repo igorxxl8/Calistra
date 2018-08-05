@@ -8,7 +8,7 @@ console input and call library's functions for work with program's entities
 
 from argparse import ArgumentParser
 from collections import namedtuple
-from user import *
+from user_wrapper import *
 import sys
 
 
@@ -58,14 +58,15 @@ def _add_user(args_dict) -> int:
         nick=args_dict.pop(_ParserArgs.NICKNAME.name),
         password=args_dict.pop(_ParserArgs.PASSWORD.name)
     )
+    nick = user.nick
     try:
-        storage.save_user(user)
+        storage.add_user(user)
     except SaveUserError as e:
         print(e.message, file=sys.stderr)
         return 1
     else:
         storage.record_users()
-        print("User {} successfully created".format(user.nick))
+        print("User {} successfully created".format(nick))
         return 0
 
 

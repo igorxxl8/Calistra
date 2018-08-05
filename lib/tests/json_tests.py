@@ -10,6 +10,12 @@ class JsonTests(unittest.TestCase):
         actual = to_json(number)
         self.assertEqual(expected, actual)
 
+    def test_empthy_string(self):
+        string = ''
+        expected = '""'
+        actual = to_json(string)
+        self.assertEqual(expected, actual)
+
     def test_str_1(self):
         string = "Hello World"
         expected = '"Hello World"'

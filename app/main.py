@@ -3,7 +3,7 @@
 
 __author__ = "Igor Turcevich <vip.turcevich3@gmail.com>"
 
-import parser
+from console_parser import run
 import sys
 
 
@@ -11,10 +11,8 @@ def main():
     """Execute program
     :return: None
     """
-
     # TODO: enable logging
-
-    code = parser.run()
+    code = run()
     sys.exit(code)
 
 

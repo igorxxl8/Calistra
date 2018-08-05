@@ -44,7 +44,7 @@ def to_json(instance=None) -> str:
                 )
             elif isinstance(value, int):
                 res = ''.join(
-                    [res, '"', key, '"', ': ', str(value)]
+                    [res, '"', key, '"', ': ', str(value).lower()]
                 )
             else:
                 res = ''.join(

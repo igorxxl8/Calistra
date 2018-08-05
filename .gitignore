@@ -1,5 +1,4 @@
 # ignore IDE files
 .idea/
 venv/
-app/__pycache__/
-app/user/__pycache__/
+__pycache__

@@ -8,7 +8,7 @@ console input and call library's functions for work with program's entities
 
 from argparse import ArgumentParser
 from collections import namedtuple
-from user_wrapper import *
+from app.user_wrapper import *
 import sys
 
 

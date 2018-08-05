@@ -3,18 +3,18 @@
 
 __author__ = "Igor Turcevich <vip.turcevich3@gmail.com>"
 
-from console_parser import run
+from app import command_parser
 import sys
 
 
-def main():
+def start():
     """Execute program
     :return: None
     """
     # TODO: enable logging
-    code = run()
+    code = command_parser.run()
     sys.exit(code)
 
 
 if __name__ == '__main__':
-    main()
+    start()

@@ -12,8 +12,5 @@ thereby collecting all the necessary functions in one application.
 
 # TODO: write usage
 
-from .parser import run
-
 __version__ = '0.1a'
 __author__ = "Igor Turcevich <vip.turcevich3@gmail.com>"
-__all__ = ['run']

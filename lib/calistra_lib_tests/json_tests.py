@@ -1,5 +1,5 @@
 import unittest
-from lib.calistra_lib.json_serializer import to_json
+from calistra_lib.storage.json_serializer import to_json
 
 
 class JsonTests(unittest.TestCase):

@@ -11,6 +11,17 @@ class Serializable:
         pass
 
 
+def load(cls_seq,file_name):
+    with open(file_name, 'r') as file:
+        s = file.read()
+    return from_json(cls_seq, s)
+
+
+def unload(instance, file_name):
+    with open(file_name, 'w') as file:
+        file.write(to_json(instance))
+
+
 def to_json(instance=None) -> str:
     def array_to_json(array):
         result = '['

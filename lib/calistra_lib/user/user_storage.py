@@ -7,7 +7,7 @@ except ImportError:
     from calistra_lib.storage import json_serializer as js
 
 
-USERS_FILE = os.path.join(os.environ['HOME'], 'calistra', 'users.json')
+USERS_FILE = os.path.join(os.environ['HOME'], 'calistra_data', 'users.json')
 
 
 class UserStorage:

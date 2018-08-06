@@ -1,15 +1,23 @@
 """
-This module contains functions for work program's instances, recognize user's
-console input and call library's functions for work with program's entities
+This module contains functions for work with program's instances,
+recognize user's console input and call library's functions for
+work with program's entities
 """
 
 # TODO: 1) write docstring for parser module
 # TODO: 2) continue write parser
-
+import sys
 from argparse import ArgumentParser
 from collections import namedtuple
-from app.user_wrapper import *
-import sys
+from app.user_wrapper import (
+    UserWrapper,
+    UserWrapperStorage,
+    UserWrapperController,
+    LoginError,
+    LogoutError,
+    SaveUserError
+)
+
 
 
 def run() -> int:
@@ -18,7 +26,7 @@ def run() -> int:
     :return: int - exit code
     """
     # sub_parser define message which print in case lack of necessary arguments
-    parser, sub_parser = _get_parser()
+    parser, sub_parser = _get_parsers()
     args_dict = vars(parser.parse_args())
 
     target = args_dict.pop(_ParserArgs.TARGET.name)
@@ -33,7 +41,7 @@ def run() -> int:
         sub_parser.print_help(sys.stderr)
         return 1
 
-    # check that target is user
+    # check that target is user and do action with it
     if target == _ParserArgs.USER.name:
         if action == _ParserArgs.ADD:
             return _add_user(args_dict)
@@ -41,11 +49,18 @@ def run() -> int:
             return _login(args_dict)
         if action == _ParserArgs.LOGOUT.name:
             return _logout()
+        if action == _ParserArgs.SHOW:
+            return _show_users()
 
-    # check that target is task
+    # check that target is task and do action with it
     if target == _ParserArgs.TASK.name:
         if action == _ParserArgs.ADD:
-            return _add_task()
+            return _add_task(args_dict)
+
+    # check that target is plan and do action with it
+    if target == _ParserArgs.PLAN.name:
+        if action == _ParserArgs.ADD:
+            return _add_plan(args_dict)
 
 
 # =================================================
@@ -100,18 +115,32 @@ def _logout() -> int:
         return 0
 
 
+def _show_users() -> int:
+    storage = UserWrapperStorage()
+    for user in storage.users:
+        print('{}'.format(user.nick))
+    return 0
+
+
 # =================================================
 # functions for work with single task instance    =
 # =================================================
-def task_handler(task_attr) -> int:
-    pass
-
-
-def _add_task() -> int:
+def _add_task(args_dict) -> int:
     pass
 
 
 def _del_task() -> int:
+    pass
+
+
+# =================================================
+# functions for work with single plan instance    =
+# =================================================
+def _add_plan(args_dict) -> int:
+    pass
+
+
+def _del_plan() -> int:
     pass
 
 
@@ -132,8 +161,9 @@ class _ParserArgs:
                       help='select a target to work with')
     ACTION = 'action'
     ADD = 'add'
-    DELETE = 'del'
     SET = 'set'
+    SHOW = 'show'
+    DELETE = 'del'
 
     # Constants, which represent user parser commands and settings
     USER = Argument(name='user', help='work with user\'s account')
@@ -144,6 +174,7 @@ class _ParserArgs:
     PASSWORD = Argument(name='pasw', help='user\'s password')
     ADD_USER_HELP = 'add new user'
     EDIT_USER_HELP = 'edit current user'
+    SHOW_USER_HELP = 'show all user'
 
     # Constants, which represent task parser commands and settings
     TASK = Argument(name='task', help='work with single task')
@@ -151,6 +182,7 @@ class _ParserArgs:
     ADD_TASK_HELP = 'add new task'
     DELETE_TASK_HELP = 'delete existing task'
     EDIT_TASK_HELP = 'edit task'
+    SHOW_TASK_HELP = 'show user\'s tasks'
 
     # Constants, which represent plan parser commands and settings
 
@@ -161,7 +193,7 @@ class _ParserArgs:
 # ===================================================
 # private functions. Don't use outside this module! =
 # ===================================================
-def _get_parser():
+def _get_parsers():
     """
     Init parser's attributes, create parsers and subparsers
     :return parser, active_sub_parser, where
@@ -201,6 +233,7 @@ def _get_parser():
 
     elif _ParserArgs.PLAN.name in sys.argv:
         _create_plan_subparsers(plan_parser)
+        active_sub_parser = plan_parser
 
     return parser, active_sub_parser
 
@@ -242,6 +275,12 @@ def _create_user_subparsers(user_parser):
         help=_ParserArgs.LOGOUT.help
     )
 
+    # calistra user show
+    user_subparsers.add_parser(
+        name=_ParserArgs.SHOW,
+        help=_ParserArgs.SHOW_USER_HELP
+    )
+
 
 def _create_task_subparsers(task_parser):
     """
@@ -269,6 +308,12 @@ def _create_task_subparsers(task_parser):
     delete_subparsers = task_subparsers.add_parser(
         name=_ParserArgs.DELETE,
         help=_ParserArgs.DELETE_TASK_HELP)
+
+    # calistra task show
+    task_subparsers.add_parser(
+        name=_ParserArgs.SHOW,
+        help=_ParserArgs.SHOW_TASK_HELP
+    )
 
 
 def _create_plan_subparsers(plan_parser):

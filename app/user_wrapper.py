@@ -16,7 +16,7 @@ except ImportError:
 
 # TODO: в самом начале использования нужно создавать файл с пустым списком!!!
 # TODO: сделать загрузку пользователей из базы данных
-FOLDER = os.path.join(os.environ['HOME'], 'calistra')
+FOLDER = os.path.join(os.environ['HOME'], 'calistra_data')
 FILENAME = os.path.join(FOLDER, 'auth.json')
 ONLINE = os.path.join(FOLDER, 'online_user.json')
 
@@ -36,6 +36,10 @@ def _make_uid():
         ]
     )
     return int(uid)
+
+
+def get_online_user_uid():
+    return js.load([], ONLINE)
 
 
 class UserWrapper:
@@ -74,7 +78,7 @@ class UserWrapperStorage:
         js.unload(self.users, FILENAME)
 
     def get_online_user(self):
-        uid = js.load([], ONLINE)
+        uid = get_online_user_uid()
         for user in self.users:
             if user.uid == uid:
                 return user

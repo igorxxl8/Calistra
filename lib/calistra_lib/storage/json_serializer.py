@@ -1,4 +1,5 @@
 import json
+import os
 
 # TODO: enable logging
 
@@ -11,7 +12,21 @@ class Serializable:
         pass
 
 
-def load(cls_seq,file_name):
+def check_program_data_files(file_name):
+    folder_name = os.path.split(file_name)[0]
+    if not os.path.exists(folder_name):
+        os.mkdir(folder_name)
+    if not os.path.exists(file_name):
+        create_storage_file(file_name)
+
+
+def create_storage_file(file_name):
+    with open(file_name, 'w') as file:
+        file.write('[]')
+
+
+def load(cls_seq, file_name):
+    check_program_data_files(file_name)
     with open(file_name, 'r') as file:
         s = file.read()
     return from_json(cls_seq, s)

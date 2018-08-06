@@ -13,11 +13,20 @@ from app.user_wrapper import (
     UserWrapper,
     UserWrapperStorage,
     UserWrapperController,
+    get_online_user_uid,
     LoginError,
     LogoutError,
     SaveUserError
 )
 
+try:
+    from lib.calistra_lib.task.task import Task
+    from lib.calistra_lib.task.task_storage import TaskStorage
+    from lib.calistra_lib.task.task_controller import TaskController
+except ImportError:
+    from calistra_lib.task.task import Task
+    from calistra_lib.task.task_storage import TaskStorage
+    from calistra_lib.task.task_controller import TaskController
 
 
 def run() -> int:
@@ -41,21 +50,22 @@ def run() -> int:
         sub_parser.print_help(sys.stderr)
         return 1
 
+    users_storage = UserWrapperStorage()
     # check that target is user and do action with it
     if target == _ParserArgs.USER.name:
         if action == _ParserArgs.ADD:
-            return _add_user(args_dict)
+            return _add_user(args_dict, users_storage)
         if action == _ParserArgs.LOGIN.name:
-            return _login(args_dict)
+            return _login(args_dict, users_storage)
         if action == _ParserArgs.LOGOUT.name:
-            return _logout()
+            return _logout(users_storage)
         if action == _ParserArgs.SHOW:
             return _show_users()
 
     # check that target is task and do action with it
     if target == _ParserArgs.TASK.name:
         if action == _ParserArgs.ADD:
-            return _add_task(args_dict)
+            return _add_task(args_dict, users_storage)
 
     # check that target is plan and do action with it
     if target == _ParserArgs.PLAN.name:
@@ -66,28 +76,26 @@ def run() -> int:
 # =================================================
 # functions for work with user's account instance =
 # =================================================
-def _add_user(args_dict) -> int:
-    # TODO: сделать лучшее отображение
-    storage = UserWrapperStorage()
+def _add_user(args_dict, users_storage) -> int:
+    # TODO: сделать лучшее отображениеUserWrapperStorage()
     user = UserWrapper(
         nick=args_dict.pop(_ParserArgs.NICKNAME.name),
         password=args_dict.pop(_ParserArgs.PASSWORD.name)
     )
     nick = user.nick
     try:
-        storage.add_user(user)
+        users_storage.add_user(user)
     except SaveUserError as e:
         print(e.message, file=sys.stderr)
         return 1
     else:
-        storage.record_users()
+        users_storage.record_users()
         print("User {} successfully created".format(nick))
         return 0
 
 
-def _login(args_dict) -> int:
-    storage = UserWrapperStorage()
-    controller = UserWrapperController(storage)
+def _login(args_dict, users_storage) -> int:
+    controller = UserWrapperController(users_storage)
     user = UserWrapper(
         nick=args_dict.pop(_ParserArgs.NICKNAME.name),
         password=args_dict.pop(_ParserArgs.PASSWORD.name)
@@ -102,9 +110,8 @@ def _login(args_dict) -> int:
         return 0
 
 
-def _logout() -> int:
-    storage = UserWrapperStorage()
-    controller = UserWrapperController(storage)
+def _logout(users_storage) -> int:
+    controller = UserWrapperController(users_storage)
     try:
         controller.logout()
     except LogoutError as e:
@@ -125,8 +132,12 @@ def _show_users() -> int:
 # =================================================
 # functions for work with single task instance    =
 # =================================================
-def _add_task(args_dict) -> int:
-    pass
+def _add_task(args_dict, users_storage) -> int:
+    tasks_storage = TaskStorage()
+    args_dict['author'] = get_online_user_uid()
+    task = Task(args_dict)
+    tasks_storage.add_task(task)
+    return 0
 
 
 def _del_task() -> int:
@@ -183,6 +194,7 @@ class _ParserArgs:
     DELETE_TASK_HELP = 'delete existing task'
     EDIT_TASK_HELP = 'edit task'
     SHOW_TASK_HELP = 'show user\'s tasks'
+    TASK_NAME = Argument(name='name', help='name for task')
 
     # Constants, which represent plan parser commands and settings
 
@@ -297,23 +309,32 @@ def _create_task_subparsers(task_parser):
     # calistra task add
     add_subparsers = task_subparsers.add_parser(
         name=_ParserArgs.ADD,
-        help=_ParserArgs.ADD_TASK_HELP)
+        help=_ParserArgs.ADD_TASK_HELP
+    )
+
+    add_subparsers.add_argument(
+        dest=_ParserArgs.TASK_NAME.name,
+        help=_ParserArgs.TASK_NAME.help
+    )
 
     # calistra task edit
     edit_subparsers = task_subparsers.add_parser(
         name=_ParserArgs.SET,
-        help=_ParserArgs.EDIT_TASK_HELP)
+        help=_ParserArgs.EDIT_TASK_HELP
+    )
 
     # calistra task delete
     delete_subparsers = task_subparsers.add_parser(
         name=_ParserArgs.DELETE,
-        help=_ParserArgs.DELETE_TASK_HELP)
+        help=_ParserArgs.DELETE_TASK_HELP
+    )
 
     # calistra task show
     task_subparsers.add_parser(
         name=_ParserArgs.SHOW,
         help=_ParserArgs.SHOW_TASK_HELP
     )
+
 
 
 def _create_plan_subparsers(plan_parser):

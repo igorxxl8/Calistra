@@ -1,5 +1,7 @@
 import json
 import os
+from .database import Database
+
 
 # TODO: enable logging
 
@@ -10,6 +12,18 @@ class Serializable:
 
     def __getitem__(self):
         pass
+
+
+class JsonDatabase(Database):
+    def load(self) -> list:
+        check_program_data_files(self.filename)
+        with open(self.filename, 'r') as file:
+            s = file.read()
+        return from_json(self.cls_seq, s)
+
+    def unload(self, instance):
+        with open(self.filename, 'w') as file:
+            file.write(to_json(instance))
 
 
 def check_program_data_files(file_name):
@@ -23,18 +37,6 @@ def check_program_data_files(file_name):
 def create_storage_file(file_name):
     with open(file_name, 'w') as file:
         file.write('[]')
-
-
-def load(cls_seq, file_name):
-    check_program_data_files(file_name)
-    with open(file_name, 'r') as file:
-        s = file.read()
-    return from_json(cls_seq, s)
-
-
-def unload(instance, file_name):
-    with open(file_name, 'w') as file:
-        file.write(to_json(instance))
 
 
 def to_json(instance=None) -> str:
@@ -89,10 +91,10 @@ def from_json(cls_seq: list, string):
         for key, value in data.items():
             if isinstance(value, list):
                 # print('list in make_object')
-                setattr(instance, key, make_objects_array(num+1, value))
+                setattr(instance, key, make_objects_array(num + 1, value))
             elif isinstance(value, dict):
                 # print('obj in make_object')
-                setattr(instance, key, make_object(num+1, value))
+                setattr(instance, key, make_object(num + 1, value))
             else:
                 # print('item in make object')
                 setattr(instance, key, value)
@@ -104,7 +106,7 @@ def from_json(cls_seq: list, string):
             # print(item)
             if isinstance(item, list):
                 # print('TO_LIST')
-                entity.append(make_objects_array(num+1, item))
+                entity.append(make_objects_array(num + 1, item))
             elif isinstance(item, dict):
                 # print('TO_CLASS')
                 entity.append(make_object(num, item))

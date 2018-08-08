@@ -121,4 +121,7 @@ def from_json(cls_seq: list, string):
     if isinstance(py_objs, int):
         return py_objs
 
+    if isinstance(py_objs, str):
+        return py_objs
+
     return make_object(0, py_objs)

@@ -21,9 +21,14 @@ from app.user_wrapper import (
 
 try:
     from lib.calistra_lib.library_interface.interface import Interface
+    from lib.calistra_lib.storage.json_serializer import JsonDatabase
+    from lib.calistra_lib.user.user import User
+    from lib.calistra_lib.task.task import Task
 except ImportError:
     from calistra_lib.library_interface.interface import Interface
-
+    from calistra_lib.storage.json_serializer import JsonDatabase
+    from calistra_lib.user.user import User
+    from calistra_lib.task.task import Task
 
 FOLDER = os.path.join(os.environ['HOME'], 'calistra_data')
 TASKS_FILE = os.path.join(FOLDER, 'tasks.json')
@@ -53,12 +58,16 @@ def run() -> int:
         sub_parser.print_help(sys.stderr)
         return 1
 
-    users_wrapper_storage = UserWrapperStorage(AUTH_FILE, ONLINE)
-    online_user = users_wrapper_storage.get_online_user()
-    if not online_user:
-        library_interface = Interface(None, USERS_FILE, TASKS_FILE)
-    else:
-        library_interface = Interface(online_user.nick, USERS_FILE, TASKS_FILE)
+    users_wrapper_storage = UserWrapperStorage(
+        JsonDatabase([UserWrapper], AUTH_FILE),
+        JsonDatabase([], ONLINE)
+    )
+
+    library_interface = Interface(
+        users_wrapper_storage.online_user,
+        JsonDatabase([User], USERS_FILE),
+        JsonDatabase([Task], TASKS_FILE)
+    )
 
     # check that target is user and do action with it
     if target == _ParserArgs.USER.name:
@@ -100,23 +109,21 @@ def _add_user(args_dict, users_storage, library_interface: Interface) -> int:
         return 1
     else:
         library_interface.add_user(nick)
-        print("User {} successfully created".format(nick))
+        print('User "{}" successfully created'.format(nick))
         return 0
 
 
 def _login(args_dict, users_storage) -> int:
     controller = UserWrapperController(users_storage)
-    user = UserWrapper(
-        nick=args_dict.pop(_ParserArgs.NICKNAME.name),
-        password=args_dict.pop(_ParserArgs.PASSWORD.name)
-    )
+    nick = args_dict.pop(_ParserArgs.NICKNAME.name)
+    password = args_dict.pop(_ParserArgs.PASSWORD.name)
     try:
-        controller.login(user)
+        controller.login(nick, password)
     except LoginError as e:
         print(e.message, file=sys.stderr)
         return 1
     else:
-        print("User {} now is online".format(user.nick))
+        print('User "{}" now is online'.format(nick))
         return 0
 
 
@@ -128,7 +135,7 @@ def _logout(users_storage) -> int:
         print(e.message, file=sys.stderr)
         return 1
     else:
-        print("All users now offline")
+        print('All users now offline')
         return 0
 
 

@@ -7,26 +7,29 @@ work with program's entities
 # TODO: 1) write docstring for parser module
 # TODO: 2) continue write parser
 import sys
+import os
 from argparse import ArgumentParser
 from collections import namedtuple
 from app.user_wrapper import (
     UserWrapper,
     UserWrapperStorage,
     UserWrapperController,
-    get_online_user_uid,
     LoginError,
     LogoutError,
     SaveUserError
 )
 
 try:
-    from lib.calistra_lib.task.task import Task
-    from lib.calistra_lib.task.task_storage import TaskStorage
-    from lib.calistra_lib.task.task_controller import TaskController
+    from lib.calistra_lib.library_interface.interface import Interface
 except ImportError:
-    from calistra_lib.task.task import Task
-    from calistra_lib.task.task_storage import TaskStorage
-    from calistra_lib.task.task_controller import TaskController
+    from calistra_lib.library_interface.interface import Interface
+
+
+FOLDER = os.path.join(os.environ['HOME'], 'calistra_data')
+TASKS_FILE = os.path.join(FOLDER, 'tasks.json')
+USERS_FILE = os.path.join(FOLDER, 'users.json')
+AUTH_FILE = os.path.join(FOLDER, 'auth.json')
+ONLINE = os.path.join(FOLDER, 'online_user.json')
 
 
 def run() -> int:
@@ -50,46 +53,53 @@ def run() -> int:
         sub_parser.print_help(sys.stderr)
         return 1
 
-    users_storage = UserWrapperStorage()
+    users_wrapper_storage = UserWrapperStorage(AUTH_FILE, ONLINE)
+    online_user = users_wrapper_storage.get_online_user()
+    if not online_user:
+        library_interface = Interface(None, USERS_FILE, TASKS_FILE)
+    else:
+        library_interface = Interface(online_user.nick, USERS_FILE, TASKS_FILE)
+
     # check that target is user and do action with it
     if target == _ParserArgs.USER.name:
         if action == _ParserArgs.ADD:
-            return _add_user(args_dict, users_storage)
+            return _add_user(
+                args_dict=args_dict,
+                users_storage=users_wrapper_storage,
+                library_interface=library_interface
+            )
+
         if action == _ParserArgs.LOGIN.name:
-            return _login(args_dict, users_storage)
+            return _login(args_dict, users_wrapper_storage)
         if action == _ParserArgs.LOGOUT.name:
-            return _logout(users_storage)
+            return _logout(users_wrapper_storage)
         if action == _ParserArgs.SHOW:
-            return _show_users()
+            return _show_users(users_wrapper_storage)
 
     # check that target is task and do action with it
     if target == _ParserArgs.TASK.name:
         if action == _ParserArgs.ADD:
-            return _add_task(args_dict, users_storage)
+            pass
 
     # check that target is plan and do action with it
     if target == _ParserArgs.PLAN.name:
         if action == _ParserArgs.ADD:
-            return _add_plan(args_dict)
+            pass
 
 
 # =================================================
 # functions for work with user's account instance =
 # =================================================
-def _add_user(args_dict, users_storage) -> int:
-    # TODO: сделать лучшее отображениеUserWrapperStorage()
-    user = UserWrapper(
-        nick=args_dict.pop(_ParserArgs.NICKNAME.name),
-        password=args_dict.pop(_ParserArgs.PASSWORD.name)
-    )
-    nick = user.nick
+def _add_user(args_dict, users_storage, library_interface: Interface) -> int:
+    nick = args_dict.pop(_ParserArgs.NICKNAME.name)
+    password = args_dict.pop(_ParserArgs.PASSWORD.name)
     try:
-        users_storage.add_user(user)
+        users_storage.add_user(nick, password)
     except SaveUserError as e:
         print(e.message, file=sys.stderr)
         return 1
     else:
-        users_storage.record_users()
+        library_interface.add_user(nick)
         print("User {} successfully created".format(nick))
         return 0
 
@@ -122,37 +132,10 @@ def _logout(users_storage) -> int:
         return 0
 
 
-def _show_users() -> int:
-    storage = UserWrapperStorage()
+def _show_users(storage) -> int:
     for user in storage.users:
         print('{}'.format(user.nick))
     return 0
-
-
-# =================================================
-# functions for work with single task instance    =
-# =================================================
-def _add_task(args_dict, users_storage) -> int:
-    tasks_storage = TaskStorage()
-    args_dict['author'] = get_online_user_uid()
-    task = Task(args_dict)
-    tasks_storage.add_task(task)
-    return 0
-
-
-def _del_task() -> int:
-    pass
-
-
-# =================================================
-# functions for work with single plan instance    =
-# =================================================
-def _add_plan(args_dict) -> int:
-    pass
-
-
-def _del_plan() -> int:
-    pass
 
 
 # =====================================================
@@ -334,7 +317,6 @@ def _create_task_subparsers(task_parser):
         name=_ParserArgs.SHOW,
         help=_ParserArgs.SHOW_TASK_HELP
     )
-
 
 
 def _create_plan_subparsers(plan_parser):

@@ -1,5 +1,4 @@
 from .user_model import User
-import os
 
 try:
     from lib.calistra_lib.storage import json_serializer as js
@@ -7,20 +6,20 @@ except ImportError:
     from calistra_lib.storage import json_serializer as js
 
 
-USERS_FILE = os.path.join(os.environ['HOME'], 'calistra_data', 'users.json')
+# TODO: обобщить метод загрузки данных
 
 
 class UserStorage:
-    def __init__(self):
-        self.users = []
-        self.load_users()
+    def __init__(self, users_file):
+        self.users_file = users_file
+        self.users = self.load_users()
 
     def load_users(self):
-        self.users = js.load([User], USERS_FILE)
+        return js.load([User], self.users_file)
 
     def record_users(self):
-        js.unload(self.users, USERS_FILE)
+        js.unload(self.users, self.users_file)
 
-    def add_user(self, user_uid):
-        self.users.append(User(user_uid))
+    def add_user(self, nick):
+        self.users.append(User(nick))
         self.record_users()

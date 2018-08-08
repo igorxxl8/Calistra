@@ -4,9 +4,9 @@ for authenticate users in the console interface
 """
 
 try:
-    from lib.calistra_lib.storage import json_serializer as js
+    from lib.calistra_lib.storage.database import Database
 except ImportError:
-    from calistra_lib.storage import json_serializer as js
+    from calistra_lib.storage.database import Database
 
 
 class UserWrapper:
@@ -27,39 +27,36 @@ class UserWrapper:
 
 class UserWrapperStorage:
 
-    def __init__(self, users_wrapper_db, online_user_db):
+    def __init__(self, users_wrapper_db: Database, online_user_db: Database):
         self.online_user_db = online_user_db
         self.users_wrapper_db = users_wrapper_db
-        self.users = self.load_users()
-
-    def load_users(self):
-        return js.load([UserWrapper], self.users_wrapper_db)
+        self.users = self.users_wrapper_db.load()
+        self.__online_user = online_user_db.load()
 
     def add_user(self, nick, password):
         for user in self.users:
             if user.nick == nick:
                 raise SaveUserError(
-                    "User with nick {} already exists".format(user.nick))
+                    'User "{}" already exists'.format(nick))
 
-        new_user = UserWrapper(nick, password)
-        self.users.append(new_user)
+        self.users.append(UserWrapper(nick, password))
         self.record_users()
 
     def record_users(self):
-        js.unload(self.users, self.users_wrapper_db)
+        self.users_wrapper_db.unload(self.users)
 
-    def get_online_user(self):
-        nick = js.load([], self.online_user_db)
-        for user in self.users:
-            if user.nick == nick:
-                return user
+    @property
+    def online_user(self):
+        return self.__online_user
 
-    def set_online_user(self, user=None):
+    @online_user.setter
+    def online_user(self, user=None):
         if user is None:
-            return js.unload(0, self.online_user_db)
-        js.unload(user.nick, self.online_user_db)
+            self.online_user_db.unload(0)
+        else:
+            self.online_user_db.unload(user.nick)
 
-    def get_user(self, query):
+    def get_user(self, query: UserWrapper):
         for user in self.users:
             if user == query:
                 return user
@@ -69,26 +66,27 @@ class UserWrapperController:
     def __init__(self, users_storage: UserWrapperStorage):
         self.users_storage = users_storage
 
-    def login(self, user: UserWrapper):
+    def login(self, nick, password):
         # check that anybody online
-        online_user = self.users_storage.get_online_user()
+        online_user = self.users_storage.online_user
         if online_user:
             raise LoginError('Unable to login: '
                              'There is already an '
-                             'online user - {}.'.format(online_user.nick))
+                             'online user - "{}".'.format(online_user))
 
         # try to find user in user storage
-        user = self.users_storage.get_user(user)
+        user = self.users_storage.get_user(UserWrapper(nick, password))
         if user is None:
             raise LoginError('Unable to log in. Please check that you have'
                              ' entered your login and password correctly. ')
-        self.users_storage.set_online_user(user)
+
+        self.users_storage.online_user = user
 
     def logout(self) -> None:
-        user = self.users_storage.get_online_user()
+        user = self.users_storage.online_user
         if not user:
-            raise LogoutError("Unable to log out: There are no online users.")
-        self.users_storage.set_online_user()
+            raise LogoutError('Unable to log out: There are no online users.')
+        self.users_storage.online_user = None
 
     def set_new_nick(self, user: UserWrapper):
         pass

@@ -1,24 +1,21 @@
-from .user_model import User
+from .user import User
 
 try:
-    from lib.calistra_lib.storage import json_serializer as js
+    from lib.calistra_lib.storage.database import Database
 except ImportError:
-    from calistra_lib.storage import json_serializer as js
+    from calistra_lib.storage.database import Database
 
 
 # TODO: обобщить метод загрузки данных
 
 
 class UserStorage:
-    def __init__(self, users_file):
-        self.users_file = users_file
-        self.users = self.load_users()
-
-    def load_users(self):
-        return js.load([User], self.users_file)
+    def __init__(self, users_db: Database):
+        self.users_db = users_db
+        self.users = users_db.load()
 
     def record_users(self):
-        js.unload(self.users, self.users_file)
+        self.users_db.unload(self.users)
 
     def add_user(self, nick):
         self.users.append(User(nick))

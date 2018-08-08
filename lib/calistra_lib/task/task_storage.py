@@ -1,23 +1,19 @@
-from .task import Task
-
 try:
-    from lib.calistra_lib.storage import json_serializer as js
+    from lib.calistra_lib.storage.database import Database
 except ImportError:
-    from calistra_lib.storage import json_serializer as js
+    from calistra_lib.storage.database import Database
 
 # TODO: обобщить метод загрузки данных
 
 
 class TaskStorage:
-    def __init__(self, tasks_db):
+    def __init__(self, tasks_db: Database):
         self.tasks_db = tasks_db
-        self.tasks = self.load_tasks()
-
-    def load_tasks(self):
-        return js.load([Task] * 100, self.tasks_db)
+        self.tasks = self.tasks_db.load()
 
     def add_task(self, task):
         self.tasks.append(task)
+        self.record_tasks()
 
     def record_tasks(self):
-        js.unload(self.tasks, self.tasks_db)
+        self.tasks_db.unload(self.tasks)

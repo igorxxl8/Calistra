@@ -15,7 +15,6 @@ class Interface:
         self.online_user = online_user
         self.users_storage = UserStorage(user_db)
         self.tasks_storage = TaskStorage(task_db)
-        pass
 
     def add_user(self, nick):
         self.users_storage.add_user(nick)

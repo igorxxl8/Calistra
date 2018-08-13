@@ -1,10 +1,10 @@
 import json
-import os
 from .database import Database
 
 
-# TODO: enable logging
-
+# TODO: 1) дописать документацию
+# TODO: 2) Рефакторинг
+# TODO: 3) Логгирование
 
 class Serializable:
     def __iter__(self):
@@ -16,7 +16,6 @@ class Serializable:
 
 class JsonDatabase(Database):
     def load(self) -> list:
-        check_program_data_files(self.filename)
         with open(self.filename, 'r') as file:
             s = file.read()
         return from_json(self.cls_seq, s)
@@ -26,22 +25,11 @@ class JsonDatabase(Database):
             file.write(to_json(instance))
 
 
-def check_program_data_files(file_name):
-    folder_name = os.path.split(file_name)[0]
-    if not os.path.exists(folder_name):
-        os.mkdir(folder_name)
-    if not os.path.exists(file_name):
-        create_storage_file(file_name)
-
-
-def create_storage_file(file_name):
-    with open(file_name, 'w') as file:
-        file.write('[]')
-
-
 def to_json(instance=None) -> str:
     def array_to_json(array):
         result = '['
+        if not array:
+            return '[]'
         for item in array:
             if item == array[-1]:
                 result = ''.join([result, to_json(item), ']'])
@@ -57,7 +45,10 @@ def to_json(instance=None) -> str:
         return res
 
     if not isinstance(instance, list):
-        attrs = vars(instance)
+        try:
+            attrs = vars(instance)
+        except TypeError:
+            attrs = instance
         res = '{'
 
         while attrs:
@@ -74,6 +65,10 @@ def to_json(instance=None) -> str:
                 res = ''.join(
                     [res, '"', key, '"', ': ', str(value).lower()]
                 )
+            elif value is None:
+                res = ''.join(
+                    [res, '"', key, '"', ': ', 'null']
+                )
             else:
                 res = ''.join(
                     [res, '"', key, '"', ': ', '"', str(value), '"']
@@ -86,8 +81,19 @@ def to_json(instance=None) -> str:
 
 
 def from_json(cls_seq: list, string):
-    def make_object(num, data):
-        instance = object.__new__(cls_seq[num])
+    def set_dict_attr(instance, data, num):
+        for key, value in data.items():
+            if isinstance(value, list):
+                # print('list in make_object')
+                instance[key] = make_objects_array(num + 1, value)
+            elif isinstance(value, dict):
+                # print('obj in make_object')
+                instance[key] = make_object(num + 1, value)
+            else:
+                # print('item in make object')
+                instance[key] = value
+
+    def set_object_attr(instance, data, num):
         for key, value in data.items():
             if isinstance(value, list):
                 # print('list in make_object')
@@ -98,6 +104,14 @@ def from_json(cls_seq: list, string):
             else:
                 # print('item in make object')
                 setattr(instance, key, value)
+
+    def make_object(num, data):
+        if cls_seq[num] is dict:
+            instance = dict.__new__(dict)
+            set_dict_attr(instance, data, num)
+        else:
+            instance = object.__new__(cls_seq[num])
+            set_object_attr(instance, data, num)
         return instance
 
     def make_objects_array(num, array):

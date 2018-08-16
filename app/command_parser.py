@@ -9,7 +9,7 @@ work with program's entities
 # TODO: 3) Логирование
 # TODO: 4) еще можно выделить в сущность даже функции парсера!
 import os
-from app.formatted_parser import FormattedParser
+from app.formatted_argparse import FormattedParser
 from app.help_functions import *
 from app.parser_args import ParserArgs
 from app.user_wrapper import (
@@ -31,6 +31,7 @@ try:
         QueueError,
         TaskError
     )
+
 except ImportError:
     from calistra_lib.storage.json_serializer import JsonDatabase
     from calistra_lib.user.user import User
@@ -48,11 +49,15 @@ USERS_FILE = os.path.join(FOLDER, 'users.json')
 AUTH_FILE = os.path.join(FOLDER, 'auth.json')
 ONLINE = os.path.join(FOLDER, 'online_user.json')
 FILES = [
-    (TASKS_FILE, '[{"name": "_inbox", "tasks": [], "archive": []}]'),
+    (TASKS_FILE, '[{"key": "0", "name": "__anon__",'
+                 ' "owner": "guest", "tasks": [], "archive": []}]'),
     (USERS_FILE, '[]'),
     (AUTH_FILE, '[]'),
     (ONLINE, '""')
 ]
+
+ERROR_CODE = 1
+BYTES_NUMBER = 8
 
 
 def apply_settings():
@@ -73,11 +78,12 @@ def run() -> int:
     Start program
     :return: int - exit code
     """
+    # TODO: сделать функцию применения настроек
+    # program settings
     apply_settings()
     check_program_data_files(FOLDER, FILES)
 
-    # sub_parser define message which print in case lack of necessary arguments
-    parser, sub_parser = _get_parsers()
+    parser = _get_parsers()
     args = vars(parser.parse_args())
 
     # check that target is defined
@@ -88,7 +94,7 @@ def run() -> int:
     # check that action is defined
     action = args.pop(ParserArgs.ACTION)
     if action is None:
-        sub_parser.error('action is required')
+        FormattedParser.active_sub_parser.error('action is required')
 
     users_wrapper_storage = UserWrapperStorage(
         JsonDatabase(AUTH_FILE, [UserWrapper]),
@@ -128,21 +134,27 @@ def run() -> int:
     if target == ParserArgs.QUEUE.name:
         if action == ParserArgs.ADD:
             return _add_queue(
-                name=args.pop(ParserArgs.QUEUE_NAME.name),
+                name=args.pop(ParserArgs.QUEUE_NAME.name).strip(' '),
                 library_interface=library_interface
             )
 
         if action == ParserArgs.DELETE:
             return _del_queue(
-                name=args.pop(ParserArgs.QUEUE_NAME.name),
+                key=args.pop(ParserArgs.QUEUE_NAME.name).strip(' '),
                 recursive=args.pop(ParserArgs.RECURSIVE.dest),
                 library_interface=library_interface
             )
 
         if action == ParserArgs.SET:
-            return _set_queue_new_name(
-                name=args.pop(ParserArgs.QUEUE_NAME.name),
-                new_name=args.pop(ParserArgs.QUEUE_NEW_NAME.name),
+            key = args.pop(ParserArgs.KEY.name)
+            new_name = args.pop(ParserArgs.NEW_NAME.dest)
+            if new_name is None:
+                parser.active_sub_parser.help()
+                return 0
+
+            return _edit_queue(
+                key=key,
+                new_name=new_name,
                 library_interface=library_interface
             )
 
@@ -150,7 +162,7 @@ def run() -> int:
             name = args.pop(ParserArgs.TASK_QUEUE.dest)
             _all = args.pop(ParserArgs.ALL.dest)
             if name:
-                return _show_queue_tasks(name, library_interface)
+                return _show_queue_tasks(name.strip(' '), library_interface)
             if _all:
                 return _show_queue(library_interface)
 
@@ -179,7 +191,7 @@ def _add_user(nick, password, users_storage, library_interface: Interface):
         users_storage.add_user(nick, password)
     except SaveUserError as e:
         print(e.message, file=sys.stderr)
-        return 1
+        return ERROR_CODE
     else:
         library_interface.add_user(nick)
         print('User "{}" successfully created'.format(nick))
@@ -192,7 +204,7 @@ def _login(nick, password, users_storage) -> int:
         controller.login(nick, password)
     except LoginError as e:
         print(e.message, file=sys.stderr)
-        return 1
+        return ERROR_CODE
     else:
         print('User "{}" now is online'.format(nick))
         return 0
@@ -204,7 +216,7 @@ def _logout(users_storage) -> int:
         controller.logout()
     except LogoutError as e:
         print(e.message, file=sys.stderr)
-        return 1
+        return ERROR_CODE
     else:
         print('All users now offline')
         return 0
@@ -221,36 +233,43 @@ def _show_users(storage) -> int:
 # functions for work with queue instance          =
 # =================================================
 def _add_queue(name, library_interface):
+    key = os.urandom(BYTES_NUMBER).hex()
     try:
-        library_interface.add_queue(name=name)
+        added_queue = library_interface.add_queue(name=name, key=key)
     except QueueError as e:
         print(e.message, file=sys.stderr)
-        return 1
+        return ERROR_CODE
     else:
-        print('Queue "{}" added'.format(name))
+        print('Queue "{}" added. It\'s key - {}'.format(
+            added_queue.name, key))
         return 0
 
 
-def _del_queue(name, recursive, library_interface):
+def _del_queue(key, recursive, library_interface):
     try:
-        # TODO: добавить опциональный аргумент рекурсии
-        library_interface.del_queue(name=name, recursive=recursive)
+        deleted_queue = library_interface.del_queue(
+            key=key,
+            recursive=recursive)
     except QueueError as e:
         print(e.message, file=sys.stderr)
-        return 1
+        return ERROR_CODE
     else:
-        print("Queue '{}' deleted".format(name))
+        print('Queue "{}" deleted'.format(deleted_queue.name))
         return 0
 
 
-def _set_queue_new_name(name, new_name, library_interface):
+def _edit_queue(key, new_name, library_interface):
+    new_name = check_name_correctness(new_name)
+    if new_name == CHECKING_ERROR:
+        return ERROR_CODE
+
     try:
-        library_interface.edit_queue(name, new_name)
+        library_interface.edit_queue(key, new_name)
     except QueueError as e:
         print(e.message, file=sys.stderr)
-        return 1
+        return ERROR_CODE
     else:
-        print('Queue "{}" now have new name "{}"'.format(name, new_name))
+        print('Queue "{}" now have new name "{}"'.format(key, new_name))
     return 0
 
 
@@ -262,20 +281,22 @@ def _show_queue(library_interface) -> int:
             raise QueueError('Queues didn\'t found')
     except QueueError as e:
         print(e.message, file=sys.stderr)
-        return 1
+        return ERROR_CODE
     else:
         for queue in queues:
-            print('Queue name: "{}"'.format(queue.name.split('_')[1]))
+            print('Queue name: "{}", key = {}'.format(
+                queue.name, queue.key)
+            )
         return 0
 
 
-def _show_queue_tasks(name, library_interface):
+def _show_queue_tasks(key, library_interface):
     # TODO: сделать форматированный показ тасок
     try:
-        tasks = library_interface.get_queue_tasks(name)
+        tasks = library_interface.get_queue_tasks(key)
     except QueueError as e:
         print(e.message, file=sys.stderr)
-        return 1
+        return ERROR_CODE
     else:
         for task in tasks:  # type: Task
             print('Name: "{}", key: {}'.format(task.name, task.key))
@@ -286,54 +307,62 @@ def _show_queue_tasks(name, library_interface):
 # functions for work with task instance           =
 # =================================================
 def _add_task(args, lib_interface) -> int:
-    name = args.pop(ParserArgs.TASK_NAME.name)
-    queue_name = args.pop(ParserArgs.TASK_QUEUE.dest)
-    key = os.urandom(8).hex()
+    key = os.urandom(BYTES_NUMBER).hex()
+
+    name = args.pop(ParserArgs.TASK_NAME.name).strip(' ')
+    name = check_name_correctness(name)
+    if name == CHECKING_ERROR:
+        return ERROR_CODE
+
+    queue_name = args.pop(ParserArgs.TASK_QUEUE.dest).strip(' ')
+    queue_name = check_name_correctness(queue_name)
+    if queue_name == CHECKING_ERROR:
+        return ERROR_CODE
 
     linked = args.pop(ParserArgs.TASK_LINKED.dest)
     linked = check_link_correctness(linked)
     if linked == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     responsible = args.pop(ParserArgs.TASK_RESPONSIBLE.dest)
     responsible = check_responsible_correctness(responsible)
     if responsible == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     priority = args.pop(ParserArgs.TASK_PRIORITY.dest)
     priority = check_priority_correctness(priority)
     if priority == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     progress = args.pop(ParserArgs.TASK_PROGRESS.dest)
     progress = check_progress_correctness(progress)
     if progress == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     start = args.pop(ParserArgs.TASK_START.dest)
     start = check_time_format(start)
     if start == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     deadline = args.pop(ParserArgs.TASK_DEADLINE.dest)
     deadline = check_time_format(deadline)
     if deadline == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     tags = args.pop(ParserArgs.TASK_TAGS.dest)
     tags = check_tags_correctness(tags)
     if tags == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     reminder = args.pop(ParserArgs.TASK_REMINDER.dest)
     reminder = check_reminder_format(reminder)
     if reminder == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     try:
         lib_interface.add_task(
             name=name,
-            queue_name=queue_name,
+            queue_key=queue_name,
             description=args.pop(ParserArgs.TASK_DESCRIPTION.dest),
             parent=args.pop(ParserArgs.TASK_PARENT.dest),
             linked=linked,
@@ -349,65 +378,92 @@ def _add_task(args, lib_interface) -> int:
 
     except TaskError as e:
         print(e.message, file=sys.stderr)
-        return 1
+        return ERROR_CODE
     else:
-        print('Task "{}" added in queue "{}"'.format(name, queue_name))
+        print('Task "{}" added. It\'s key - {}'.format(name, key))
         return 0
 
 
 def _edit_task(args, lib_interface) -> int:
     # TODO: продолжить делать этот метод
-    key = args.pop(ParserArgs.TASK_KEY.name)
+    key = args.pop(ParserArgs.KEY.name)
 
     linked = args.pop(ParserArgs.TASK_LINKED.dest)
-    linked = check_link_correctness(linked)
+    linked = check_link_correctness(
+        linked,
+        action=ParserArgs.SET
+    )
     if linked == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     responsible = args.pop(ParserArgs.TASK_RESPONSIBLE.dest)
-    responsible = check_responsible_correctness(responsible)
+    responsible = check_responsible_correctness(
+        responsible,
+        action=ParserArgs.SET
+    )
     if responsible == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     priority = args.pop(ParserArgs.TASK_PRIORITY.dest)
-    priority = check_priority_correctness(priority)
+    priority = check_priority_correctness(
+        priority,
+        action=ParserArgs.SET
+    )
     if priority == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     progress = args.pop(ParserArgs.TASK_PROGRESS.dest)
-    progress = check_progress_correctness(progress)
+    progress = check_progress_correctness(
+        progress,
+        action=ParserArgs.SET
+    )
     if progress == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     start = args.pop(ParserArgs.TASK_START.dest)
-    start = check_time_format(start)
+    start = check_time_format(
+        start,
+        action=ParserArgs.SET
+    )
     if start == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     deadline = args.pop(ParserArgs.TASK_DEADLINE.dest)
-    deadline = check_time_format(deadline)
+    deadline = check_time_format(
+        deadline,
+        action=ParserArgs.SET
+    )
     if deadline == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     tags = args.pop(ParserArgs.TASK_TAGS.dest)
-    tags = check_tags_correctness(tags)
+    tags = check_tags_correctness(
+        tags,
+        action=ParserArgs.SET
+    )
     if tags == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     reminder = args.pop(ParserArgs.TASK_REMINDER.dest)
-    reminder = check_reminder_format(reminder)
+    reminder = check_reminder_format(
+        reminder,
+        action=ParserArgs.SET
+    )
     if reminder == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     status = args.pop(ParserArgs.TASK_STATUS.dest)
-    status = check_status_correctness(status)
+    status = check_status_correctness(
+        status,
+        action=ParserArgs.SET
+    )
     if status == CHECKING_ERROR:
-        return 1
+        return ERROR_CODE
 
     try:
         lib_interface.edit_task(
             key=key,
-            name=args.pop(ParserArgs.TASK_NEW_NAME.dest),
+            name=args.pop(ParserArgs.NEW_NAME.dest),
             description=args.pop(ParserArgs.TASK_DESCRIPTION.dest),
             status=status,
             parent=args.pop(ParserArgs.TASK_PARENT.dest),
@@ -422,14 +478,14 @@ def _edit_task(args, lib_interface) -> int:
         )
     except TaskError as e:
         print(e.message, file=sys.stderr)
-        return 1
+        return ERROR_CODE
     else:
         print('Task with key "{}" edited'.format(key))
         return 0
 
 
 def _del_task(args, lib_interface) -> int:
-    key = args.pop(ParserArgs.TASK_KEY.name)
+    key = args.pop(ParserArgs.KEY.name)
     try:
         lib_interface.del_task(
             key=key,
@@ -437,7 +493,7 @@ def _del_task(args, lib_interface) -> int:
         )
     except TaskError as e:
         print(e.message, file=sys.stderr)
-        return 1
+        return ERROR_CODE
     else:
         print('Task with key "{}" deleted'.format(key))
     return 0
@@ -449,9 +505,7 @@ def _del_task(args, lib_interface) -> int:
 def _get_parsers():
     """
     Init parser's attributes, create parsers and subparsers
-    :return parser, active_sub_parser, where
-            parser - main parser,
-            active_sub_parser - current sub_parser which used in program
+    :return parser - main parser
     """
     parser = FormattedParser(
         description=ParserArgs.DESCRIPTION)
@@ -460,7 +514,6 @@ def _get_parsers():
         help=ParserArgs.TARGET.help)
 
     # create next level parsers for different targets
-    active_sub_parser = None
     user_parser = subparsers.add_parser(
         name=ParserArgs.USER.name,
         help=ParserArgs.USER.help)
@@ -479,22 +532,22 @@ def _get_parsers():
 
     # check console args, create subparsers for necessary args
     if ParserArgs.USER.name in sys.argv:
+        FormattedParser.active_sub_parser = user_parser
         _create_user_subparsers(user_parser)
-        active_sub_parser = user_parser
 
     elif ParserArgs.QUEUE.name in sys.argv:
+        FormattedParser.active_sub_parser = queue_parser
         _create_queue_subparsers(queue_parser)
-        active_sub_parser = queue_parser
 
     elif ParserArgs.TASK.name in sys.argv:
+        FormattedParser.active_sub_parser = task_parser
         _create_task_subparsers(task_parser)
-        active_sub_parser = task_parser
 
     elif ParserArgs.PLAN.name in sys.argv:
+        FormattedParser.active_sub_parser = plan_parser
         _create_plan_subparsers(plan_parser)
-        active_sub_parser = plan_parser
 
-    return parser, active_sub_parser
+    return parser
 
 
 def _create_user_subparsers(user_parser):
@@ -510,33 +563,50 @@ def _create_user_subparsers(user_parser):
     add_subparsers = user_subparsers.add_parser(
         name=ParserArgs.ADD,
         help=ParserArgs.ADD_USER_HELP)
-    add_subparsers.add_argument(
-        dest=ParserArgs.NICKNAME.name,
-        help=ParserArgs.NICKNAME.help)
-    add_subparsers.add_argument(
-        dest=ParserArgs.PASSWORD.name,
-        help=ParserArgs.PASSWORD.help)
 
     # calistra user login <nickname> <password>
     login_subparsers = user_subparsers.add_parser(
         name=ParserArgs.LOGIN.name,
         help=ParserArgs.LOGIN.help)
-    login_subparsers.add_argument(
-        dest=ParserArgs.NICKNAME.name,
-        help=ParserArgs.NICKNAME.help)
-    login_subparsers.add_argument(
-        dest=ParserArgs.PASSWORD.name,
-        help=ParserArgs.PASSWORD.help)
 
     # calistra user logout (only for online user)
-    user_subparsers.add_parser(
+    logout_subparsers = user_subparsers.add_parser(
         name=ParserArgs.LOGOUT.name,
         help=ParserArgs.LOGOUT.help)
 
     # calistra user show
-    user_subparsers.add_parser(
+    show_subparsers = user_subparsers.add_parser(
         name=ParserArgs.SHOW,
         help=ParserArgs.SHOW_USER_HELP)
+
+    if ParserArgs.ADD in sys.argv:
+        # calistra user add <nickname>
+        add_subparsers.add_argument(
+            dest=ParserArgs.NICKNAME.name,
+            help=ParserArgs.NICKNAME.help)
+
+        # calistra user add <password>
+        add_subparsers.add_argument(
+            dest=ParserArgs.PASSWORD.name,
+            help=ParserArgs.PASSWORD.help)
+        # set add_subparsers as active
+        FormattedParser.active_sub_parser = add_subparsers
+
+    elif ParserArgs.LOGIN.name in sys.argv:
+        login_subparsers.add_argument(
+            dest=ParserArgs.NICKNAME.name,
+            help=ParserArgs.NICKNAME.help)
+        login_subparsers.add_argument(
+            dest=ParserArgs.PASSWORD.name,
+            help=ParserArgs.PASSWORD.help)
+        # set login_subparsers as active
+        FormattedParser.active_sub_parser = login_subparsers
+
+    elif ParserArgs.SHOW in sys.argv:
+        FormattedParser.active_sub_parser = show_subparsers
+
+    elif ParserArgs.LOGOUT.name in sys.argv:
+        FormattedParser.active_sub_parser = logout_subparsers
 
 
 # TODO: добавить документацию и опциональные параметры
@@ -545,71 +615,82 @@ def _create_queue_subparsers(queue_parser):
         dest=ParserArgs.ACTION,
         help=ParserArgs.QUEUE_ACTION)
 
-    # calistra queueshow_subparsers add
+    # calistra queue add
     add_subparsers = queue_subparsers.add_parser(
         name=ParserArgs.ADD,
         help=ParserArgs.ADD_QUEUE_HELP)
-
-    # calistra queue add <name>
-    add_subparsers.add_argument(
-        dest=ParserArgs.QUEUE_NAME.name,
-        help=ParserArgs.QUEUE_NAME.help)
 
     # calistra queue set
     edit_subparsers = queue_subparsers.add_parser(
         name=ParserArgs.SET,
         help=ParserArgs.SET_QUEUE_HELP)
 
-    # calistra queue set <name>
-    edit_subparsers.add_argument(
-        dest=ParserArgs.QUEUE_NAME.name,
-        help=ParserArgs.QUEUE_NAME.help)
-
-    # calistra queue set <name> <new_name>
-    edit_subparsers.add_argument(
-        dest=ParserArgs.QUEUE_NEW_NAME.name,
-        help=ParserArgs.QUEUE_NEW_NAME.help)
-
     # calistra queue del
     del_subparsers = queue_subparsers.add_parser(
         name=ParserArgs.DELETE,
         help=ParserArgs.DELETE_QUEUE_HELP)
 
-    # calistra queue del <name>
-    del_subparsers.add_argument(
-        dest=ParserArgs.QUEUE_NAME.name,
-        help=ParserArgs.QUEUE_NAME.help)
-
-    del_subparsers.add_argument(
-        ParserArgs.RECURSIVE.short,
-        ParserArgs.RECURSIVE.long,
-        dest=ParserArgs.RECURSIVE.dest,
-        action="store_true",
-        help=ParserArgs.RECURSIVE.help)
-
     # calistra queue show
     show_subparsers = queue_subparsers.add_parser(
         name=ParserArgs.SHOW,
-        help=ParserArgs.SHOW_QUEUE_HELP,
-    )
+        help=ParserArgs.SHOW_QUEUE_HELP)
 
-    show_args_group = show_subparsers.add_mutually_exclusive_group()
-    show_args_group.description = 'kek'
-    # calistra queue show [--name="NAME"]
-    show_args_group.add_argument(
-        ParserArgs.TASK_QUEUE.long,
-        dest=ParserArgs.TASK_QUEUE.dest,
-        help=ParserArgs.TASK_QUEUE.help
-    )
+    if ParserArgs.ADD in sys.argv:
+        # calistra queue add <name>
+        add_subparsers.add_argument(
+            dest=ParserArgs.QUEUE_NAME.name,
+            help=ParserArgs.QUEUE_NAME.help)
+        # set add_subparsers as active
+        FormattedParser.active_sub_parser = add_subparsers
 
-    show_args_group.add_argument(
-        ParserArgs.ALL.long,
-        ParserArgs.ALL.short,
-        dest=ParserArgs.ALL.dest,
-        action="store_true",
-        default=True,
-        help=ParserArgs.ALL.help
-    )
+    elif ParserArgs.SET in sys.argv:
+        # calistra queue set <name>
+        edit_subparsers.add_argument(
+            dest=ParserArgs.KEY.name,
+            help=ParserArgs.KEY.help)
+
+        # calistra queue set <name> <new_name>
+        edit_subparsers.add_argument(
+            ParserArgs.NEW_NAME.long,
+            dest=ParserArgs.NEW_NAME.dest,
+            help=ParserArgs.NEW_NAME.help)
+
+        FormattedParser.active_sub_parser = edit_subparsers
+
+    elif ParserArgs.DELETE in sys.argv:
+        # calistra queue del <name>
+        del_subparsers.add_argument(
+            dest=ParserArgs.QUEUE_NAME.name,
+            help=ParserArgs.QUEUE_NAME.help)
+
+        del_subparsers.add_argument(
+            ParserArgs.RECURSIVE.short,
+            ParserArgs.RECURSIVE.long,
+            dest=ParserArgs.RECURSIVE.dest,
+            action="store_true",
+            help=ParserArgs.RECURSIVE.help
+        )
+
+        FormattedParser.active_sub_parser = del_subparsers
+
+    elif ParserArgs.SHOW in sys.argv:
+        show_args_group = show_subparsers.add_mutually_exclusive_group()
+        # calistra queue show [--name="NAME"]
+        show_args_group.add_argument(
+            ParserArgs.TASK_QUEUE.long,
+            dest=ParserArgs.TASK_QUEUE.dest,
+            help=ParserArgs.TASK_QUEUE.help)
+
+        show_args_group.add_argument(
+            ParserArgs.ALL.long,
+            ParserArgs.ALL.short,
+            dest=ParserArgs.ALL.dest,
+            action="store_true",
+            default=True,
+            help=ParserArgs.ALL.help
+        )
+
+        FormattedParser.active_sub_parser = show_subparsers
 
 
 def _create_task_subparsers(task_parser):
@@ -621,79 +702,89 @@ def _create_task_subparsers(task_parser):
         dest=ParserArgs.ACTION,
         help=ParserArgs.TASK_ACTION)
 
-    # TODO: подумать над атрибутами task
-
     # calistra task add
     add_subparsers = task_subparsers.add_parser(
         name=ParserArgs.ADD,
         help=ParserArgs.ADD_TASK_HELP)
-
-    # positional args for add_subparsers
-    # calistra task add <name>
-    add_subparsers.add_argument(
-        dest=ParserArgs.TASK_NAME.name,
-        help=ParserArgs.TASK_NAME.help)
-
-    # calistra task add [--queue=<QUEUE>]
-    add_subparsers.add_argument(
-        ParserArgs.TASK_QUEUE.long,
-        dest=ParserArgs.TASK_QUEUE.dest,
-        default='inbox',
-        help=ParserArgs.TASK_QUEUE.help)
-
-    # add optional arguments
-    __add_common_optional_task_args(add_subparsers)
 
     # calistra task set
     edit_subparsers = task_subparsers.add_parser(
         name=ParserArgs.SET,
         help=ParserArgs.SET_TASK_HELP)
 
-    # positional args for edit_subparsers
-    # calistra task set <TASK_KEY>
-    edit_subparsers.add_argument(
-        dest=ParserArgs.TASK_KEY.name,
-        help=ParserArgs.TASK_KEY.help)
-
-    # optional args for edit_subparsers
-    # calistra task set --new_name=<NEW_NAME>
-    edit_subparsers.add_argument(
-        ParserArgs.TASK_NEW_NAME.long,
-        dest=ParserArgs.TASK_NEW_NAME.dest,
-        help=ParserArgs.TASK_NEW_NAME.help)
-
-    # calistra task set --status=<STATUS>
-    edit_subparsers.add_argument(
-        ParserArgs.TASK_STATUS.long,
-        dest=ParserArgs.TASK_STATUS.dest,
-        help=ParserArgs.TASK_STATUS.help)
-
-    __add_common_optional_task_args(edit_subparsers)
-
     # calistra task delete
     del_subparsers = task_subparsers.add_parser(
         name=ParserArgs.DELETE,
         help=ParserArgs.DELETE_TASK_HELP)
 
-    # positional args for del_subparsers
-    # calistra task del <TASK_KEY>
-    del_subparsers.add_argument(
-        dest=ParserArgs.TASK_KEY.name,
-        help=ParserArgs.TASK_KEY.help)
-
-    # optional args for del_subparsers
-    # calistra task del [-r]
-    del_subparsers.add_argument(
-        ParserArgs.RECURSIVE.short,
-        ParserArgs.RECURSIVE.long,
-        dest=ParserArgs.RECURSIVE.dest,
-        action="store_true",
-        help=ParserArgs.RECURSIVE.help)
-
     # calistra task show
-    task_subparsers.add_parser(
+    show_subparsers = task_subparsers.add_parser(
         name=ParserArgs.SHOW,
         help=ParserArgs.SHOW_TASK_HELP)
+
+    if ParserArgs.ADD in sys.argv:
+        # positional args for add_subparsers
+        # calistra task add <name>
+        add_subparsers.add_argument(
+            dest=ParserArgs.TASK_NAME.name,
+            help=ParserArgs.TASK_NAME.help)
+
+        # add optional arguments
+        __add_common_optional_task_args(add_subparsers)
+
+        # calistra task add [--queue=<QUEUE>]
+        add_subparsers.add_argument(
+            ParserArgs.TASK_QUEUE.long,
+            dest=ParserArgs.TASK_QUEUE.dest,
+            default='?',
+            help=ParserArgs.TASK_QUEUE.help)
+
+        FormattedParser.active_sub_parser = add_subparsers
+
+    elif ParserArgs.SET in sys.argv:
+        # positional args for edit_subparsers
+        # calistra task set <TASK_KEY>
+        edit_subparsers.add_argument(
+            dest=ParserArgs.KEY.name,
+            help=ParserArgs.KEY.help)
+
+        # optional args for edit_subparsers
+        # calistra task set --new_name=<NEW_NAME>
+        edit_subparsers.add_argument(
+            ParserArgs.NEW_NAME.long,
+            dest=ParserArgs.NEW_NAME.dest,
+            help=ParserArgs.NEW_NAME.help)
+
+        # calistra task set --status=<STATUS>
+        edit_subparsers.add_argument(
+            ParserArgs.TASK_STATUS.long,
+            dest=ParserArgs.TASK_STATUS.dest,
+            help=ParserArgs.TASK_STATUS.help)
+
+        __add_common_optional_task_args(edit_subparsers)
+
+        FormattedParser.active_sub_parser = edit_subparsers
+
+    elif ParserArgs.DELETE in sys.argv:
+        # positional args for del_subparsers
+        # calistra task del <TASK_KEY>
+        del_subparsers.add_argument(
+            dest=ParserArgs.KEY.name,
+            help=ParserArgs.KEY.help)
+
+        # optional args for del_subparsers
+        # calistra task del [-r]
+        del_subparsers.add_argument(
+            ParserArgs.RECURSIVE.short,
+            ParserArgs.RECURSIVE.long,
+            dest=ParserArgs.RECURSIVE.dest,
+            action="store_true",
+            help=ParserArgs.RECURSIVE.help)
+
+        FormattedParser.active_sub_parser = del_subparsers
+
+    elif ParserArgs.SHOW in sys.argv:
+        FormattedParser.active_sub_parser = show_subparsers
 
 
 def __add_common_optional_task_args(action_subparser):

@@ -7,16 +7,31 @@ except ImportError:
 
 
 # TODO: обобщить метод загрузки данных
-
+# TODO: 1) дописать документацию
+# TODO: 2) Рефакторинг
+# TODO: 3) Логгирование
 
 class UserStorage:
     def __init__(self, users_db: Database):
         self.users_db = users_db
         self.users = users_db.load()
 
-    def record_users(self):
+    def get_user_by_nick(self, nick):
+        for user in self.users:
+            if user.nick == nick:
+                return user
+
+    def get_user_by_uid(self, uid):
+        for user in self.users:
+            if user.uid == uid:
+                return uid
+
+    def load_users(self):
+        self.users = self.users_db.load()
+
+    def save_users(self):
         self.users_db.unload(self.users)
 
     def add_user(self, nick):
         self.users.append(User(nick))
-        self.record_users()
+        return self.users[-1]

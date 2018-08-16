@@ -26,6 +26,7 @@ class ParserArgs:
     SET = 'set'
     SHOW = 'show'
     DELETE = 'del'
+    KEY = Argument(name='key', help='access key')
     RECURSIVE = OptionalArgument(
         dest='recursive',
         long='--recursive',
@@ -58,19 +59,17 @@ class ParserArgs:
     SET_TASK_HELP = 'edit task'
     SHOW_TASK_HELP = 'show user\'s tasks'
     TASK_NAME = Argument(name='name', help='name for task')
-    TASK_KEY = Argument(name='key', help='access key for task')
-
     # optional task params
-    TASK_NEW_NAME = OptionalArgument(
+    NEW_NAME = OptionalArgument(
         dest='NEW_NAME',
         long='--new_name',
         short='-nn',
-        help='define new name for task'
+        help='define new name for tasks, queues and other'
     )
 
     TASK_QUEUE = OptionalArgument(
-        dest='QUEUE',
-        long='--queue',
+        dest='QK',
+        long='--queue_key',
         short='-q',
         help='queue name where the tasks placed')
 
@@ -85,14 +84,15 @@ class ParserArgs:
         dest='PARENT',
         long='--parent',
         short='-pr',
-        help='key of parent task'
+        help='the key of the parent task. The parent task must be '
+             'in the same queue as the edited task. Type "?" to reset'
     )
 
     TASK_LINKED = OptionalArgument(
         dest='LINKED',
         long='--linked',
         short='-li',
-        help='type of linked task^'
+        help='type of linked task'
     )
 
     TASK_PRIORITY = OptionalArgument(
@@ -107,14 +107,18 @@ class ParserArgs:
         dest='PROGRESS',
         long='--progress',
         short='-pr',
-        help='task progress in % (0-100)'
+        help='task progress in range (0-100) percent. Type "?" to reset'
     )
 
     TASK_START = OptionalArgument(
         dest='START',
         long='--starts',
         short='-s',
-        help='time, when task begin. Format: day|month|year|hour|min'
+        help='time, when task begin. It must have correct number of days '
+             'in month, month in year, hour and minutes. '
+             'Format: day.month.year.hour:min (only numbers allowed, '
+             'ex. 12.08.2028.9:00. '
+             'or type symbol "?" to erase start time for task)'
     )
 
     TASK_DEADLINE = OptionalArgument(
@@ -122,7 +126,8 @@ class ParserArgs:
         long='--deadline',
         short='-dl',
         help='the deadline for the completion of a task.'
-             'Format: day|month|year|hour|min'
+             'Format: day.month.year.hour:min (only numbers allowed)'
+             'or type symbol "?" to erase deadline for task'
     )
 
     TASK_TAGS = OptionalArgument(
@@ -154,7 +159,7 @@ class ParserArgs:
         dest='STATUS',
         long='--status',
         short='-st',
-        help='define task status: opened, closed, solved or worked'
+        help='define task status: opened, closed, solved or activated'
     )
 
     # Constants for work with queues
@@ -162,13 +167,7 @@ class ParserArgs:
     QUEUE_ACTION = 'action with queue'
     ADD_QUEUE_HELP = 'add new queue'
     QUEUE_NAME = Argument(name='name', help='queue name')
-    QUEUE_NAME_OPTIONAL = OptionalArgument(
-        long='--name',
-        dest='NAME',
-        short='-n',
-        help='queue name'
-    )
-    QUEUE_NEW_NAME = Argument(name='new_name', help='new name for queue')
+
     SET_QUEUE_HELP = 'edit queue'
     DELETE_QUEUE_HELP = 'delete existing queue'
     SHOW_QUEUE_HELP = 'show user queues or tasks in queue with defined name'

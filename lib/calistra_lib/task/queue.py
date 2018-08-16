@@ -4,7 +4,9 @@
 
 
 class Queue:
-    def __init__(self, name, tasks, archive):
+    def __init__(self, name, key, owner, tasks, archive):
         self.name = name
+        self.key = key
+        self.owner = owner
         self.tasks = tasks
         self.archive = archive

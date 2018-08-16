@@ -7,15 +7,12 @@ class Task:
     def __init__(self, name, description, parent, linked, author,
                  responsible: list, priority, progress, start, deadline,
                  tags, reminder, key):
+
         self.name = name
         self.description = description
         self.parent = parent
         self.linked = linked
         self.author = author
-        if responsible is None:
-            self.responsible = []
-        else:
-            self.responsible = responsible
         self.priority = priority
         self.progress = progress
         self.start = start
@@ -24,3 +21,8 @@ class Task:
         self.reminder = reminder
         self.status = 'opened'
         self.key = key
+
+        if responsible is None:
+            self.responsible = []
+        else:
+            self.responsible = responsible

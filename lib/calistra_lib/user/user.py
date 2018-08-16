@@ -2,10 +2,19 @@ from random import randint
 from datetime import datetime
 
 
+# TODO: 1) дописать документацию
+# TODO: 2) Рефакторинг
+# TODO: 3) Логгирование
+
+
 class User:
     def __init__(self, nick):
         self.uid = _make_uid()
         self.nick = nick
+        self.queues = []
+        self.tasks_author = []
+        self.tasks_responsible = []
+        self.notifications = []
 
 
 def _make_uid():
@@ -22,4 +31,4 @@ def _make_uid():
             str(randint(0, 1000))
         ]
     )
-    return int(uid)
+    return uid

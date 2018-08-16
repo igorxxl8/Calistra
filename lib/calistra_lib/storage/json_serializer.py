@@ -5,6 +5,11 @@ from .database import Database
 # TODO: 1) дописать документацию
 # TODO: 2) Рефакторинг
 # TODO: 3) Логгирование
+# TODO: 4) все объединить в процедуру конкат
+
+def concat(*args):
+    return ''.join(args)
+
 
 class Serializable:
     def __iter__(self):
@@ -22,44 +27,71 @@ class JsonDatabase(Database):
 
     def unload(self, instance):
         with open(self.filename, 'w') as file:
-            file.write(to_json(instance))
+            file.write(to_json(instance, indentation=4))
 
 
-def to_json(instance=None) -> str:
-    def array_to_json(array):
-        result = '['
-        if not array:
-            return '[]'
-        for item in array:
-            if item == array[-1]:
-                result = ''.join([result, to_json(item), ']'])
-            else:
-                result = ''.join([result, to_json(item), ', '])
-        return result
+def array_to_json(array, ctrl_char, indent, level):
+    if not array:
+        return '[]'
+    result = ''.join(['[', ctrl_char, ' ' * level * indent])
 
+    size = len(array)
+    for i in range(size):
+        item = array[i]
+        if i == size - 1:
+            result = ''.join(
+                [
+                    result,
+                    to_json(item, indent, level+1),
+                    ctrl_char,
+                    ' ' * (level - 1) * indent, ']'
+                ]
+            )
+        else:
+            result = ''.join(
+                [
+                    result,
+                    to_json(item, indent, level+1),
+                    ',',
+                    ctrl_char,
+                    ' ' * level * indent
+                ]
+            )
+    return result
+
+
+def to_json(instance=None, indentation=None, level=1) -> str:
     try:
-        res = json.dumps(instance)
+        res = json.dumps(instance, indent=indentation)
     except TypeError:
         pass
     else:
         return res
 
+    if indentation is None:
+        indent = 0
+        ctrl_char = ''
+    else:
+        indent = indentation
+        ctrl_char = '\n'
+
     if not isinstance(instance, list):
         try:
-            attrs = vars(instance)
+            attrs = vars(instance).copy()
         except TypeError:
             attrs = instance
-        res = '{'
+        res = ''.join(['{', ctrl_char, ' ' * level * indent])
 
         while attrs:
             key, value = attrs.popitem()
             if isinstance(value, list):
                 res = ''.join(
-                    [res, '"', key, '"', ': ', array_to_json(value)]
+                    [res, '"', key, '"', ': ',
+                     array_to_json(value, ctrl_char, indent, level + 1)]
                 )
             elif isinstance(value, Serializable):
                 res = ''.join(
-                    [res, '"', key, '"', ': ', to_json(value)]
+                    [res, '"', key, '"', ': ', to_json(value, indent, level + 1)]
                 )
             elif isinstance(value, int):
                 res = ''.join(
@@ -74,10 +106,10 @@ def to_json(instance=None) -> str:
                     [res, '"', key, '"', ': ', '"', str(value), '"']
                 )
             if attrs:
-                res = ''.join([res, ', '])
-        return ''.join([res, '}'])
+                res = ''.join([res, ',', ctrl_char, ' ' * level * indent])
+        return ''.join([res, ctrl_char, ' ' * (level-1) * indent, '}'])
 
-    return array_to_json(instance)
+    return array_to_json(instance, ctrl_char, indentation, level)
 
 
 def from_json(cls_seq: list, string):

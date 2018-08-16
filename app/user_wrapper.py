@@ -9,6 +9,10 @@ except ImportError:
     from calistra_lib.storage.database import Database
 
 
+# TODO: 1) дописать документацию
+# TODO: 2) Рефакторинг
+# TODO: 3) Логирование
+
 class UserWrapper:
     def __init__(self, nick, password):
         self.nick = nick
@@ -34,6 +38,9 @@ class UserWrapperStorage:
         self.__online_user = online_user_db.load()
 
     def add_user(self, nick, password):
+        if nick == 'guest':
+            raise SaveUserError('Unable to create user. '
+                                'Name "guest" booked by program')
         for user in self.users:
             if user.nick == nick:
                 raise SaveUserError(
@@ -52,7 +59,7 @@ class UserWrapperStorage:
     @online_user.setter
     def online_user(self, user=None):
         if user is None:
-            self.online_user_db.unload(0)
+            self.online_user_db.unload("")
         else:
             self.online_user_db.unload(user.nick)
 

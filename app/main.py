@@ -6,6 +6,8 @@ __author__ = "Igor Turcevich <vip.turcevich3@gmail.com>"
 from app import command_parser
 import sys
 
+# TODO: 1) Логирование
+
 
 def start():
     """Execute program

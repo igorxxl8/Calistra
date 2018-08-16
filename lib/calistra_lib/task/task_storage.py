@@ -1,10 +1,10 @@
+from .task import Task
+from .queue import Queue
+from .task_exceptions import QueueError, TaskError
+
 try:
-    from lib.calistra_lib.task.task import Task
-    from lib.calistra_lib.task.queue import Queue
     from lib.calistra_lib.storage.database import Database
 except ImportError:
-    from calistra_lib.task.task import Task
-    from calistra_lib.task.queue import Queue
     from calistra_lib.storage.database import Database
 
 
@@ -25,30 +25,26 @@ class TaskStorage:
             tasks += queue.tasks
         return tasks
 
-    def add_queue(self, name):
-        if self.get_queue_by_name(name):
-            return 1
-        new_queue = Queue(name, [], [])
-        self.tasks_queues.append(new_queue)
-        self.record_tasks()
-        return new_queue
+    def add_queue(self, name, key, owner):
+        self.tasks_queues.append(Queue(name, key, owner, [], []))
+        return self.tasks_queues[-1]
 
-    def get_queue_by_name(self, name):
+    def remove_queue(self, queue):
+        self.tasks_queues.remove(queue)
+
+    def get_queue_by_key(self, key):
         for queue in self.tasks_queues:  # type: Queue
-            if name == queue.name:
+            if key == queue.key:
                 return queue
 
-    def del_queue(self, name, recursive):
-        queue = self.get_queue_by_name(name)
-        if not queue:
-            return 1
-        if not recursive and queue.tasks:
-            return 2
-        self.tasks_queues.remove(queue)
-        self.record_tasks()
-        return queue
+    def get_queue_with_task(self, task):
+        for queue in self.tasks_queues:
+            for queue_task in queue.tasks:
+                if queue_task is task:
+                    return queue
 
-    def add_task(self, queue_name, name, description, parent, linked, author,
+    @staticmethod
+    def add_task(queue, name, description, parent, linked, author,
                  responsible, priority, progress, start, deadline, tags,
                  reminder, key):
 
@@ -58,26 +54,14 @@ class TaskStorage:
             progress=progress, start=start, deadline=deadline,
             tags=tags, reminder=reminder, key=key)
 
-        for queue in self.tasks_queues:  # type: Queue
-            if queue_name == queue.name:
-                queue.tasks.append(new_task)
-                self.record_tasks()
-                return new_task
-        return 1
+        queue.tasks.append(new_task)
+        return new_task
 
-    def del_task(self, task, recursive):
+    def remove_task(self, task):
         for queue in self.tasks_queues:  # type: Queue
-            if task in queue.tasks:
-                subtasks = self.get_subtasks(task)
-                if not subtasks:
-                    queue.tasks.remove(task)
-                    return task
-                if not recursive:
-                    return None
-                queue.tasks.remove(task)
-                for subtask in subtasks:
-                    self.del_task(subtask, recursive)
-                return task
+            for q_task in queue.tasks:  # type: Task
+                if q_task.key == task.key:
+                    queue.tasks.remove(q_task)
 
     def get_subtasks(self, parent_task: Task):
         subtasks = []
@@ -91,5 +75,12 @@ class TaskStorage:
             if task.key == key:
                 return task
 
-    def record_tasks(self):
+    def get_task_by_name(self, name):
+        tasks = []
+        for task in self.tasks:
+            if task.name == name:
+                tasks.append(task)
+        return tasks
+
+    def save_tasks(self):
         self.tasks_db.unload(self.tasks_queues)

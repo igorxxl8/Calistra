@@ -125,7 +125,8 @@ def run() -> int:
             return _login(
                 nick=args.pop(ParserArgs.NICKNAME.name),
                 password=args.pop(ParserArgs.PASSWORD.name),
-                users_storage=users_wrapper_storage
+                users_storage=users_wrapper_storage,
+                library_interface=library_interface
             )
 
         if action == ParserArgs.LOGOUT.name:
@@ -194,6 +195,13 @@ def run() -> int:
         if action == ParserArgs.ADD:
             pass
 
+    if target == ParserArgs.NOTIFICATIONS.name:
+        if action == ParserArgs.SHOW:
+            _show_notifications(library_interface)
+
+        if action == ParserArgs.DELETE:
+            pass
+
 
 # =================================================
 # functions for work with user's account instance =
@@ -210,7 +218,7 @@ def _add_user(nick, password, users_storage, library_interface: Interface):
         return 0
 
 
-def _login(nick, password, users_storage) -> int:
+def _login(nick, password, users_storage, library_interface) -> int:
     controller = UserWrapperController(users_storage)
     try:
         controller.login(nick, password)
@@ -219,6 +227,8 @@ def _login(nick, password, users_storage) -> int:
         return ERROR_CODE
     else:
         print('User "{}" now is online'.format(nick))
+        library_interface.set_online_user(nick)
+        _show_notifications(library_interface)
         return 0
 
 
@@ -232,6 +242,15 @@ def _logout(users_storage) -> int:
     else:
         print('All users now offline')
         return 0
+
+
+def _show_notifications(library_interface) -> int:
+    notifications = library_interface.online_user.notifications
+    if notifications:
+        print('Notifications for user "{}":')
+        for notification in reversed(notifications):
+            print(notification)
+    return 0
 
 
 def _show_user_tasks(library_interface) -> int:
@@ -520,6 +539,11 @@ def _get_parsers():
         name=ParserArgs.PLAN.name,
         help=ParserArgs.PLAN.help)
 
+    notifications_parser = subparsers.add_parser(
+        name=ParserArgs.NOTIFICATIONS.name,
+        help=ParserArgs.NOTIFICATIONS.help
+    )
+
     # check console args, create subparsers for necessary args
     if ParserArgs.USER.name in sys.argv:
         FormattedParser.active_sub_parser = user_parser
@@ -536,6 +560,10 @@ def _get_parsers():
     elif ParserArgs.PLAN.name in sys.argv:
         FormattedParser.active_sub_parser = plan_parser
         _create_plan_subparsers(plan_parser)
+
+    elif ParserArgs.NOTIFICATIONS.name in sys.argv:
+        FormattedParser.active_sub_parser = notifications_parser
+        _create_notification_subparsers(notifications_parser)
 
     return parser
 
@@ -870,3 +898,26 @@ def _create_plan_subparsers(plan_parser):
     plan_subparsers = plan_parser.add_subparsers(
         dest=ParserArgs.ACTION,
         help=ParserArgs.PLAN_ACTION)
+
+
+def _create_notification_subparsers(notification_parser):
+    notification_subparsers = notification_parser.add_subparsers(
+        dest=ParserArgs.ACTION,
+        help=ParserArgs.NTF_ACTION
+    )
+
+    show_subparsers = notification_subparsers.add_parser(
+        name=ParserArgs.SHOW,
+        help=ParserArgs.SHOW_NTF_HELP
+    )
+
+    del_subparsers = notification_subparsers.add_parser(
+        name=ParserArgs.DELETE,
+        help=ParserArgs.DELETE_NTF
+    )
+
+    if show_subparsers in sys.argv:
+        FormattedParser.active_sub_parser = show_subparsers
+
+    elif del_subparsers in sys.argv:
+        FormattedParser.active_sub_parser = del_subparsers

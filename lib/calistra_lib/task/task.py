@@ -3,10 +3,18 @@
 # TODO: 3) Логгирование
 
 
+class TaskStatus:
+    OPENED = 'opened'
+    SOLVED = 'solved'
+    ACTIVATED = 'activated'
+    CLOSED = 'closed'
+    FAILED = 'failed'
+
+
 class Task:
     def __init__(self, name, description, parent, linked, author,
                  responsible: list, priority, progress, start, deadline,
-                 tags, reminder, key):
+                 tags, reminder, key, create_time):
 
         self.name = name
         self.description = description
@@ -19,8 +27,10 @@ class Task:
         self.deadline = deadline
         self.tags = tags
         self.reminder = reminder
-        self.status = 'opened'
+        self.status = TaskStatus.OPENED
         self.key = key
+        self.create_teme = create_time
+        self.edit_time = create_time
 
         if responsible is None:
             self.responsible = []

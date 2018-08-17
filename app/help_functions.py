@@ -1,15 +1,22 @@
 import sys
 from datetime import datetime
+from lib.calistra_lib.task.task import TaskStatus
 
-CHECKING_ERROR = 404
 TIME_FORMAT = '%d.%m.%Y.%H:%M'
 
 
 # TODO: сделать корректные сообщения об ошибках для консоли и для веба отдельно
 # TODO: сделав тем самым константу какую нибудь
 
-def check_name_correctness(name):
-    return name
+def concat(*args):
+    return ''.join(args)
+
+
+def check_str_len(string):
+    if isinstance(string, str) and len(string) > 100:
+        raise ValueError('calistra: description and name must not '
+                         'exceed 100 characters')
+    return string
 
 
 def check_priority_correctness(priority, action='add'):
@@ -24,22 +31,18 @@ def check_priority_correctness(priority, action='add'):
         if 10 < priority or priority < -10:
             raise ValueError()
     except ValueError:
-        print(''.join(['calistra: incorrect value of priority. '
-                       'See "calistra task ', action, ' --help"']),
-              file=sys.stderr)
-        return CHECKING_ERROR
-    else:
-        return priority
+        raise ValueError(concat('calistra: incorrect value of priority. '
+                                'See "calistra task ', action, ' --help"'))
+    return priority
 
 
 def check_status_correctness(status, action='add'):
     if status is None:
         return None
-    if status not in ['opened', 'closed', 'solved', 'activated']:
-        print(''.join(['calistra: incorrect value of status. '
-                       'See "calistra task ', action, ' --help"']),
-              file=sys.stderr)
-        return CHECKING_ERROR
+    if status not in TaskStatus.__dict__.values():
+        raise ValueError(concat('calistra: incorrect value of status. '
+                                'See "calistra task ', action, ' --help"'))
+
     return status
 
 
@@ -51,10 +54,8 @@ def check_progress_correctness(progress, action='add'):
         if 100 < progress or progress < 0:
             raise ValueError()
     except ValueError:
-        print(''.join(['calistra: incorrect value of progress. '
-                       'See "calistra task ', action, ' --help"']),
-              file=sys.stderr)
-        return CHECKING_ERROR
+        raise ValueError(concat('calistra: incorrect value of progress. '
+                                'See "calistra task ', action, ' --help"'))
     return progress
 
 
@@ -66,15 +67,19 @@ def check_time_format(time, action='add'):
             return None
         datetime.strptime(time, TIME_FORMAT)
     except ValueError:
-        print(''.join(['calistra: invalid format of date and time. See '
-                       '"calistra task ', action, ' --help"']), file=sys.stderr
-              )
-        return CHECKING_ERROR
+        raise ValueError(
+            concat('calistra: invalid format of date and time. See '
+                   '"calistra task ', action, ' --help"')
+        )
+
     return time
 
 
 def check_tags_correctness(tags_to_check: str, action='add'):
-    return check_list_format_correctness(tags_to_check, 'tags', action)
+    try:
+        return check_list_format_correctness(tags_to_check, 'tags', action)
+    except ValueError as e:
+        raise ValueError(e)
 
 
 def check_list_format_correctness(objects_list: str, obj_type, action, ):
@@ -91,10 +96,9 @@ def check_list_format_correctness(objects_list: str, obj_type, action, ):
             if not checked_obj:
                 raise ValueError()
     except ValueError:
-        print(''.join(['calistra: invalid format of ', obj_type,
-                       'See "calistra task ', action, ' --help"']),
-              file=sys.stderr)
-        return CHECKING_ERROR
+        raise ValueError(concat('calistra: invalid format of ', obj_type,
+                                '. See "calistra task ', action, ' --help"'))
+
     return right_list
 
 
@@ -107,4 +111,7 @@ def check_link_correctness(linked, action='add'):
 
 
 def check_responsible_correctness(responsible, action='add'):
-    return check_list_format_correctness(responsible, 'responsible', action)
+    try:
+        return check_list_format_correctness(responsible, 'responsible', action)
+    except ValueError as e:
+        raise ValueError(e)

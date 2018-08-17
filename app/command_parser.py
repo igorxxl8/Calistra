@@ -12,6 +12,7 @@ import os
 from app.formatted_argparse import FormattedParser
 from app.help_functions import *
 from app.parser_args import ParserArgs
+from app.printer import Printer
 from app.user_wrapper import (
     UserWrapper,
     UserWrapperStorage,
@@ -24,7 +25,7 @@ from app.user_wrapper import (
 try:
     from lib.calistra_lib.storage.json_serializer import JsonDatabase
     from lib.calistra_lib.user.user import User
-    from lib.calistra_lib.task.task import Task
+    from lib.calistra_lib.task.task import Task, TaskStatus
     from lib.calistra_lib.task.queue import Queue
     from lib.calistra_lib.library_interface.interface import (
         Interface,
@@ -35,7 +36,7 @@ try:
 except ImportError:
     from calistra_lib.storage.json_serializer import JsonDatabase
     from calistra_lib.user.user import User
-    from calistra_lib.task.task import Task
+    from calistra_lib.task.task import Task, TaskStatus
     from calistra_lib.task.queue import Queue
     from calistra_lib.library_interface.interface import (
         Interface,
@@ -50,7 +51,7 @@ AUTH_FILE = os.path.join(FOLDER, 'auth.json')
 ONLINE = os.path.join(FOLDER, 'online_user.json')
 FILES = [
     (TASKS_FILE, '[{"key": "0", "name": "__anon__",'
-                 ' "owner": "guest", "tasks": [], "archive": []}]'),
+                 ' "owner": "guest", "opened": [], "solved": [], "failed": []}]'),
     (USERS_FILE, '[]'),
     (AUTH_FILE, '[]'),
     (ONLINE, '""')
@@ -107,6 +108,9 @@ def run() -> int:
         JsonDatabase(TASKS_FILE, [Queue, Task])
     )
 
+    # update reminders deadlines queue and other
+    library_interface.update_all()
+
     # check that target is user and do action with it
     if target == ParserArgs.USER.name:
         if action == ParserArgs.ADD:
@@ -128,7 +132,7 @@ def run() -> int:
             return _logout(users_wrapper_storage)
 
         if action == ParserArgs.SHOW:
-            return _show_users(users_wrapper_storage)
+            return _show_user_tasks(library_interface)
 
     # check that target is queue and do action with it
     if target == ParserArgs.QUEUE.name:
@@ -159,12 +163,14 @@ def run() -> int:
             )
 
         if action == ParserArgs.SHOW:
-            name = args.pop(ParserArgs.TASK_QUEUE.dest)
-            _all = args.pop(ParserArgs.ALL.dest)
-            if name:
-                return _show_queue_tasks(name.strip(' '), library_interface)
-            if _all:
-                return _show_queue(library_interface)
+            return _show_queue_tasks(
+                key=args.pop(ParserArgs.KEY.name),
+                opened=args.pop(ParserArgs.OPEN_TASKS.dest),
+                archive=args.pop(ParserArgs.SOLVED_TASKS.dest),
+                failed=args.pop(ParserArgs.FAILED_TASKS.dest),
+                long=args.pop(ParserArgs.LONG.dest),
+                library_interface=library_interface
+            )
 
     # check that target is task and do action with it
     if target == ParserArgs.TASK.name:
@@ -176,6 +182,12 @@ def run() -> int:
 
         if action == ParserArgs.DELETE:
             return _del_task(args, library_interface)
+
+        if action == ParserArgs.SHOW:
+            return _show_task(
+                args.pop(ParserArgs.KEY.name),
+                library_interface
+            )
 
     # check that target is plan and do action with it
     if target == ParserArgs.PLAN.name:
@@ -222,10 +234,12 @@ def _logout(users_storage) -> int:
         return 0
 
 
-def _show_users(storage) -> int:
+def _show_user_tasks(library_interface) -> int:
     # TODO: сделать форматированный показ пользователей
-    for user in storage.users:
-        print('{}'.format(user.nick))
+    print('User: "{}".'.format(library_interface.online_user.nick))
+    author_tasks, responsible_tasks = library_interface.get_user_tasks()
+    Printer.print_tasks(author_tasks, "Author")
+    Printer.print_tasks(responsible_tasks, "Responsible")
     return 0
 
 
@@ -259,18 +273,20 @@ def _del_queue(key, recursive, library_interface):
 
 
 def _edit_queue(key, new_name, library_interface):
-    new_name = check_name_correctness(new_name)
-    if new_name == CHECKING_ERROR:
-        return ERROR_CODE
-
     try:
-        library_interface.edit_queue(key, new_name)
-    except QueueError as e:
-        print(e.message, file=sys.stderr)
+        new_name = check_str_len(new_name)
+    except ValueError as e:
+        print(e, file=sys.stderr)
         return ERROR_CODE
     else:
-        print('Queue "{}" now have new name "{}"'.format(key, new_name))
-    return 0
+        try:
+            library_interface.edit_queue(key, new_name)
+        except QueueError as e:
+            print(e.message, file=sys.stderr)
+            return ERROR_CODE
+        else:
+            print('Queue "{}" now have new name "{}"'.format(key, new_name))
+            return 0
 
 
 def _show_queue(library_interface) -> int:
@@ -290,16 +306,25 @@ def _show_queue(library_interface) -> int:
         return 0
 
 
-def _show_queue_tasks(key, library_interface):
-    # TODO: сделать форматированный показ тасок
+def _show_queue_tasks(key, library_interface, opened, archive, failed, long):
+    if not opened and not archive and not failed:
+        opened = True
     try:
-        tasks = library_interface.get_queue_tasks(key)
+        queue = library_interface.get_queue(key)
     except QueueError as e:
         print(e.message, file=sys.stderr)
         return ERROR_CODE
     else:
-        for task in tasks:  # type: Task
-            print('Name: "{}", key: {}'.format(task.name, task.key))
+        print('Queue: "{}", key {}\nTasks:'.format(queue.name, queue.key))
+        if opened:
+            Printer.print_tasks(queue.opened, TaskStatus.OPENED, long,
+                                Printer.CL_YELLOW)
+        if archive:
+            Printer.print_tasks(queue.solved, TaskStatus.SOLVED, long,
+                                Printer.CL_BLUE)
+        if failed:
+            Printer.print_tasks(queue.failed, TaskStatus.FAILED, long,
+                                Printer.CL_RED)
         return 0
 
 
@@ -309,179 +334,133 @@ def _show_queue_tasks(key, library_interface):
 def _add_task(args, lib_interface) -> int:
     key = os.urandom(BYTES_NUMBER).hex()
 
-    name = args.pop(ParserArgs.TASK_NAME.name).strip(' ')
-    name = check_name_correctness(name)
-    if name == CHECKING_ERROR:
-        return ERROR_CODE
-
-    queue_name = args.pop(ParserArgs.TASK_QUEUE.dest).strip(' ')
-    queue_name = check_name_correctness(queue_name)
-    if queue_name == CHECKING_ERROR:
-        return ERROR_CODE
-
-    linked = args.pop(ParserArgs.TASK_LINKED.dest)
-    linked = check_link_correctness(linked)
-    if linked == CHECKING_ERROR:
-        return ERROR_CODE
-
-    responsible = args.pop(ParserArgs.TASK_RESPONSIBLE.dest)
-    responsible = check_responsible_correctness(responsible)
-    if responsible == CHECKING_ERROR:
-        return ERROR_CODE
-
-    priority = args.pop(ParserArgs.TASK_PRIORITY.dest)
-    priority = check_priority_correctness(priority)
-    if priority == CHECKING_ERROR:
-        return ERROR_CODE
-
-    progress = args.pop(ParserArgs.TASK_PROGRESS.dest)
-    progress = check_progress_correctness(progress)
-    if progress == CHECKING_ERROR:
-        return ERROR_CODE
-
-    start = args.pop(ParserArgs.TASK_START.dest)
-    start = check_time_format(start)
-    if start == CHECKING_ERROR:
-        return ERROR_CODE
-
-    deadline = args.pop(ParserArgs.TASK_DEADLINE.dest)
-    deadline = check_time_format(deadline)
-    if deadline == CHECKING_ERROR:
-        return ERROR_CODE
-
-    tags = args.pop(ParserArgs.TASK_TAGS.dest)
-    tags = check_tags_correctness(tags)
-    if tags == CHECKING_ERROR:
-        return ERROR_CODE
-
-    reminder = args.pop(ParserArgs.TASK_REMINDER.dest)
-    reminder = check_reminder_format(reminder)
-    if reminder == CHECKING_ERROR:
-        return ERROR_CODE
-
     try:
-        lib_interface.add_task(
-            name=name,
-            queue_key=queue_name,
-            description=args.pop(ParserArgs.TASK_DESCRIPTION.dest),
-            parent=args.pop(ParserArgs.TASK_PARENT.dest),
-            linked=linked,
-            responsible=responsible,
-            priority=int(priority),
-            progress=progress,
-            start=start,
-            deadline=deadline,
-            tags=tags,
-            reminder=reminder,
-            key=key
-        )
+        name = args.pop(ParserArgs.TASK_NAME.name).strip(' ')
+        name = check_str_len(name)
 
-    except TaskError as e:
-        print(e.message, file=sys.stderr)
+        description = args.pop(ParserArgs.TASK_DESCRIPTION.dest)
+        description = check_str_len(description)
+
+        queue_name = args.pop(ParserArgs.TASK_QUEUE.dest).strip(' ')
+        queue_name = check_str_len(queue_name)
+
+        linked = args.pop(ParserArgs.TASK_LINKED.dest)
+        linked = check_link_correctness(linked)
+
+        responsible = args.pop(ParserArgs.TASK_RESPONSIBLE.dest)
+        responsible = check_responsible_correctness(responsible)
+
+        priority = args.pop(ParserArgs.TASK_PRIORITY.dest)
+        priority = check_priority_correctness(priority)
+
+        progress = args.pop(ParserArgs.TASK_PROGRESS.dest)
+        progress = check_progress_correctness(progress)
+
+        start = args.pop(ParserArgs.TASK_START.dest)
+        start = check_time_format(start)
+
+        deadline = args.pop(ParserArgs.TASK_DEADLINE.dest)
+        deadline = check_time_format(deadline)
+
+        tags = args.pop(ParserArgs.TASK_TAGS.dest)
+        tags = check_tags_correctness(tags)
+
+        reminder = args.pop(ParserArgs.TASK_REMINDER.dest)
+        reminder = check_reminder_format(reminder)
+
+    except ValueError as e:
+        print(e, file=sys.stderr)
         return ERROR_CODE
     else:
-        print('Task "{}" added. It\'s key - {}'.format(name, key))
-        return 0
+        try:
+            lib_interface.add_task(
+                name=name,
+                queue_key=queue_name,
+                description=description,
+                parent=args.pop(ParserArgs.TASK_PARENT.dest),
+                linked=linked,
+                responsible=responsible,
+                priority=int(priority),
+                progress=progress,
+                start=start,
+                deadline=deadline,
+                tags=tags,
+                reminder=reminder,
+                key=key
+            )
+
+        except TaskError as e:
+            print(e.message, file=sys.stderr)
+            return ERROR_CODE
+        else:
+            print('Task "{}" added. It\'s key - {}'.format(name, key))
+            return 0
 
 
 def _edit_task(args, lib_interface) -> int:
     # TODO: продолжить делать этот метод
     key = args.pop(ParserArgs.KEY.name)
 
-    linked = args.pop(ParserArgs.TASK_LINKED.dest)
-    linked = check_link_correctness(
-        linked,
-        action=ParserArgs.SET
-    )
-    if linked == CHECKING_ERROR:
-        return ERROR_CODE
-
-    responsible = args.pop(ParserArgs.TASK_RESPONSIBLE.dest)
-    responsible = check_responsible_correctness(
-        responsible,
-        action=ParserArgs.SET
-    )
-    if responsible == CHECKING_ERROR:
-        return ERROR_CODE
-
-    priority = args.pop(ParserArgs.TASK_PRIORITY.dest)
-    priority = check_priority_correctness(
-        priority,
-        action=ParserArgs.SET
-    )
-    if priority == CHECKING_ERROR:
-        return ERROR_CODE
-
-    progress = args.pop(ParserArgs.TASK_PROGRESS.dest)
-    progress = check_progress_correctness(
-        progress,
-        action=ParserArgs.SET
-    )
-    if progress == CHECKING_ERROR:
-        return ERROR_CODE
-
-    start = args.pop(ParserArgs.TASK_START.dest)
-    start = check_time_format(
-        start,
-        action=ParserArgs.SET
-    )
-    if start == CHECKING_ERROR:
-        return ERROR_CODE
-
-    deadline = args.pop(ParserArgs.TASK_DEADLINE.dest)
-    deadline = check_time_format(
-        deadline,
-        action=ParserArgs.SET
-    )
-    if deadline == CHECKING_ERROR:
-        return ERROR_CODE
-
-    tags = args.pop(ParserArgs.TASK_TAGS.dest)
-    tags = check_tags_correctness(
-        tags,
-        action=ParserArgs.SET
-    )
-    if tags == CHECKING_ERROR:
-        return ERROR_CODE
-
-    reminder = args.pop(ParserArgs.TASK_REMINDER.dest)
-    reminder = check_reminder_format(
-        reminder,
-        action=ParserArgs.SET
-    )
-    if reminder == CHECKING_ERROR:
-        return ERROR_CODE
-
-    status = args.pop(ParserArgs.TASK_STATUS.dest)
-    status = check_status_correctness(
-        status,
-        action=ParserArgs.SET
-    )
-    if status == CHECKING_ERROR:
-        return ERROR_CODE
-
     try:
-        lib_interface.edit_task(
-            key=key,
-            name=args.pop(ParserArgs.NEW_NAME.dest),
-            description=args.pop(ParserArgs.TASK_DESCRIPTION.dest),
-            status=status,
-            parent=args.pop(ParserArgs.TASK_PARENT.dest),
-            linked=linked,
-            responsible=responsible,
-            priority=priority,
-            progress=progress,
-            start=start,
-            deadline=deadline,
-            tags=tags,
-            reminder=reminder,
-        )
-    except TaskError as e:
-        print(e.message, file=sys.stderr)
+        name = args.pop(ParserArgs.NEW_NAME.dest)
+        name = check_str_len(name)
+
+        description = args.pop(ParserArgs.TASK_DESCRIPTION.dest)
+        description = check_str_len(description)
+
+        linked = args.pop(ParserArgs.TASK_LINKED.dest)
+        linked = check_link_correctness(linked, action=ParserArgs.SET)
+
+        responsible = args.pop(ParserArgs.TASK_RESPONSIBLE.dest)
+        responsible = check_responsible_correctness(responsible,
+                                                    action=ParserArgs.SET)
+
+        priority = args.pop(ParserArgs.TASK_PRIORITY.dest)
+        priority = check_priority_correctness(priority, action=ParserArgs.SET)
+
+        progress = args.pop(ParserArgs.TASK_PROGRESS.dest)
+        progress = check_progress_correctness(progress, action=ParserArgs.SET)
+
+        start = args.pop(ParserArgs.TASK_START.dest)
+        start = check_time_format(start, action=ParserArgs.SET)
+
+        deadline = args.pop(ParserArgs.TASK_DEADLINE.dest)
+        deadline = check_time_format(deadline, action=ParserArgs.SET)
+
+        tags = args.pop(ParserArgs.TASK_TAGS.dest)
+        tags = check_tags_correctness(tags, action=ParserArgs.SET)
+
+        reminder = args.pop(ParserArgs.TASK_REMINDER.dest)
+        reminder = check_reminder_format(reminder, action=ParserArgs.SET)
+
+        status = args.pop(ParserArgs.TASK_STATUS.dest)
+        status = check_status_correctness(status, action=ParserArgs.SET)
+    except ValueError as e:
+        print(e, file=sys.stderr)
         return ERROR_CODE
     else:
-        print('Task with key "{}" edited'.format(key))
-        return 0
+        try:
+            lib_interface.edit_task(
+                key=key,
+                name=name,
+                description=description,
+                status=status,
+                parent=args.pop(ParserArgs.TASK_PARENT.dest),
+                linked=linked,
+                responsible=responsible,
+                priority=priority,
+                progress=progress,
+                start=start,
+                deadline=deadline,
+                tags=tags,
+                reminder=reminder,
+            )
+        except TaskError as e:
+            print(e.message, file=sys.stderr)
+            return ERROR_CODE
+        else:
+            print('Task with key "{}" edited'.format(key))
+            return 0
 
 
 def _del_task(args, lib_interface) -> int:
@@ -496,6 +475,17 @@ def _del_task(args, lib_interface) -> int:
         return ERROR_CODE
     else:
         print('Task with key "{}" deleted'.format(key))
+    return 0
+
+
+def _show_task(key, lib_interface) -> int:
+    task = lib_interface.task_controller.find_task(key=key)
+    if task:
+        print('Main task:')
+        Printer.print_task_briefly(task)
+        sub_tasks = lib_interface.task_controller.find_sub_tasks(task)
+        if sub_tasks:
+            Printer.print_tasks(sub_tasks, "Subtasks")
     return 0
 
 
@@ -667,27 +657,46 @@ def _create_queue_subparsers(queue_parser):
             ParserArgs.RECURSIVE.short,
             ParserArgs.RECURSIVE.long,
             dest=ParserArgs.RECURSIVE.dest,
-            action="store_true",
+            action=ParserArgs.__STORE_TRUE__,
             help=ParserArgs.RECURSIVE.help
         )
 
         FormattedParser.active_sub_parser = del_subparsers
 
     elif ParserArgs.SHOW in sys.argv:
-        show_args_group = show_subparsers.add_mutually_exclusive_group()
-        # calistra queue show [--name="NAME"]
-        show_args_group.add_argument(
-            ParserArgs.TASK_QUEUE.long,
-            dest=ParserArgs.TASK_QUEUE.dest,
-            help=ParserArgs.TASK_QUEUE.help)
+        # calistra queue show <key>
+        show_subparsers.add_argument(
+            ParserArgs.KEY.name,
+            help=ParserArgs.KEY.help
+        )
 
-        show_args_group.add_argument(
-            ParserArgs.ALL.long,
-            ParserArgs.ALL.short,
-            dest=ParserArgs.ALL.dest,
-            action="store_true",
-            default=True,
-            help=ParserArgs.ALL.help
+        show_subparsers.add_argument(
+            ParserArgs.LONG.long,
+            ParserArgs.LONG.short,
+            dest=ParserArgs.LONG.dest,
+            action=ParserArgs.__STORE_TRUE__,
+            help=ParserArgs.LONG.help
+        )
+
+        show_subparsers.add_argument(
+            ParserArgs.OPEN_TASKS.long,
+            dest=ParserArgs.OPEN_TASKS.dest,
+            action=ParserArgs.__STORE_TRUE__,
+            help=ParserArgs.OPEN_TASKS.help
+        )
+
+        show_subparsers.add_argument(
+            ParserArgs.SOLVED_TASKS.long,
+            dest=ParserArgs.SOLVED_TASKS.dest,
+            action=ParserArgs.__STORE_TRUE__,
+            help=ParserArgs.SOLVED_TASKS.help
+        )
+
+        show_subparsers.add_argument(
+            ParserArgs.FAILED_TASKS.long,
+            dest=ParserArgs.FAILED_TASKS.dest,
+            action=ParserArgs.__STORE_TRUE__,
+            help=ParserArgs.FAILED_TASKS.help
         )
 
         FormattedParser.active_sub_parser = show_subparsers
@@ -778,12 +787,16 @@ def _create_task_subparsers(task_parser):
             ParserArgs.RECURSIVE.short,
             ParserArgs.RECURSIVE.long,
             dest=ParserArgs.RECURSIVE.dest,
-            action="store_true",
+            action=ParserArgs.__STORE_TRUE__,
             help=ParserArgs.RECURSIVE.help)
 
         FormattedParser.active_sub_parser = del_subparsers
 
     elif ParserArgs.SHOW in sys.argv:
+        show_subparsers.add_argument(
+            ParserArgs.KEY.name,
+            help=ParserArgs.KEY.help
+        )
         FormattedParser.active_sub_parser = show_subparsers
 
 

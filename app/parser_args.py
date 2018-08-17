@@ -16,6 +16,8 @@ class ParserArgs:
         'OptionalArgument',
         ['dest', 'long', 'short', 'help']
     )
+    __STORE_TRUE__ = "store_true"
+
 
     # main parser's arguments
     DESCRIPTION = 'Calistra - task tracker'
@@ -40,6 +42,13 @@ class ParserArgs:
         help='apply operation for all objects'
     )
 
+    LONG = OptionalArgument(
+        dest='LONG',
+        long='--long',
+        short='-l',
+        help='show full info'
+    )
+
     # Constants, which represent user parser commands and settings
     USER = Argument(name='user', help='work with user\'s account')
     USER_ACTION = 'action with user'
@@ -50,6 +59,10 @@ class ParserArgs:
     ADD_USER_HELP = 'add new user'
     SET_USER_HELP = 'edit current user'
     SHOW_USER_HELP = 'show all user'
+    NOTIFICATIONS = Argument(name='ntf', help='user notifications')
+    NTF_ACTION = 'action with notifications'
+    SHOW_NTF_HELP = 'show all user notifications'
+    DELETE_NTF = 'delete notifications'
 
     # Constants, which represent task parser commands and settings
     TASK = Argument(name='task', help='work with single task')
@@ -167,6 +180,27 @@ class ParserArgs:
     QUEUE_ACTION = 'action with queue'
     ADD_QUEUE_HELP = 'add new queue'
     QUEUE_NAME = Argument(name='name', help='queue name')
+
+    OPEN_TASKS = OptionalArgument(
+        long='--opened',
+        short='-op',
+        dest='OPEN',
+        help='confirm for opened tasks'
+    )
+
+    SOLVED_TASKS = OptionalArgument(
+        long='--solved',
+        short='-do',
+        dest='SOLVED',
+        help='confirm for solved tasks'
+    )
+
+    FAILED_TASKS = OptionalArgument(
+        long='--failed',
+        short='-f',
+        dest='FAILED',
+        help='confirm for failed tasks'
+    )
 
     SET_QUEUE_HELP = 'edit queue'
     DELETE_QUEUE_HELP = 'delete existing queue'

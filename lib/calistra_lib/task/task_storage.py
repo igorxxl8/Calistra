@@ -17,12 +17,26 @@ class TaskStorage:
     def __init__(self, tasks_db: Database):
         self.tasks_db = tasks_db
         self.tasks_queues = self.tasks_db.load()  # type: list
-        self.tasks = self.get_all_tasks()
+        self.open_tasks = self.get_open_tasks()
+        self.archive_tasks = self.get_archive_tasks()
+        self.failed_tasks = self.get_failed_tasks()
 
-    def get_all_tasks(self):
+    def get_open_tasks(self):
         tasks = []
-        for queue in self.tasks_queues:
-            tasks += queue.tasks
+        for queue in self.tasks_queues:  # type: Queue
+            tasks += queue.opened
+        return tasks
+
+    def get_archive_tasks(self):
+        tasks = []
+        for queue in self.tasks_queues:  # type: Queue
+            tasks += queue.solved
+        return tasks
+
+    def get_failed_tasks(self):
+        tasks = []
+        for queue in self.tasks_queues:  # type: Queue
+            tasks += queue.failed
         return tasks
 
     def add_queue(self, name, key, owner):
@@ -39,45 +53,52 @@ class TaskStorage:
 
     def get_queue_with_task(self, task):
         for queue in self.tasks_queues:
-            for queue_task in queue.tasks:
+            all_tasks = queue.opened+queue.solved+queue.failed
+            for queue_task in all_tasks:
                 if queue_task is task:
                     return queue
 
     @staticmethod
     def add_task(queue, name, description, parent, linked, author,
                  responsible, priority, progress, start, deadline, tags,
-                 reminder, key):
+                 reminder, key, create_time):
 
         new_task = Task(
             name=name, description=description, parent=parent, linked=linked,
             author=author, responsible=responsible, priority=priority,
             progress=progress, start=start, deadline=deadline,
-            tags=tags, reminder=reminder, key=key)
+            tags=tags, reminder=reminder, key=key, create_time=create_time)
 
-        queue.tasks.append(new_task)
+        queue.opened.append(new_task)
         return new_task
 
-    def remove_task(self, task):
+    @staticmethod
+    def remove_archive_task(task, queue):
+        queue.archive.remove(task)
+
+    def remove_open_task(self, task):
         for queue in self.tasks_queues:  # type: Queue
-            for q_task in queue.tasks:  # type: Task
+            for q_task in queue.opened:  # type: Task
                 if q_task.key == task.key:
-                    queue.tasks.remove(q_task)
+                    queue.opened.remove(q_task)
 
     def get_subtasks(self, parent_task: Task):
         subtasks = []
-        for task in self.tasks:
+        for task in self.open_tasks:
             if task.parent == parent_task.key:
                 subtasks.append(task)
         return subtasks
 
     def get_task_by_key(self, key):
-        for task in self.tasks:
+        all_tasks = self.open_tasks + self.archive_tasks + self.failed_tasks
+        for task in all_tasks:
             if task.key == key:
                 return task
 
     def get_task_by_name(self, name):
         tasks = []
-        for task in self.tasks:
+        all_tasks = self.open_tasks + self.archive_tasks + self.failed_tasks
+        for task in all_tasks:
             if task.name == name:
                 tasks.append(task)
         return tasks

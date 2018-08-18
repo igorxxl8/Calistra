@@ -1,6 +1,5 @@
 from .task import Task
 from .queue import Queue
-from .task_exceptions import QueueError, TaskError
 
 try:
     from lib.calistra_lib.storage.database import Database
@@ -17,17 +16,17 @@ class TaskStorage:
     def __init__(self, tasks_db: Database):
         self.tasks_db = tasks_db
         self.tasks_queues = self.tasks_db.load()  # type: list
-        self.open_tasks = self.get_open_tasks()
-        self.archive_tasks = self.get_archive_tasks()
+        self.opened_tasks = self.get_opened_tasks()
+        self.solved_tasks = self.get_solved_tasks()
         self.failed_tasks = self.get_failed_tasks()
 
-    def get_open_tasks(self):
+    def get_opened_tasks(self):
         tasks = []
         for queue in self.tasks_queues:  # type: Queue
             tasks += queue.opened
         return tasks
 
-    def get_archive_tasks(self):
+    def get_solved_tasks(self):
         tasks = []
         for queue in self.tasks_queues:  # type: Queue
             tasks += queue.solved
@@ -73,31 +72,31 @@ class TaskStorage:
         return new_task
 
     @staticmethod
-    def remove_archive_task(task, queue):
-        queue.archive.remove(task)
+    def remove_solved_task(task, queue):
+        queue.solved.remove(task)
 
-    def remove_open_task(self, task):
+    def remove_opened_task(self, task):
         for queue in self.tasks_queues:  # type: Queue
             for q_task in queue.opened:  # type: Task
                 if q_task.key == task.key:
                     queue.opened.remove(q_task)
 
-    def get_subtasks(self, parent_task: Task):
-        subtasks = []
-        for task in self.open_tasks:
+    def get_sub_tasks(self, parent_task: Task):
+        sub_tasks = []
+        for task in self.opened_tasks:
             if task.parent == parent_task.key:
-                subtasks.append(task)
-        return subtasks
+                sub_tasks.append(task)
+        return sub_tasks
 
     def get_task_by_key(self, key):
-        all_tasks = self.open_tasks + self.archive_tasks + self.failed_tasks
+        all_tasks = self.opened_tasks + self.solved_tasks + self.failed_tasks
         for task in all_tasks:
             if task.key == key:
                 return task
 
     def get_task_by_name(self, name):
         tasks = []
-        all_tasks = self.open_tasks + self.archive_tasks + self.failed_tasks
+        all_tasks = self.opened_tasks + self.solved_tasks + self.failed_tasks
         for task in all_tasks:
             if task.name == name:
                 tasks.append(task)

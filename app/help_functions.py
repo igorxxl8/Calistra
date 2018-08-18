@@ -23,7 +23,7 @@ def check_priority_correctness(priority, action='add'):
     #  to check if the priority is entered correctly
     priority_dict = {'high': "10", 'low': "-10", 'medium': "0"}
     if priority is None:
-        priority = 0
+        return None
     if priority in priority_dict.keys():
         priority = priority_dict[priority]
     try:
@@ -49,7 +49,7 @@ def check_status_correctness(status, action='add'):
 def check_progress_correctness(progress, action='add'):
     try:
         if progress is None or progress == '?':
-            return 0
+            return None
         progress = int(progress)
         if 100 < progress or progress < 0:
             raise ValueError()

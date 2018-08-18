@@ -5,9 +5,10 @@ def concat(*args):
     return ''.join(args)
 
 
-def formatted_output(string):
-    strlen = len(string) + Printer.TAB_LEN
-    return concat(Printer.DELIMETER*2, string, ' ' * (Printer.LINE_LEN - strlen), '|')
+def formatted_string(string):
+    str_len = len(string) + Printer.TAB_LEN
+    return concat(Printer.DELIMETER * 2, string,
+                  ' ' * (Printer.LINE_LEN - str_len), '|')
 
 
 class Printer:
@@ -29,13 +30,25 @@ class Printer:
     UNDERLINE = '\033[4m'
 
     @staticmethod
+    def print_queues(queues):
+        print('Queues:')
+        for queue in queues:
+            print(
+                concat(
+                    Printer.DELIMETER,
+                    'Name: "{}" key: {}'.format(queue.name, queue.key)
+                )
+            )
+        print()
+
+    @staticmethod
     def print_tasks(tasks, tasks_type: str, full=False, color=None):
         if not tasks:
-            print('\t{}: tasks not found.'.format(tasks_type.title()))
+            print('\t{}: tasks not found.'.format(tasks_type))
             return
         if color is None:
             color = Printer.BOLD
-        print(concat(Printer.DELIMETER, '{}:'.format(tasks_type.title())))
+        print(concat(Printer.DELIMETER, '{}:'.format(tasks_type)))
         size = len(tasks)
         if full:
             for task in tasks:
@@ -64,22 +77,34 @@ class Printer:
     @staticmethod
     def print_task_fully(task):
         print(Printer.SEPARATOR)
-        print(formatted_output('Name: {}'.format(task.name)))
-        print(formatted_output('Key: {}'.format(task.key)))
-        print(formatted_output('Author: {}'.format(task.author)))
-        print(formatted_output('Description: {}'.format(task.description)))
-        print(formatted_output('Status: {}'.format(task.status)))
+        print(formatted_string('Name: {}'.format(task.name)))
+        print(formatted_string('Key: {}'.format(task.key)))
+        print(formatted_string('Author: {}'.format(task.author)))
+        print(formatted_string('Description: {}'.format(task.description)))
+        print(formatted_string('Status: {}'.format(task.status)))
 
         spaces = '-' * (100 - task.progress)
         progress_bar = concat('[', '|' * task.progress, spaces, ']')
-        print(formatted_output(
+        print(formatted_string(
             'Progress: {}%, {}'.format(task.progress, progress_bar)))
 
-        print(formatted_output('Deadline: {}'.format(task.deadline)))
-        print(formatted_output('Updated: {}'.format(task.edit_time)))
-        print(formatted_output('Tags: {}'.format(task.tags)))
-        print(formatted_output('Responsible: {}'.format(task.responsible)))
+        print(formatted_string('Deadline: {}'.format(task.deadline)))
+        print(formatted_string('Updated: {}'.format(task.edit_time)))
+        print(formatted_string('Tags: {}'.format(task.tags)))
+        print(formatted_string('Responsible: {}'.format(task.responsible)))
 
-        print(formatted_output('Parent: {}'.format(task.parent)))
-        print(formatted_output('Linked: {}'.format(task.linked)))
-        print(formatted_output('Priority:{}'.format(task.priority)))
+        print(formatted_string('Parent: {}'.format(task.parent)))
+        print(formatted_string('Linked: {}'.format(task.linked)))
+        print(formatted_string('Priority:{}'.format(task.priority)))
+
+    @staticmethod
+    def print_reminders(reminders):
+        # TODO: форматированный вывод
+        for reminder in reminders:
+            print(reminder)
+
+    @staticmethod
+    def print_notifications(notifications):
+        # TODO: форматированный вывод
+        for notification in notifications:
+            print(notification)

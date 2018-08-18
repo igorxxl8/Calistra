@@ -44,7 +44,7 @@ class UserWrapperStorage:
         for user in self.users:
             if user.nick == nick:
                 raise SaveUserError(
-                    'User "{}" already exists'.format(nick))
+                    'User with nick "{}" already exists'.format(nick))
 
         self.users.append(UserWrapper(nick, password))
         self.record_users()
@@ -103,17 +103,12 @@ class UserWrapperController:
 
 
 class SaveUserError(Exception):
-    def __init__(self, message):
-        self.message = message
+    pass
 
 
 class LoginError(Exception):
-
-    def __init__(self, message):
-        self.message = message
+    pass
 
 
 class LogoutError(Exception):
-
-    def __init__(self, message):
-        self.message = message
+    pass

@@ -28,6 +28,7 @@ class ParserArgs:
     SET = 'set'
     SHOW = 'show'
     DELETE = 'del'
+    FIND = 'find'
     KEY = Argument(name='key', help='access key')
     RECURSIVE = OptionalArgument(
         dest='recursive',
@@ -40,6 +41,13 @@ class ParserArgs:
         long='--all',
         short='-a',
         help='apply operation for all objects'
+    )
+
+    OLD = OptionalArgument(
+        dest='quantity',
+        long='--old',
+        short='-o',
+        help='apply operation for define number of old objects.'
     )
 
     LONG = OptionalArgument(
@@ -58,7 +66,7 @@ class ParserArgs:
     PASSWORD = Argument(name='pasw', help='user\'s password')
     ADD_USER_HELP = 'add new user'
     SET_USER_HELP = 'edit current user'
-    SHOW_USER_HELP = 'show all user'
+    SHOW_USER_HELP = 'show user queues and tasks'
     NOTIFICATIONS = Argument(name='ntf', help='user notifications')
     NTF_ACTION = 'action with notifications'
     SHOW_NTF_HELP = 'show all user notifications'
@@ -69,6 +77,7 @@ class ParserArgs:
     TASK_ACTION = 'action with task'
     ADD_TASK_HELP = 'add new task'
     DELETE_TASK_HELP = 'delete existing task'
+    FIND_TASK_HELP = 'find task'
     SET_TASK_HELP = 'edit task'
     SHOW_TASK_HELP = 'show user\'s tasks'
     TASK_NAME = Argument(name='name', help='name for task')

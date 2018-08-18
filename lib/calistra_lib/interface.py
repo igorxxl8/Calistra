@@ -28,7 +28,7 @@ from datetime import datetime as dt
 # TODO: 4) Priority        +     +
 # TODO: 5) Progress        +     +
 # TODO: 6) Start           +     +                +
-# TODO: 7) Deadline        +     +
+# TODO: 7) Deadline        +     +                +
 # TODO: 8) Tags            +     +
 # TODO: 9) Status         (-)    +
 # TODO: 10) Reminder
@@ -61,12 +61,24 @@ class Interface:
             self.online_user = User(GUEST)
             self.online_user.uid = GUEST_UID
 
-    def set_online_user(self, user):
-        self.online_user = self.user_controller.find_user(nick=user)
+    def clear_notifications(self, quantity=None):
+        try:
+            self.user_controller.clear_user_notifications(
+                self.online_user, quantity)
+        except ValueError as e:
+            raise ValueError(e)
+
+    def set_online_user(self, user_nick):
+        self.online_user = self.user_controller.find_user(nick=user_nick)
 
     def update_all(self):
         failed_tasks = self.task_controller.update_tasks()
         reminders = self.task_controller.check_reminders()
+        for task in failed_tasks:
+            pass
+
+        #    self.
+
 
     def add_user(self, nick):
         new_user = self.user_controller.add_user(nick)

@@ -27,22 +27,16 @@ try:
     from lib.calistra_lib.user.user import User
     from lib.calistra_lib.task.task import Task, TaskStatus
     from lib.calistra_lib.task.queue import Queue
-    from lib.calistra_lib.library_interface.interface import (
-        Interface,
-        QueueError,
-        TaskError
-    )
+    from lib.calistra_lib.exceptions.base_exception import AppError
+    from lib.calistra_lib.interface import Interface
 
 except ImportError:
     from calistra_lib.storage.json_serializer import JsonDatabase
     from calistra_lib.user.user import User
     from calistra_lib.task.task import Task, TaskStatus
     from calistra_lib.task.queue import Queue
-    from calistra_lib.library_interface.interface import (
-        Interface,
-        QueueError,
-        TaskError
-    )
+    from calistra_lib.exceptions.base_exception import AppError
+    from calistra_lib.interface import Interface
 
 FOLDER = os.path.join(os.environ['HOME'], 'calistra_data')
 TASKS_FILE = os.path.join(FOLDER, 'tasks.json')
@@ -102,14 +96,14 @@ def run() -> int:
         JsonDatabase(ONLINE, [])
     )
 
-    library_interface = Interface(
+    library = Interface(
         users_wrapper_storage.online_user,
         JsonDatabase(USERS_FILE, [User]),
         JsonDatabase(TASKS_FILE, [Queue, Task])
     )
 
     # update reminders deadlines queue and other
-    library_interface.update_all()
+    library.update_all()
 
     # check that target is user and do action with it
     if target == ParserArgs.USER.name:
@@ -118,7 +112,7 @@ def run() -> int:
                 nick=args.pop(ParserArgs.NICKNAME.name),
                 password=args.pop(ParserArgs.PASSWORD.name),
                 users_storage=users_wrapper_storage,
-                library_interface=library_interface
+                library=library
             )
 
         if action == ParserArgs.LOGIN.name:
@@ -126,28 +120,28 @@ def run() -> int:
                 nick=args.pop(ParserArgs.NICKNAME.name),
                 password=args.pop(ParserArgs.PASSWORD.name),
                 users_storage=users_wrapper_storage,
-                library_interface=library_interface
+                library=library
             )
 
         if action == ParserArgs.LOGOUT.name:
             return _logout(users_wrapper_storage)
 
         if action == ParserArgs.SHOW:
-            return _show_user_tasks(library_interface)
+            return _show_user_tasks(library)
 
     # check that target is queue and do action with it
     if target == ParserArgs.QUEUE.name:
         if action == ParserArgs.ADD:
             return _add_queue(
                 name=args.pop(ParserArgs.QUEUE_NAME.name).strip(' '),
-                library_interface=library_interface
+                library=library
             )
 
         if action == ParserArgs.DELETE:
             return _del_queue(
                 key=args.pop(ParserArgs.QUEUE_NAME.name).strip(' '),
                 recursive=args.pop(ParserArgs.RECURSIVE.dest),
-                library_interface=library_interface
+                library=library
             )
 
         if action == ParserArgs.SET:
@@ -160,7 +154,7 @@ def run() -> int:
             return _edit_queue(
                 key=key,
                 new_name=new_name,
-                library_interface=library_interface
+                library=library
             )
 
         if action == ParserArgs.SHOW:
@@ -170,25 +164,29 @@ def run() -> int:
                 archive=args.pop(ParserArgs.SOLVED_TASKS.dest),
                 failed=args.pop(ParserArgs.FAILED_TASKS.dest),
                 long=args.pop(ParserArgs.LONG.dest),
-                library_interface=library_interface
+                library=library
             )
 
     # check that target is task and do action with it
     if target == ParserArgs.TASK.name:
         if action == ParserArgs.ADD:
-            return _add_task(args, library_interface)
+            return _add_task(args, library)
 
         if action == ParserArgs.SET:
-            return _edit_task(args, library_interface)
+            return _edit_task(args, library)
 
         if action == ParserArgs.DELETE:
-            return _del_task(args, library_interface)
+            return _del_task(args, library)
 
         if action == ParserArgs.SHOW:
             return _show_task(
                 args.pop(ParserArgs.KEY.name),
-                library_interface
+                library,
+                args.pop(ParserArgs.LONG.dest)
             )
+
+        if action == ParserArgs.FIND:
+            return _find_task(args.pop(ParserArgs.TASK_NAME.name), library)
 
     # check that target is plan and do action with it
     if target == ParserArgs.PLAN.name:
@@ -197,38 +195,42 @@ def run() -> int:
 
     if target == ParserArgs.NOTIFICATIONS.name:
         if action == ParserArgs.SHOW:
-            _show_notifications(library_interface)
+            _show_notifications(library)
 
         if action == ParserArgs.DELETE:
-            pass
+            _del_notifications(
+                library,
+                _all=args.pop(ParserArgs.ALL.dest),
+                old=args.pop(ParserArgs.OLD.dest)
+            )
 
 
 # =================================================
 # functions for work with user's account instance =
 # =================================================
-def _add_user(nick, password, users_storage, library_interface: Interface):
+def _add_user(nick, password, users_storage, library: Interface):
     try:
         users_storage.add_user(nick, password)
     except SaveUserError as e:
-        print(e.message, file=sys.stderr)
+        print(e, file=sys.stderr)
         return ERROR_CODE
     else:
-        library_interface.add_user(nick)
+        library.add_user(nick)
         print('User "{}" successfully created'.format(nick))
         return 0
 
 
-def _login(nick, password, users_storage, library_interface) -> int:
+def _login(nick, password, users_storage, library) -> int:
     controller = UserWrapperController(users_storage)
     try:
         controller.login(nick, password)
     except LoginError as e:
-        print(e.message, file=sys.stderr)
+        print(e, file=sys.stderr)
         return ERROR_CODE
     else:
         print('User "{}" now is online'.format(nick))
-        library_interface.set_online_user(nick)
-        _show_notifications(library_interface)
+        library.set_online_user(nick)
+        _show_notifications(library)
         return 0
 
 
@@ -237,26 +239,51 @@ def _logout(users_storage) -> int:
     try:
         controller.logout()
     except LogoutError as e:
-        print(e.message, file=sys.stderr)
+        print(e, file=sys.stderr)
         return ERROR_CODE
     else:
         print('All users now offline')
         return 0
 
 
-def _show_notifications(library_interface) -> int:
-    notifications = library_interface.online_user.notifications
+def _show_notifications(library) -> int:
+    notifications = library.online_user.notifications
     if notifications:
-        print('Notifications for user "{}":')
-        for notification in reversed(notifications):
-            print(notification)
+        print('Notifications for user "{}":'.
+              format(library.online_user.nick)
+              )
+
+        reminders = []
+        for notification in notifications:  # type: str
+            if notification.lower().startswith('reminder'):
+                reminders.append(notification)
+                notifications.remove(notification)
+        Printer.print_reminders(reversed(reminders))
+        Printer.print_notifications(reversed(notifications))
+    else:
+        print('New notifications not found!')
     return 0
 
 
-def _show_user_tasks(library_interface) -> int:
-    # TODO: сделать форматированный показ пользователей
-    print('User: "{}".'.format(library_interface.online_user.nick))
-    author_tasks, responsible_tasks = library_interface.get_user_tasks()
+def _del_notifications(library, _all, old) -> int:
+    try:
+        library.clear_notifications(old)
+    except ValueError as e:
+        print(e, file=sys.stderr)
+        return ERROR_CODE
+    return 0
+
+
+def _show_user_tasks(library) -> int:
+    try:
+        print('User: "{}".'.format(library.online_user.nick))
+        queues = library.get_user_queues()
+        Printer.print_queues(queues)
+    except AppError as e:
+        print(e, file=sys.stderr)
+        return ERROR_CODE
+    author_tasks, responsible_tasks = library.get_user_tasks()
+    print('Tasks:')
     Printer.print_tasks(author_tasks, "Author")
     Printer.print_tasks(responsible_tasks, "Responsible")
     return 0
@@ -265,12 +292,12 @@ def _show_user_tasks(library_interface) -> int:
 # =================================================
 # functions for work with queue instance          =
 # =================================================
-def _add_queue(name, library_interface):
+def _add_queue(name, library):
     key = os.urandom(BYTES_NUMBER).hex()
     try:
-        added_queue = library_interface.add_queue(name=name, key=key)
-    except QueueError as e:
-        print(e.message, file=sys.stderr)
+        added_queue = library.add_queue(name=name, key=key)
+    except AppError as e:
+        print(e, file=sys.stderr)
         return ERROR_CODE
     else:
         print('Queue "{}" added. It\'s key - {}'.format(
@@ -278,20 +305,20 @@ def _add_queue(name, library_interface):
         return 0
 
 
-def _del_queue(key, recursive, library_interface):
+def _del_queue(key, recursive, library):
     try:
-        deleted_queue = library_interface.del_queue(
+        deleted_queue = library.del_queue(
             key=key,
             recursive=recursive)
-    except QueueError as e:
-        print(e.message, file=sys.stderr)
+    except AppError as e:
+        print(e, file=sys.stderr)
         return ERROR_CODE
     else:
         print('Queue "{}" deleted'.format(deleted_queue.name))
         return 0
 
 
-def _edit_queue(key, new_name, library_interface):
+def _edit_queue(key, new_name, library):
     try:
         new_name = check_str_len(new_name)
     except ValueError as e:
@@ -299,23 +326,23 @@ def _edit_queue(key, new_name, library_interface):
         return ERROR_CODE
     else:
         try:
-            library_interface.edit_queue(key, new_name)
-        except QueueError as e:
-            print(e.message, file=sys.stderr)
+            library.edit_queue(key, new_name)
+        except AppError as e:
+            print(e, file=sys.stderr)
             return ERROR_CODE
         else:
             print('Queue "{}" now have new name "{}"'.format(key, new_name))
             return 0
 
 
-def _show_queue(library_interface) -> int:
+def _show_queue(library) -> int:
     # TODO: сделать чтобы показывались все таски
     try:
-        queues = library_interface.get_user_queues()
+        queues = library.get_user_queues()
         if not queues:
-            raise QueueError('Queues didn\'t found')
-    except QueueError as e:
-        print(e.message, file=sys.stderr)
+            raise AppError('Queues not found')
+    except AppError as e:
+        print(e, file=sys.stderr)
         return ERROR_CODE
     else:
         for queue in queues:
@@ -325,13 +352,13 @@ def _show_queue(library_interface) -> int:
         return 0
 
 
-def _show_queue_tasks(key, library_interface, opened, archive, failed, long):
+def _show_queue_tasks(key, library, opened, archive, failed, long):
     if not opened and not archive and not failed:
         opened = True
     try:
-        queue = library_interface.get_queue(key)
-    except QueueError as e:
-        print(e.message, file=sys.stderr)
+        queue = library.get_queue(key)
+    except AppError as e:
+        print(e, file=sys.stderr)
         return ERROR_CODE
     else:
         print('Queue: "{}", key {}\nTasks:'.format(queue.name, queue.key))
@@ -350,7 +377,7 @@ def _show_queue_tasks(key, library_interface, opened, archive, failed, long):
 # =================================================
 # functions for work with task instance           =
 # =================================================
-def _add_task(args, lib_interface) -> int:
+def _add_task(args, library) -> int:
     key = os.urandom(BYTES_NUMBER).hex()
 
     try:
@@ -392,14 +419,14 @@ def _add_task(args, lib_interface) -> int:
         return ERROR_CODE
     else:
         try:
-            lib_interface.add_task(
+            library.add_task(
                 name=name,
                 queue_key=queue_name,
                 description=description,
                 parent=args.pop(ParserArgs.TASK_PARENT.dest),
                 linked=linked,
                 responsible=responsible,
-                priority=int(priority),
+                priority=priority,
                 progress=progress,
                 start=start,
                 deadline=deadline,
@@ -408,15 +435,15 @@ def _add_task(args, lib_interface) -> int:
                 key=key
             )
 
-        except TaskError as e:
-            print(e.message, file=sys.stderr)
+        except AppError as e:
+            print(e, file=sys.stderr)
             return ERROR_CODE
         else:
             print('Task "{}" added. It\'s key - {}'.format(name, key))
             return 0
 
 
-def _edit_task(args, lib_interface) -> int:
+def _edit_task(args, library) -> int:
     # TODO: продолжить делать этот метод
     key = args.pop(ParserArgs.KEY.name)
 
@@ -459,7 +486,7 @@ def _edit_task(args, lib_interface) -> int:
         return ERROR_CODE
     else:
         try:
-            lib_interface.edit_task(
+            library.edit_task(
                 key=key,
                 name=name,
                 description=description,
@@ -474,37 +501,47 @@ def _edit_task(args, lib_interface) -> int:
                 tags=tags,
                 reminder=reminder,
             )
-        except TaskError as e:
-            print(e.message, file=sys.stderr)
+        except AppError as e:
+            print(e, file=sys.stderr)
             return ERROR_CODE
         else:
             print('Task with key "{}" edited'.format(key))
             return 0
 
 
-def _del_task(args, lib_interface) -> int:
+def _del_task(args, library) -> int:
     key = args.pop(ParserArgs.KEY.name)
     try:
-        lib_interface.del_task(
+        library.del_task(
             key=key,
             recursive=args.pop(ParserArgs.RECURSIVE.dest)
         )
-    except TaskError as e:
-        print(e.message, file=sys.stderr)
+    except AppError as e:
+        print(e, file=sys.stderr)
         return ERROR_CODE
     else:
         print('Task with key "{}" deleted'.format(key))
     return 0
 
 
-def _show_task(key, lib_interface) -> int:
-    task = lib_interface.task_controller.find_task(key=key)
-    if task:
+def _show_task(key, library, long) -> int:
+    try:
+        task = library.find_task(key=key)
+    except AppError as e:
+        print(e, file=sys.stderr)
+    else:
         print('Main task:')
         Printer.print_task_briefly(task)
-        sub_tasks = lib_interface.task_controller.find_sub_tasks(task)
+        sub_tasks = library.task_controller.find_sub_tasks(task)
         if sub_tasks:
-            Printer.print_tasks(sub_tasks, "Subtasks")
+            Printer.print_tasks(sub_tasks, "Sub tasks:")
+    return 0
+
+
+def _find_task(name, library) -> int:
+    tasks = library.find_task(name=name)
+    print('Search:')
+    Printer.print_tasks(tasks, 'Result for "{}"'.format(name))
     return 0
 
 
@@ -759,6 +796,11 @@ def _create_task_subparsers(task_parser):
         name=ParserArgs.SHOW,
         help=ParserArgs.SHOW_TASK_HELP)
 
+    find_subparsers = task_subparsers.add_parser(
+        name=ParserArgs.FIND,
+        help=ParserArgs.FIND_TASK_HELP
+    )
+
     if ParserArgs.ADD in sys.argv:
         # positional args for add_subparsers
         # calistra task add <name>
@@ -823,9 +865,23 @@ def _create_task_subparsers(task_parser):
     elif ParserArgs.SHOW in sys.argv:
         show_subparsers.add_argument(
             ParserArgs.KEY.name,
-            help=ParserArgs.KEY.help
+            help=ParserArgs.KEY.help)
+
+        show_subparsers.add_argument(
+            ParserArgs.LONG.short,
+            ParserArgs.LONG.long,
+            action=ParserArgs.__STORE_TRUE__,
+            dest=ParserArgs.LONG.dest,
+            help=ParserArgs.LONG.help
         )
         FormattedParser.active_sub_parser = show_subparsers
+
+    elif ParserArgs.FIND in sys.argv:
+        find_subparsers.add_argument(
+            ParserArgs.TASK_NAME.name,
+            help=ParserArgs.TASK_NAME.help)
+
+        FormattedParser.active_sub_parser = find_subparsers
 
 
 def __add_common_optional_task_args(action_subparser):
@@ -916,8 +972,22 @@ def _create_notification_subparsers(notification_parser):
         help=ParserArgs.DELETE_NTF
     )
 
-    if show_subparsers in sys.argv:
+    if ParserArgs.SHOW in sys.argv:
         FormattedParser.active_sub_parser = show_subparsers
 
-    elif del_subparsers in sys.argv:
+    elif ParserArgs.DELETE in sys.argv:
+        group = del_subparsers.add_mutually_exclusive_group()
+        group.add_argument(
+            ParserArgs.ALL.long,
+            dest=ParserArgs.ALL.dest,
+            action=ParserArgs.__STORE_TRUE__,
+            help=ParserArgs.ALL.help
+        )
+
+        group.add_argument(
+            ParserArgs.OLD.long,
+            type=int,
+            dest=ParserArgs.OLD.dest,
+            help=ParserArgs.OLD.help
+        )
         FormattedParser.active_sub_parser = del_subparsers

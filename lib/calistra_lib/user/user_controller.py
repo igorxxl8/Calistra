@@ -1,5 +1,6 @@
-def notify_user(user, message):
-    user.notifications.append(message)
+from datetime import datetime as dt
+
+TIME_FORMAT = '%d.%m.%Y.%H:%M:%S'
 
 
 class UserController:
@@ -10,6 +11,17 @@ class UserController:
         added_user = self.users_storage.add_user(nick)
         self.users_storage.save_users()
         return added_user
+
+    def clear_user_notifications(self, user, quantity):
+        if quantity is None:
+            user.notifications.clear()
+        else:
+            if quantity > len(user.notifications):
+                raise ValueError('')
+            for i in range(quantity):
+                user.notifications.pop(i)
+        self.users_storage.save_users()
+        return 0
 
     def link_queue_with_user(self, user, queue):
         user = self.find_user(nick=user.nick)
@@ -27,37 +39,18 @@ class UserController:
         # TODO: изменить сообщение
         user = self.find_user(nick=responsible.nick)
         user.tasks_responsible.append(task.key)
-
-        # notify user
-        notify_user(
-            user=user,
-            message='You responsible of task name:'
-                    ' "{}", key - {}'.format(task.name, task.key))
-
         self.users_storage.save_users()
 
-    def unlink_task_and_responsible(self, responsible_nick, task):
-        user = self.find_user(nick=responsible_nick)
+    def unlink_task_and_responsible(self, responsible, task):
+        user = self.find_user(nick=responsible.nick)
         for key in user.tasks_responsible:
             if key == task.key:
                 user.tasks_responsible.remove(key)
-
-        notify_user(
-            user=user,
-            message='You not responsible of task. Task name: "{}",'
-                    ' key - {}'.format(task.name, task.key)
-        )
         self.users_storage.save_users()
 
     def link_task_with_author(self, author, task):
         user = self.find_user(nick=author.nick)
         user.tasks_author.append(task.key)
-
-        notify_user(
-            user=user,
-            message='You author of task: "{}",'
-                    ' key - {}'.format(task.name, task.key)
-        )
         self.users_storage.save_users()
 
     def unlink_task_and_author(self, author, task):
@@ -65,13 +58,6 @@ class UserController:
         for key in user.tasks_author:
             if key == task.key:
                 user.tasks_author.remove(key)
-
-        # notify
-        notify_user(
-            user=user,
-            message='You not author of task: '
-                    'name "{}", key - {}'.format(task.name, task.key)
-        )
         self.users_storage.save_users()
 
     def find_user(self, nick=None, uid=None):
@@ -80,3 +66,8 @@ class UserController:
                 return None
             return self.users_storage.get_user_by_nick(nick)
         return self.users_storage.get_user_by_uid(uid)
+
+    def notify_user(self, user, message):
+        message = ''.join([dt.now().strftime(TIME_FORMAT), ': ', message])
+        user.notifications.append(message)
+        self.users_storage.save_users()

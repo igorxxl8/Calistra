@@ -30,12 +30,17 @@ class Printer:
     UNDERLINE = '\033[4m'
 
     @staticmethod
-    def print_queues(queues):
-        print('Queues:')
+    def print_queues(queues, queue_type=None):
+        if queue_type is None:
+            queue_type = 'Queues'
+        if not queues:
+            print('\t{}: queues not found'.format(queue_type))
+            return
+        print(concat(Printer.DELIMETER, '{}:'.format(queue_type)))
         for queue in queues:
             print(
                 concat(
-                    Printer.DELIMETER,
+                    Printer.DELIMETER * 2,
                     'Name: "{}" key: {}'.format(queue.name, queue.key)
                 )
             )
@@ -70,7 +75,7 @@ class Printer:
         print(concat(
             Printer.DELIMETER * indent_level,
             '{} Name: "{}", key: {}, updated: {}, status: {}, deadline: {}'.
-            format(number, task.name, task.key, task.edit_time, task.status,
+            format(number, task.name, task.key, task.editing_time, task.status,
                    task.deadline))
         )
 
@@ -89,7 +94,7 @@ class Printer:
             'Progress: {}%, {}'.format(task.progress, progress_bar)))
 
         print(formatted_string('Deadline: {}'.format(task.deadline)))
-        print(formatted_string('Updated: {}'.format(task.edit_time)))
+        print(formatted_string('Updated: {}'.format(task.editing_time)))
         print(formatted_string('Tags: {}'.format(task.tags)))
         print(formatted_string('Responsible: {}'.format(task.responsible)))
 

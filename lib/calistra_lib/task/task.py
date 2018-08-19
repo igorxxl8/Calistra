@@ -12,13 +12,15 @@ class TaskStatus:
 
 
 class Task:
-    def __init__(self, name, description, parent, linked, author,
+    def __init__(self, name, queue, description, parent, linked, author,
                  responsible: list, priority, progress, start, deadline,
-                 tags, reminder, key, create_time):
+                 tags, reminder, key, creating_time):
 
         self.name = name
+        self.queue = queue
         self.description = description
         self.parent = parent
+        self.sub_tasks = []
         self.linked = linked
         self.author = author
         self.priority = priority
@@ -29,8 +31,8 @@ class Task:
         self.reminder = reminder
         self.status = TaskStatus.OPENED
         self.key = key
-        self.create_teme = create_time
-        self.edit_time = create_time
+        self.creating_teme = creating_time
+        self.editing_time = creating_time
 
         if responsible is None:
             self.responsible = []

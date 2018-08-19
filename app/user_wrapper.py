@@ -5,8 +5,10 @@ for authenticate users in the console interface
 
 try:
     from lib.calistra_lib.storage.database import Database
+    from lib.calistra_lib.exceptions.base_exception import AppError
 except ImportError:
     from calistra_lib.storage.database import Database
+    from calistra_lib.exceptions.base_exception import AppError
 
 
 # TODO: 1) дописать документацию
@@ -39,12 +41,10 @@ class UserWrapperStorage:
 
     def add_user(self, nick, password):
         if nick == 'guest':
-            raise SaveUserError('Unable to create user. '
-                                'Name "guest" booked by program')
+            raise SaveUserError('name "guest" booked by program')
         for user in self.users:
             if user.nick == nick:
-                raise SaveUserError(
-                    'User with nick "{}" already exists'.format(nick))
+                raise SaveUserError('user "{}" already exists'.format(nick))
 
         self.users.append(UserWrapper(nick, password))
         self.record_users()
@@ -77,22 +77,21 @@ class UserWrapperController:
         # check that anybody online
         online_user = self.users_storage.online_user
         if online_user:
-            raise LoginError('Unable to login: '
-                             'There is already an '
+            raise LoginError('there is already an '
                              'online user - "{}".'.format(online_user))
 
         # try to find user in user storage
         user = self.users_storage.get_user(UserWrapper(nick, password))
         if user is None:
-            raise LoginError('Unable to log in. Please check that you have'
-                             ' entered your login and password correctly. ')
+            raise LoginError('please check, that you have entered your login'
+                             ' and password correctly. ')
 
         self.users_storage.online_user = user
 
     def logout(self) -> None:
         user = self.users_storage.online_user
         if not user:
-            raise LogoutError('Unable to log out: There are no online users.')
+            raise LogoutError('there are no online users.')
         self.users_storage.online_user = None
 
     def set_new_nick(self, user: UserWrapper):
@@ -102,13 +101,19 @@ class UserWrapperController:
         pass
 
 
-class SaveUserError(Exception):
-    pass
+class SaveUserError(AppError):
+    def __init__(self, message):
+        message = ''.join(['Save user error: ', message])
+        super().__init__(message)
 
 
-class LoginError(Exception):
-    pass
+class LoginError(AppError):
+    def __init__(self, message):
+        message = ''.join(['Log in error: ', message])
+        super().__init__(message)
 
 
-class LogoutError(Exception):
-    pass
+class LogoutError(AppError):
+    def __init__(self, message):
+        message = ''.join(['Log out error: ', message])
+        super().__init__(message)

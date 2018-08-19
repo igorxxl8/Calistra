@@ -1,6 +1,8 @@
-import sys
 from datetime import datetime
-from lib.calistra_lib.task.task import TaskStatus
+try:
+    from lib.calistra_lib.task.task import TaskStatus
+except ImportError:
+    from calistra_lib.task.task import TaskStatus
 
 TIME_FORMAT = '%d.%m.%Y.%H:%M'
 

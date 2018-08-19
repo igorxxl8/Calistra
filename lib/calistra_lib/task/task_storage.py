@@ -1,5 +1,5 @@
 from .task import Task
-from .queue import Queue
+from queue.queue import Queue
 
 try:
     from lib.calistra_lib.storage.database import Database
@@ -20,26 +20,33 @@ class TaskStorage:
         self.solved_tasks = self.get_solved_tasks()
         self.failed_tasks = self.get_failed_tasks()
 
+    def get_all_tasks(self):
+        return self.opened_tasks + self.solved_tasks + self.failed_tasks
+
+    @staticmethod
+    def get_all_queue_tasks(queue):
+        return queue.opened_tasks + queue.solved_tasks + queue.failed_tasks
+
     def get_opened_tasks(self):
         tasks = []
         for queue in self.tasks_queues:  # type: Queue
-            tasks += queue.opened
+            tasks += queue.opened_tasks
         return tasks
 
     def get_solved_tasks(self):
         tasks = []
         for queue in self.tasks_queues:  # type: Queue
-            tasks += queue.solved
+            tasks += queue.solved_tasks
         return tasks
 
     def get_failed_tasks(self):
         tasks = []
         for queue in self.tasks_queues:  # type: Queue
-            tasks += queue.failed
+            tasks += queue.failed_tasks
         return tasks
 
     def add_queue(self, name, key, owner):
-        self.tasks_queues.append(Queue(name, key, owner, [], []))
+        self.tasks_queues.append(Queue(name, key, owner))
         return self.tasks_queues[-1]
 
     def remove_queue(self, queue):
@@ -50,25 +57,31 @@ class TaskStorage:
             if key == queue.key:
                 return queue
 
+    def get_queue_by_name(self, name):
+        results = []
+        for queue in self.tasks_queues:
+            if name == queue.name or queue.name.startswith(name):
+                results.append(queue)
+        return results
+
     def get_queue_with_task(self, task):
         for queue in self.tasks_queues:
-            all_tasks = queue.opened+queue.solved+queue.failed
-            for queue_task in all_tasks:
+            for queue_task in self.get_all_queue_tasks(queue):
                 if queue_task is task:
                     return queue
 
     @staticmethod
     def add_task(queue, name, description, parent, linked, author,
                  responsible, priority, progress, start, deadline, tags,
-                 reminder, key, create_time):
+                 reminder, key, creating_time):
 
         new_task = Task(
             name=name, description=description, parent=parent, linked=linked,
             author=author, responsible=responsible, priority=priority,
             progress=progress, start=start, deadline=deadline,
-            tags=tags, reminder=reminder, key=key, create_time=create_time)
+            tags=tags, reminder=reminder, key=key, creating_time=creating_time)
 
-        queue.opened.append(new_task)
+        queue.opened_tasks.append(new_task)
         return new_task
 
     @staticmethod
@@ -77,9 +90,9 @@ class TaskStorage:
 
     def remove_opened_task(self, task):
         for queue in self.tasks_queues:  # type: Queue
-            for q_task in queue.opened:  # type: Task
+            for q_task in queue.opened_tasks:  # type: Task
                 if q_task.key == task.key:
-                    queue.opened.remove(q_task)
+                    queue.opened_tasks.remove(q_task)
 
     def get_sub_tasks(self, parent_task: Task):
         sub_tasks = []
@@ -89,17 +102,16 @@ class TaskStorage:
         return sub_tasks
 
     def get_task_by_key(self, key):
-        all_tasks = self.opened_tasks + self.solved_tasks + self.failed_tasks
-        for task in all_tasks:
+        for task in self.get_all_tasks():
             if task.key == key:
                 return task
 
     def get_task_by_name(self, name):
         tasks = []
-        all_tasks = self.opened_tasks + self.solved_tasks + self.failed_tasks
-        for task in all_tasks:
-            if task.name == name:
+        for task in self.get_all_tasks():
+            if task.name == name or task.name.startswith(name):
                 tasks.append(task)
+
         return tasks
 
     def save_tasks(self):

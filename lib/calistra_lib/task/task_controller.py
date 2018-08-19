@@ -1,14 +1,16 @@
 from datetime import datetime as dt
 from .task import Task, TaskStatus
 from .task_storage import TaskStorage
-from .queue import Queue
+from queue.queue import Queue
 
 try:
+    from lib.calistra_lib.messages import Messages
     from lib.calistra_lib.exceptions.task_exceptions import *
     from lib.calistra_lib.exceptions.access_exceptions import *
     from lib.calistra_lib.exceptions.queue_exceptions import *
 
 except ImportError:
+    from calistra_lib.messages import Messages
     from calistra_lib.exceptions.task_exceptions import *
     from calistra_lib.exceptions.access_exceptions import *
     from calistra_lib.exceptions.queue_exceptions import *
@@ -16,9 +18,7 @@ except ImportError:
 TIME_FORMAT = '%d.%m.%Y.%H:%M'
 
 DEFAULT_QUEUE = 'default'
-ANONYMOUS_QUEUE = '__anon__'
 UNDEFINED = '?'
-GUEST = 'guest'
 
 
 def get_date(string):
@@ -44,18 +44,14 @@ class TaskController:
         queue = self.tasks_storage.get_queue_by_key(key)
 
         if queue is None:
-            raise QueueNotFoundError(' key - {}'.format(key))
+            raise QueueNotFoundError(Messages.SHOW_KEY.format(key))
 
         if queue.owner != editor.nick:
-            raise AccessDeniedError(' you cannot edit this queue')
+            raise AccessDeniedError(Messages.CANNOT_EDIT_QUEUE)
 
         if queue.name == DEFAULT_QUEUE:
-            raise EditingQueueError('default queue "{}" immutable'.
+            raise EditingQueueError(Messages.DEFAULT_QUEUE_IMMUTABLE.
                                     format(DEFAULT_QUEUE))
-
-        if queue.name == ANONYMOUS_QUEUE:
-            raise EditingQueueError('anonymous queue "{}" immutable'.
-                                    format(ANONYMOUS_QUEUE))
 
         queue.name = new_name
         self.tasks_storage.save_tasks()
@@ -64,22 +60,17 @@ class TaskController:
     def del_queue(self, key, recursive, owner) -> Queue:
         queue = self.tasks_storage.get_queue_by_key(key)
         if queue is None:
-            raise QueueNotFoundError('key - {}.'.format(key))
+            raise QueueNotFoundError(Messages.SHOW_KEY.format(key))
 
         if queue.owner != owner.nick:
-            raise AccessDeniedError(' you cannot delete this queue')
+            raise AccessDeniedError(Messages.CANNOT_DELETE_QUEUE)
 
-        if queue.name == ANONYMOUS_QUEUE:
-            raise DeletingQueueError('you cannot remove anonymous queue {}!'.
-                                     format(ANONYMOUS_QUEUE))
-
-        if not recursive and (queue.opened or queue.solved or queue.failed):
-            raise DeletingQueueError('queue with key "{}" isn\'t empty. '
-                                     'Delete all queue tasks or '
-                                     'delete queue recursively'.format(key))
+        all_tasks = self.tasks_storage.get_all_queue_tasks(queue)
+        if not recursive and all_tasks:
+            raise DeletingQueueError(Messages.QUEUE_NOT_EMPTY.format(key))
 
         deleted_tasks = []
-        all_tasks = queue.opened + queue.solved + queue.failed
+        all_tasks = self.tasks_storage.get_all_queue_tasks(queue)
         for task in all_tasks:
             deleted_tasks += self.del_task(owner, task.key, recursive)
         self.tasks_storage.remove_queue(queue)
@@ -91,10 +82,6 @@ class TaskController:
         return self.tasks_storage.get_queue_by_key(key)
 
     def get_queues_by_owner(self, owner) -> list:
-        if owner.nick == GUEST:
-            raise AccessDeniedError('please, log in system with existing '
-                                    'account or add new')
-
         queues = []
         for key in owner.queues:
             queues.append(self.tasks_storage.get_queue_by_key(key))
@@ -103,16 +90,26 @@ class TaskController:
     def get_queue_tasks(self, q_key, owner):
         queue = self.tasks_storage.get_queue_by_key(q_key)
         if queue is None:
-            raise QueueNotFoundError('key - {}'.format(q_key))
+            raise QueueNotFoundError(Messages.SHOW_KEY.format(q_key))
 
         if queue.owner != owner.nick:
-            raise AccessDeniedError('you cannot see this queue')
+            raise AccessDeniedError(Messages.CANNOT_SEE_QUEUE)
 
         return queue.tasks
 
+    def find_queues(self, key=None, name=None):
+        if key is None and name is None:
+            return []
+        result = []
+        if key:
+            result = self.tasks_storage.get_queue_by_key(key)
+        if name and not result:
+            result = self.tasks_storage.get_queue_by_name(name)
+        return result
+
     def add_task(self, author, name, queue_key, description, parent, linked,
                  responsible, priority, progress, start, deadline, tags,
-                 reminder, key, create_time):
+                 reminder, key, creating_time):
 
         if queue_key == UNDEFINED:
             queue_key = author.uid
@@ -138,41 +135,40 @@ class TaskController:
         if deadline:
             deadline_date = get_date(deadline)
             if deadline_date < dt.now():
-                raise TaskDeadlineError('the deadline cannot be earlier '
-                                        'than current time')
+                raise TaskDeadlineError(Messages.DEADLINE_CANNOT_EARLIER_NOW)
 
             if start and (deadline_date < get_date(start)):
-                raise TaskDeadlineError('the deadline for a task cannot '
-                                        'be earlier than its start')
+                raise TaskDeadlineError(Messages.DEADLINE_CANNOT_EARLIER_START)
 
         parent_task = self.tasks_storage.get_task_by_key(parent)
         if parent and parent_task is None:
-            raise TaskNotFoundError('parent task key "{}"'.format(parent))
+            raise TaskNotFoundError(Messages.SHOW_PARENT_KEY.format(parent))
 
         queue = self.tasks_storage.get_queue_by_key(queue_key)
         if queue is None:
-            raise QueueNotFoundError('key - {}'.format(queue_key))
+            raise QueueNotFoundError(Messages.SHOW_KEY.format(queue_key))
 
         parent_queue = self.tasks_storage.get_queue_with_task(parent_task)
         if parent_task and queue is not parent_queue:
-            raise SubTaskError('sub task and its parent cannot be located in '
-                               'different queues')
+            raise SubTaskError(Messages.PARENT_IN_OTHER_QUEUE)
 
         task = self.tasks_storage.add_task(
             author=author.nick, name=name, queue=queue, description=description,
             parent=parent, linked=linked, responsible=responsible,
             priority=priority, progress=progress, start=start,
             deadline=deadline, tags=tags, reminder=reminder, key=key,
-            create_time=create_time)
+            creating_time=creating_time)
 
         self.tasks_storage.save_tasks()
         return task
 
     def edit_task(self, task, editor, name, description, parent, linked,
                   responsible, priority, progress, start, deadline, tags,
-                  reminder, status, edit_time):
-        TaskController.EDITING_MESSAGE = ('User "{}" edit task "{}":'.
+                  reminder, status, editing_time):
+
+        TaskController.EDITING_MESSAGE = (Messages.USER_EDIT_TASK.
                                           format(editor.nick, task.name))
+
         task_queue = self.tasks_storage.get_queue_with_task(task)
 
         try:
@@ -192,30 +188,31 @@ class TaskController:
             self.edit_reminder(task, reminder)
             self.edit_responsible(task, responsible)
         except AppError as e:
-            raise AppError(e)
+            raise e
 
-        task.edit_time = edit_time
+        task.editing_time = editing_time
 
         self.tasks_storage.save_tasks()
         return task
 
     def check_access(self, user, task, responsible, *args):
         nick = user.nick
-        # TODO: разрешить редактировать только автору
         if (nick not in task.responsible and
                 nick != task.author):
-            raise AccessDeniedError('you cannot edit this task'.format(nick))
+            raise AccessDeniedError(Messages.CANNOT_EDIT_TASK)
+
+        if task.key not in user.tasks_responsible and task.author != nick:
+            raise AccessDeniedError(Messages.NEED_ACTIVATE_TASK)
+
+        if nick in task.responsible and nick != task.author:
+            for arg in args:
+                if arg:
+                    raise AccessDeniedError(Messages.CANNOT_EDIT_PARAM)
 
         if responsible:
             if responsible == UNDEFINED:
                 responsible = []
             task.responsible = responsible
-
-        if nick in task.responsible and nick != task.author:
-            for arg in args:
-                if arg:
-                    raise AccessDeniedError('You can not edit task param '
-                                            'besides status and progress')
 
     @staticmethod
     def edit_progress(task, progress):
@@ -244,21 +241,19 @@ class TaskController:
                 task.parent = None
 
             elif parent_task is None:
-                raise TaskNotFoundError('parent task key - {}'.format(parent))
+                raise TaskNotFoundError(Messages.SHOW_PARENT_KEY.format(parent))
 
             elif parent_task and task_queue is not parent_queue:
-                raise SubTaskError('sub task and its parent cannot be located'
-                                   ' in different queues')
+                raise SubTaskError(Messages.PARENT_IN_OTHER_QUEUE)
 
             elif task.key == parent:
-                raise SubTaskError('parent and subtask cannot be the same task')
+                raise SubTaskError(Messages.PARENT_SAME_TASK)
 
             else:
                 subtasks = self.tasks_storage.get_sub_tasks(task)
                 for subtask in subtasks:
                     if parent == subtask.key:
-                        raise SubTaskError('parent task cannot be one of '
-                                           'sub tasks of this task')
+                        raise SubTaskError(Messages.PARENT_IS_TASK_SUBTASK)
                 task.parent = parent
                 TaskController.attach_message('parent {}'.format(parent))
 
@@ -290,8 +285,7 @@ class TaskController:
             elif (task.deadline and get_date(task.deadline) < get_date(start)
                   and deadline and get_date(deadline) < get_date(start)):
 
-                raise TaskDeadlineError('deadline for a task cannot'
-                                        ' be earlier than its start')
+                raise TaskDeadlineError(Messages.DEADLINE_CANNOT_EARLIER_START)
             else:
                 task.start = start
                 TaskController.attach_message('start: {}'.format(start))
@@ -317,11 +311,9 @@ class TaskController:
             if deadline == UNDEFINED:
                 task.deadline = None
             elif get_date(deadline) < dt.now():
-                raise TaskDeadlineError('deadline can not be earlier than now')
+                raise TaskDeadlineError(Messages.DEADLINE_CANNOT_EARLIER_NOW)
             elif task.start and get_date(deadline) < get_date(task.start):
-                raise TaskDeadlineError(
-                    'the deadline for a task cannot be earlier '
-                    'than its start')
+                raise TaskDeadlineError(Messages.DEADLINE_CANNOT_EARLIER_START)
             else:
                 task.deadline = deadline
                 TaskController.attach_message('deadline: {}'.format(deadline))
@@ -330,14 +322,22 @@ class TaskController:
         if status:
             if status == TaskStatus.CLOSED:
                 if editor.nick != task.author:
-                    raise TaskStatusError('you cannot set status "closed".'
-                                          ' It\'s author rights.')
+                    raise TaskStatusError(Messages.CANNOT_SET_STATUS_CLOSED)
 
                 if task.status == TaskStatus.SOLVED:
                     self.close_task(queue, task)
                 else:
-                    raise TaskStatusError('cannot set status "closed". '
-                                          'First of all task must be solved')
+                    raise TaskStatusError(
+                        Messages.CANNOT_SET_STATUS_CLOSED_FOR_UNSOLVED
+                    )
+
+            sub_tasks = self.find_sub_tasks(task)
+            if status == TaskStatus.SOLVED:
+                for sub_task in sub_tasks:
+                    if sub_task.status != TaskStatus.SOLVED:
+                        raise TaskStatusError(
+                            Messages.CANNOT_SET_STATUS_SOLVED_UNS_ST
+                        )
 
             task.status = status
             TaskController.attach_message('status: {}'.format(status))
@@ -352,62 +352,60 @@ class TaskController:
         self.tasks_storage.remove_solved_task(task, queue)
         # notify user
 
+    def activate_task(self, task):
+        if task.status == TaskStatus.OPENED:
+            task.status = TaskStatus.ACTIVATED
+        self.tasks_storage.save_tasks()
+
     def move_in_opened(self, queue: Queue, task: Task):
         if task in self.tasks_storage.opened_tasks:
-            raise TaskStatusError('cannot set status "opened". '
-                                  'Task already opened')
+            raise TaskStatusError(Messages.TASK_ALREADY_SOLVED)
 
         if task in self.tasks_storage.failed_tasks:
             if task.deadline and get_date(task.deadline) < dt.now():
                 raise TaskStatusError(
-                    'cannot set status "opened". Task failed. First of all,'
-                    ' change deadline and open task again')
+                    Messages.CANNOT_SET_STATUS_OPENED_FOR_FAILED
+                )
 
-            queue.failed.remove(task)
+            queue.failed_tasks.remove(task)
         if task in self.tasks_storage.solved_tasks:
-            queue.solved.remove(task)
-        queue.opened.append(task)
+            queue.solved_tasks.remove(task)
+        queue.opened_tasks.append(task)
 
     def move_in_solved(self, queue: Queue, task: Task):
         if task in self.tasks_storage.solved_tasks:
-            raise TaskStatusError('cannot set status "solved". '
-                                  'Task already solved')
+            raise TaskStatusError(Messages.TASK_ALREADY_SOLVED)
 
         if task in self.tasks_storage.failed_tasks:
-            raise TaskStatusError('cannot set status "solved". '
-                                  'Failed task cannot be solved. '
-                                  'First of all, change deadline and'
-                                  ' open task again')
+            raise TaskStatusError(Messages.CANNOT_SET_STATUS_SOLVED_FOR_FAILED)
 
-        queue.opened.remove(task)
-        queue.solved.append(task)
+        queue.opened_tasks.remove(task)
+        queue.solved_tasks.append(task)
         # notify user
 
     def move_in_failed(self, queue: Queue, task: Task):
         if task in self.tasks_storage.failed_tasks:
-            raise TaskStatusError('cannot set status "failed". '
-                                  'Task already failed')
+            raise TaskStatusError(Messages.CANNOT_SET_STATUS_FAILED)
 
         if task in self.tasks_storage.solved_tasks:
-            queue.solved.remove(task)
+            queue.solved_tasks.remove(task)
 
         elif task in self.tasks_storage.opened_tasks:
-            queue.opened.remove(task)
-        queue.failed.append(task)
+            queue.opened_tasks.remove(task)
+        queue.failed_tasks.append(task)
         # notify user
 
     def del_task(self, owner, key, recursive):
         task = self.find_task(key=key)
         if task is None:
-            raise TaskNotFoundError('key - {}'.format(key))
+            raise TaskNotFoundError(Messages.SHOW_KEY.format(key))
 
         if owner.nick != task.author:
-            raise AccessDeniedError('you cannot delete this task.')
+            raise AccessDeniedError(Messages.CANNOT_DELETE_TASK)
 
         sub_tasks = self.find_sub_tasks(task)
         if sub_tasks and recursive is False:
-            raise DeletingTaskError('task has sub tasks. Delete all sub tasks'
-                                    ' or delete task recursively')
+            raise DeletingTaskError(Messages.TASK_HAS_SUBTASKS)
 
         self.tasks_storage.remove_opened_task(task)
         all_deleted_tasks = [task]

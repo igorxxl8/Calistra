@@ -18,7 +18,6 @@ class ParserArgs:
     )
     __STORE_TRUE__ = "store_true"
 
-
     # main parser's arguments
     DESCRIPTION = 'Calistra - task tracker'
     TARGET = Argument(name='target',
@@ -29,6 +28,7 @@ class ParserArgs:
     SHOW = 'show'
     DELETE = 'del'
     FIND = 'find'
+    ACTIVATE = 'activate'
     KEY = Argument(name='key', help='access key')
     RECURSIVE = OptionalArgument(
         dest='recursive',
@@ -57,6 +57,15 @@ class ParserArgs:
         help='show full info'
     )
 
+    SORT_BY = OptionalArgument(
+        dest='SORTBY',
+        long='--sortby',
+        short='-sb',
+        help='task field for sort'
+    )
+    SORT_BY_CHOICES = ['deadline', 'priority', 'progress', 'editing_time',
+                       'name']
+
     # Constants, which represent user parser commands and settings
     USER = Argument(name='user', help='work with user\'s account')
     USER_ACTION = 'action with user'
@@ -80,6 +89,8 @@ class ParserArgs:
     FIND_TASK_HELP = 'find task'
     SET_TASK_HELP = 'edit task'
     SHOW_TASK_HELP = 'show user\'s tasks'
+    ACTIVATE_TASK_HELP = ('confirm participation on task '
+                          '(for responsible user only)')
     TASK_NAME = Argument(name='name', help='name for task')
     # optional task params
     NEW_NAME = OptionalArgument(
@@ -91,9 +102,9 @@ class ParserArgs:
 
     TASK_QUEUE = OptionalArgument(
         dest='QK',
-        long='--queue_key',
+        long='--queue',
         short='-q',
-        help='queue name where the tasks placed')
+        help='queue key where the tasks placed')
 
     TASK_DESCRIPTION = OptionalArgument(
         dest='DESCR',
@@ -118,7 +129,7 @@ class ParserArgs:
     )
 
     TASK_PRIORITY = OptionalArgument(
-        dest='PRIOR',
+        dest='PRIORITY',
         long='--priority',
         short='-p',
         help='task priority: high (10), medium (0), low (-10)'
@@ -188,6 +199,7 @@ class ParserArgs:
     QUEUE = Argument(name='queue', help='work with group of task')
     QUEUE_ACTION = 'action with queue'
     ADD_QUEUE_HELP = 'add new queue'
+    FIND_QUEUE_HELP = 'find queue by name'
     QUEUE_NAME = Argument(name='name', help='queue name')
 
     OPEN_TASKS = OptionalArgument(
@@ -213,7 +225,7 @@ class ParserArgs:
 
     SET_QUEUE_HELP = 'edit queue'
     DELETE_QUEUE_HELP = 'delete existing queue'
-    SHOW_QUEUE_HELP = 'show user queues or tasks in queue with defined name'
+    SHOW_QUEUE_HELP = 'show user queues or tasks in queue with defined key'
 
     # Constants, which represent plan parser commands and settings
     PLAN = Argument(name='plan', help='work with plans')

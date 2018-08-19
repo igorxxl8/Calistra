@@ -15,6 +15,7 @@ class User:
         self.tasks_author = []
         self.tasks_responsible = []
         self.notifications = []
+        self.new_messages = []
 
 
 def _make_uid():

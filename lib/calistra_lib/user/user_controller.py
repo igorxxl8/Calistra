@@ -21,7 +21,11 @@ class UserController:
             for i in range(quantity):
                 user.notifications.pop(i)
         self.users_storage.save_users()
-        return 0
+
+    def clear_new_messages(self, user):
+        user.notifications += user.new_messages
+        user.new_messages.clear()
+        self.users_storage.save_users()
 
     def link_queue_with_user(self, user, queue):
         user = self.find_user(nick=user.nick)
@@ -36,7 +40,6 @@ class UserController:
         self.users_storage.save_users()
 
     def link_task_with_responsible(self, responsible, task):
-        # TODO: изменить сообщение
         user = self.find_user(nick=responsible.nick)
         user.tasks_responsible.append(task.key)
         self.users_storage.save_users()
@@ -69,5 +72,6 @@ class UserController:
 
     def notify_user(self, user, message):
         message = ''.join([dt.now().strftime(TIME_FORMAT), ': ', message])
-        user.notifications.append(message)
-        self.users_storage.save_users()
+        if user:
+            user.new_messages.append(message)
+            self.users_storage.save_users()

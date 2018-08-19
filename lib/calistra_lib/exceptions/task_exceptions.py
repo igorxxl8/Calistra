@@ -25,6 +25,12 @@ class DeletingTaskError(AppError):
         super().__init__(message)
 
 
+class ActivationTaskError(AppError):
+    def __init__(self, message):
+        message = ''.join(['Activation task error: ', message])
+        super().__init__(message)
+
+
 class TaskStatusError(AppError):
     def __init__(self, message):
         message = ''.join(['Task status error: ', message])

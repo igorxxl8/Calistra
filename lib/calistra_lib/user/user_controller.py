@@ -1,16 +1,19 @@
 from datetime import datetime as dt
 
-TIME_FORMAT = '%d.%m.%Y.%H:%M:%S'
+try:
+    from lib.calistra_lib.constants import Constants
+except ImportError:
+    from calistra_lib.constants import Constants
 
 
 class UserController:
     def __init__(self, users_storage):
         self.users_storage = users_storage
 
-    def add_user(self, nick):
-        added_user = self.users_storage.add_user(nick)
+    def add_user(self, nick, uid):
+        user = self.users_storage.add_user(nick, uid)
         self.users_storage.save_users()
-        return added_user
+        return user
 
     def clear_user_notifications(self, user, quantity):
         if quantity is None:
@@ -27,40 +30,41 @@ class UserController:
         user.new_messages.clear()
         self.users_storage.save_users()
 
-    def link_queue_with_user(self, user, queue):
-        user = self.find_user(nick=user.nick)
+    def link_user_with_queue(self, user, queue):
         user.queues.append(queue.key)
         self.users_storage.save_users()
 
-    def unlink_queue_and_user(self, user, queue):
-        user = self.find_user(nick=user.nick)
+    def unlink_user_and_queue(self, user, queue):
         for _queue in user.queues:
             if _queue == queue.key:
                 user.queues.remove(_queue)
+                break
+
         self.users_storage.save_users()
 
-    def link_task_with_responsible(self, responsible, task):
-        user = self.find_user(nick=responsible.nick)
-        user.tasks_responsible.append(task.key)
+    def link_responsible_with_task(self, responsible, task):
+        responsible.tasks_responsible.append(task.key)
         self.users_storage.save_users()
 
-    def unlink_task_and_responsible(self, responsible, task):
-        user = self.find_user(nick=responsible.nick)
-        for key in user.tasks_responsible:
+    def unlink_responsible_and_task(self, responsible, task):
+        for key in responsible.tasks_responsible:
             if key == task.key:
-                user.tasks_responsible.remove(key)
+                responsible.tasks_responsible.remove(key)
+                break
+
         self.users_storage.save_users()
 
-    def link_task_with_author(self, author, task):
+    def link_author_with_task(self, author, task):
         user = self.find_user(nick=author.nick)
         user.tasks_author.append(task.key)
         self.users_storage.save_users()
 
-    def unlink_task_and_author(self, author, task):
-        user = self.find_user(nick=author.nick)
-        for key in user.tasks_author:
+    def unlink_author_and_task(self, author, task):
+        for key in author.tasks_author:
             if key == task.key:
-                user.tasks_author.remove(key)
+                author.tasks_author.remove(key)
+                break
+
         self.users_storage.save_users()
 
     def find_user(self, nick=None, uid=None):
@@ -71,7 +75,14 @@ class UserController:
         return self.users_storage.get_user_by_uid(uid)
 
     def notify_user(self, user, message):
-        message = ''.join([dt.now().strftime(TIME_FORMAT), ': ', message])
+        message = ''.join(
+            [
+                dt.now().strftime(Constants.EXTENDED_TIME_FORMAT),
+                ': ',
+                message
+            ]
+        )
+
         if user:
             user.new_messages.append(message)
             self.users_storage.save_users()

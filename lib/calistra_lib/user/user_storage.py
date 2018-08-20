@@ -26,12 +26,9 @@ class UserStorage:
             if user.uid == uid:
                 return uid
 
-    def load_users(self):
-        self.users = self.users_db.load()
-
     def save_users(self):
         self.users_db.unload(self.users)
 
-    def add_user(self, nick):
-        self.users.append(User(nick))
+    def add_user(self, nick, uid):
+        self.users.append(User(nick, uid))
         return self.users[-1]

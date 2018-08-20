@@ -1,4 +1,5 @@
 try:
+    from lib.calistra_lib.constants import Constants
     from lib.calistra_lib.messages import Messages
     from lib.calistra_lib.queue.queue_controller import QueueController
     from lib.calistra_lib.queue.queue_storage import QueueStorage
@@ -19,6 +20,7 @@ try:
         QueueNotFoundError
     )
 except ImportError:
+    from calistra_lib.constants import Constants
     from calistra_lib.messages import Messages
     from calistra_lib.queue.queue_controller import QueueController
     from calistra_lib.queue.queue_storage import QueueStorage
@@ -39,6 +41,7 @@ except ImportError:
         QueueNotFoundError
     )
 from datetime import datetime as dt
+
 
 # TODO: 1) дописать документацию
 # TODO: 2) Рефакторинг
@@ -64,14 +67,8 @@ from datetime import datetime as dt
 # TODO: написать перемещение задач в архив при выполнении
 # TODO: перемещениче задач в проваленные при прошедшем дедлайне
 
-TIME_FORMAT = '%d.%m.%Y.%H:%M'
-EXTENDED_TIME_FORMAT = '%d.%m.%Y.%H:%M:%S'
-UNDEFINED = '?'
-DEFAULT_QUEUE = 'default'
-
-
 def get_date(string):
-    return dt.strptime(string, TIME_FORMAT)
+    return dt.strptime(string, Constants.TIME_FORMAT)
 
 
 class Interface:
@@ -81,6 +78,20 @@ class Interface:
         self.task_controller = TaskController(TaskStorage(tasks_db))
         self.user_controller = UserController(UserStorage(users_db))
         self.online_user = self.user_controller.find_user(nick=online_user)
+
+    # functions for work with user instance
+    def get_online_user(self):
+        if self.online_user is None:
+            raise AccessDeniedError(Messages.SIGN_IN)
+        return self.online_user
+
+    def set_online_user(self, user_nick):
+        self.online_user = self.user_controller.find_user(nick=user_nick)
+
+    def add_user(self, nick, uid, queue_key):
+        user = self.user_controller.add_user(nick, uid)
+        self.add_queue(Constants.DEFAULT_QUEUE, queue_key, user)
+        return user
 
     def clear_notifications(self, quantity=None):
         try:
@@ -92,14 +103,6 @@ class Interface:
     def clear_new_messages(self):
         self.user_controller.clear_new_messages(self.online_user)
 
-    def get_online_user(self):
-        if self.online_user is None:
-            raise AccessDeniedError(Messages.SIGN_IN)
-        return self.online_user
-
-    def set_online_user(self, user_nick):
-        self.online_user = self.user_controller.find_user(nick=user_nick)
-
     def update_all(self):
         failed_tasks = self.task_controller.update_tasks()
         reminders = self.task_controller.check_reminders()
@@ -110,77 +113,86 @@ class Interface:
 
         #    self.
 
-    def add_user(self, nick):
-        new_user = self.user_controller.add_user(nick)
-        self.add_queue(DEFAULT_QUEUE, new_user.uid, new_user)
-        return new_user
-
+    # functions for work with queue instance
     def add_queue(self, name, key, owner=None):
         if owner is None:
             owner = self.get_online_user()
+            if name == Constants.DEFAULT_QUEUE:
+                raise AddingQueueError(Messages.CANNOT_NAME_AS_DEFAULT_QUEUE)
 
         try:
-            new_queue = self.task_controller.add_queue(name, key, owner)
+            queue = self.queue_controller.add_queue(name, key, owner)
         except AppError as e:
-            raise AppError(e)
+            raise e
         else:
-            self.user_controller.link_queue_with_user(owner, new_queue)
-            return new_queue
+            self.user_controller.link_user_with_queue(owner, queue)
+            return queue
 
     def edit_queue(self, key, new_name):
         editor = self.get_online_user()
         try:
-            return self.task_controller.edit_queue(key, new_name, editor)
-        except AppError as e:
-            raise AppError(e)
-
-    def del_queue(self, key, recursive):
-        user = self.get_online_user()
-        try:
-            queue = self.task_controller.del_queue(key, recursive, user)
+            return self.queue_controller.edit_queue(key, new_name, editor)
         except AppError as e:
             raise e
 
-        self.user_controller.unlink_queue_and_user(user, queue)
-        if queue.opened_tasks:
-            self.delete_link_with_users(queue.opened_tasks, user,
-                                        Messages.TASK_WAS_DELETED)
+    def remove_queue(self, key, recursive):
+        # TODO: после создания метода удаления таски потестить
+        user = self.get_online_user()
+        try:
+            queue = self.queue_controller.remove_queue(key, recursive, user)
+        except AppError as e:
+            raise e
+
+        self.user_controller.unlink_user_and_queue(user, queue)
+        task_keys = queue.opened_tasks + queue.failed_tasks + queue.solved_tasks
+        for task_key in task_keys:
+            self.remove_task(task_key, recursive)
 
         return queue
 
     def get_user_queues(self):
         try:
             user = self.get_online_user()
-            queues = self.task_controller.get_queues_by_owner(user)
+            queues = self.queue_controller.get_user_queues(user)
         except AppError as e:
             raise e
         return queues
 
-    def get_queue(self, queue_key):
-        queue = self.task_controller.get_queue_by_key(queue_key)
-        if queue is None:
-            raise QueueNotFoundError(Messages.SHOW_KEY.format(queue_key))
+    def get_queue(self, queue_key, owner=None):
+        if owner is None:
+            owner = self.online_user
+        if queue_key == Constants.UNDEFINED:
+            queue = self.queue_controller.get_user_default_queue(owner)
+        else:
+            queue = self.queue_controller.get_queue_by_key(queue_key)
+        if queue.owner != owner.uid:
+            raise AccessDeniedError(Messages.CANNOT_USE_SOMEONE_ELSE_QUEUE)
+        # if queue is None:
+        #    raise QueueNotFoundError(Messages.SHOW_KEY.format(queue_key))
         return queue
 
     def find_queues(self, name):
         user = self.get_online_user()
-        queues = self.task_controller.find_queues(name=name)
-        for queue in queues[:]:
-            if user.nick != queue.owner:
-                queues.remove(queue)
-        return queues
+        queues = self.queue_controller.get_user_queues(user)
+        result = []
+        for queue in queues:
+            if queue.name == name or queue.name.startswith(name):
+                result.append(queue)
+        return result
 
+    # functions for work with task instance
     def add_task(self, name, queue_key, description, parent, linked,
                  responsible, priority, progress, start, deadline, tags,
                  reminder, key):
 
-        creating_time = dt.strftime(dt.now(), EXTENDED_TIME_FORMAT)
+        creating_time = dt.strftime(dt.now(), Constants.EXTENDED_TIME_FORMAT)
         author = self.get_online_user()
+        queue = self.get_queue(queue_key, author)
 
         try:
 
             task = self.task_controller.add_task(
-                author=author, name=name, queue_key=queue_key,
+                author=author, name=name, queue=queue,
                 description=description, parent=parent, linked=linked,
                 responsible=responsible, priority=priority, progress=progress,
                 start=start, deadline=deadline, tags=tags, reminder=reminder,
@@ -191,12 +203,16 @@ class Interface:
 
         responsible_users = self.find_users_by_name_list(responsible)
         for user in responsible_users:
-            message = Messages.YOU_ASSIGNED.format(author.nick, task.name,
-                                                   task.key, task.key)
+            if user.uid == author.uid:
+                self.user_controller.link_responsible_with_task(user, task)
+            else:
+                message = Messages.YOU_ASSIGNED.format(author.nick, task.name,
+                                                       task.key, task.key)
 
-            self.user_controller.notify_user(user, message)
+                self.user_controller.notify_user(user, message)
 
-        self.user_controller.link_task_with_author(author, task)
+        self.user_controller.link_author_with_task(author, task)
+        self.queue_controller.link_queue_with_task(queue, task)
 
         return task
 
@@ -204,13 +220,12 @@ class Interface:
                   responsible, priority, progress, start, deadline, tags,
                   reminder, status):
 
-        editing_time = dt.strftime(dt.now(), EXTENDED_TIME_FORMAT)
+        editing_time = dt.strftime(dt.now(), Constants.EXTENDED_TIME_FORMAT)
         editor = self.get_online_user()
 
         try:
-            task = self.task_controller.find_task(key=key)
-            if task is None:
-                raise TaskNotFoundError(Messages.SHOW_KEY.format(key))
+            task = self.get_task(key)
+            task_queue = self.queue_controller.get_queue_by_key(task.queue)
 
             if responsible is None:
                 current_responsible = []
@@ -221,15 +236,16 @@ class Interface:
                 new_responsible = self.find_users_by_name_list(responsible)
 
             task = self.task_controller.edit_task(
-                task=task, editor=editor, name=name, description=description,
-                parent=parent, linked=linked, priority=priority,
-                progress=progress, start=start, deadline=deadline, tags=tags,
-                reminder=reminder, status=status, responsible=responsible,
-                editing_time=editing_time
+                task_queue=task_queue, task=task, editor=editor, name=name,
+                description=description, parent=parent, linked=linked,
+                priority=priority, progress=progress, start=start,
+                deadline=deadline, tags=tags, reminder=reminder, status=status,
+                responsible=responsible, editing_time=editing_time
             )
 
         except AppError as e:
             raise e
+
         else:
             dismissed_users, invited_users = self.get_responsible_diff(
                 new_responsible, current_responsible)
@@ -238,20 +254,18 @@ class Interface:
                 dismissed_users)
             responsible_users = self.find_users_by_name_list(task.responsible)
 
-            if status == TaskStatus.CLOSED:
-                self.user_controller.unlink_task_and_author(editor, task)
-
             for user in dismissed_responsible:
-                self.user_controller.unlink_task_and_responsible(user, task)
+                self.user_controller.unlink_responsible_and_task(user, task)
                 message = (Messages.YOU_SUSPENDED.format(task.name))
                 self.user_controller.notify_user(user, message)
 
-            if editor.nick != task.author:
-                author = self.user_controller.find_user(nick=task.author)
-                self.user_controller.notify_user(
-                    author, TaskController.EDITING_MESSAGE)
+            author = self.user_controller.find_user(nick=task.author)
+            self.user_controller.notify_user(
+                author, TaskController.EDITING_MESSAGE)
 
             for user in new_responsible:
+                if user.uid == editor.uid:
+                    self.user_controller.link_responsible_with_task(user, task)
                 message = (Messages.YOU_ASSIGNED.format(editor.nick, task.name,
                                                         task.key, task.key))
 
@@ -263,8 +277,22 @@ class Interface:
                 self.user_controller.notify_user(
                     user, TaskController.EDITING_MESSAGE)
 
-            # for user in responsible
+            if task.status == TaskStatus.SOLVED:
+                self.queue_controller.move_in_solved(task_queue, task)
+            elif task.status == TaskStatus.OPENED:
+                self.queue_controller.move_in_opened(task_queue, task)
+            elif task.status == TaskStatus.FAILED:
+                self.queue_controller.move_in_failed(task_queue, task)
+
             return task
+
+    def get_task(self, key, owner=None):
+        if owner is None:
+            owner = self.get_online_user()
+        task = self.task_controller.get_task_by_key(key)
+        if task.author != owner.nick and owner.nick not in task.responsible:
+            raise AccessDeniedError(Messages.CANNOT_USE_SOMEONE_ELSE_TASK)
+        return task
 
     def find_task(self, key=None, name=None):
         user = self.get_online_user()
@@ -283,27 +311,34 @@ class Interface:
             raise AccessDeniedError(Messages.CANNOT_SEE_TASK)
         return tasks
 
-    def del_task(self, key, recursive):
-        owner = self.get_online_user()
+    def remove_task(self, key, recursive):
+        remover = self.get_online_user()
+        task = self.get_task(key)
         try:
-            tasks = self.task_controller.del_task(owner, key, recursive)
+            tasks = self.task_controller.remove_task(task, remover, recursive)
 
         except AppError as e:
             raise e
 
-        self.delete_link_with_users(tasks, owner, Messages.TASK_WAS_DELETED)
+        self.delete_link_with_queue(tasks, remover)
+        self.delete_link_with_users(tasks, remover, Messages.TASK_WAS_DELETED)
         return tasks
+
+    def delete_link_with_queue(self, tasks, remover):
+        for task in tasks:
+            queue = self.queue_controller.get_queue_by_key(task.queue)
+            self.queue_controller.unlink_queue_and_task(queue, task)
 
     def delete_link_with_users(self, tasks, author, message):
         for task in tasks:
             while task.responsible:
                 nick = task.responsible.pop()
                 user = self.user_controller.find_user(nick=nick)
-                self.user_controller.unlink_task_and_responsible(user, task)
+                self.user_controller.unlink_responsible_and_task(user, task)
                 self.user_controller.notify_user(user,
                                                  message.format(task.name))
             if author is not None:
-                self.user_controller.unlink_task_and_author(author, task)
+                self.user_controller.unlink_author_and_task(author, task)
 
     def activate_task(self, key):
         user = self.get_online_user()
@@ -317,7 +352,7 @@ class Interface:
         if key in user.tasks_responsible:
             raise ActivationTaskError(Messages.ALREADY_CONFIRMED)
 
-        self.user_controller.link_task_with_responsible(user, task)
+        self.user_controller.link_responsible_with_task(user, task)
         self.task_controller.activate_task(task)
 
         author = self.user_controller.find_user(nick=task.author)
@@ -358,7 +393,7 @@ class Interface:
 
     def find_users_by_name_list(self, name_list):
         users = []
-        if name_list == UNDEFINED:
+        if name_list == Constants.UNDEFINED:
             return users
         if name_list:
             for name in name_list:

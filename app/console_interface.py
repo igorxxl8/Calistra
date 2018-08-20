@@ -272,6 +272,7 @@ def _show_new_messages(library) -> int:
         print('New messages:')
         _show_messages(new_messages)
         library.clear_new_messages()
+        print(Printer.SEPARATOR)
     return 0
 
 

@@ -59,6 +59,7 @@ class QueueController:
                 raise DeletingQueueError(Messages.QUEUE_NOT_EMPTY.format(key))
 
         self.queue_storage.remove_queue(queue)
+        self.queue_storage.save_queues()
         return queue
 
     def get_user_default_queue(self, user):
@@ -73,23 +74,13 @@ class QueueController:
     def get_user_queues(self, user) -> list:
         queues = []
         for queue_key in user.queues:
-            queue = self.queue_storage.get_queue_by_key(queue_key)
+            queue = self.get_queue_by_key(queue_key)
             queues.append(queue)
 
         if not queues:
             raise QueueNotFoundError(Messages.QUEUES_NOT_FOUND)
 
         return queues
-
-    def get_queue_tasks(self, q_key, owner):
-        queue = self.queue_storage.get_queue_by_key(q_key)
-        if queue is None:
-            raise QueueNotFoundError(Messages.SHOW_KEY.format(q_key))
-
-        if queue.owner != owner.nick:
-            raise AccessDeniedError(Messages.CANNOT_SEE_QUEUE)
-
-        return queue.tasks
 
     def link_queue_with_task(self, queue, task):
         queue.opened_tasks.append(task.key)
@@ -106,11 +97,12 @@ class QueueController:
         self.queue_storage.save_queues()
 
     def move_in_opened(self, queue: Queue, task: Task):
-        if task.key in queue.failed_tasks:
-            queue.failed_tasks.remove(task.key)
-        if task.key in queue.solved_tasks:
-            queue.solved_tasks.remove(task.key)
-        queue.opened_tasks.append(task.key)
+        key = task.key
+        if key in queue.failed_tasks:
+            queue.failed_tasks.remove(key)
+        if key in queue.solved_tasks:
+            queue.solved_tasks.remove(key)
+        queue.opened_tasks.append(key)
         self.queue_storage.save_queues()
 
     def move_in_solved(self, queue: Queue, task: Task):
@@ -119,18 +111,10 @@ class QueueController:
         self.queue_storage.save_queues()
 
     def move_in_failed(self, queue: Queue, task: Task):
-        if task.key in queue.solved_tasks:
-            queue.solved_tasks.remove(task)
-        elif task.key in queue.opened_tasks:
-            queue.opened_tasks.remove(task)
-        queue.failed_tasks.append(task)
+        key = task.key
+        if key in queue.solved_tasks:
+            queue.solved_tasks.remove(key)
+        elif key in queue.opened_tasks:
+            queue.opened_tasks.remove(key)
+        queue.failed_tasks.append(key)
         self.queue_storage.save_queues()
-
-
-# deleted_tasks = []
-#         all_tasks = self.queue_storage.get_all_queue_tasks(queue)
-#         for task in all_tasks:
-#             deleted_tasks += self.del_task(owner, task.key, recursive)
-#         self.queue_storage.remove_queue(queue)
-#         self.queue_storage.save_queues()
-#         queue.opened = deleted_tasks

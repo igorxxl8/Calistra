@@ -74,9 +74,9 @@ class Printer:
         sys.stdout.write(color)
         print(concat(
             Printer.DELIMETER * indent_level,
-            '{} Name: "{}", key: {}, updated: {}, status: {}, deadline: {}'.
-            format(number, task.name, task.key, task.editing_time, task.status,
-                   task.deadline))
+            '{}) Name: "{}", key: {}, queue: {} updated: {}, status: {}, '
+            'deadline: {}'.format(number, task.name, task.key, task.queue,
+                                  task.editing_time, task.status, task.deadline))
         )
 
     @staticmethod
@@ -87,6 +87,7 @@ class Printer:
         print(formatted_string('Author: {}'.format(task.author)))
         print(formatted_string('Description: {}'.format(task.description)))
         print(formatted_string('Status: {}'.format(task.status)))
+        print(formatted_string('Queue key: {}'.format(task.queue)))
 
         spaces = '-' * (100 - task.progress)
         progress_bar = concat('[', '|' * task.progress, spaces, ']')

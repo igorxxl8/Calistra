@@ -98,14 +98,14 @@ class TaskController:
             self.check_access(editor, task, responsible, name, description,
                               parent, linked, responsible, priority, start,
                               deadline, tags, reminder)
+            self.edit_start(task, start, deadline)
+            self.edit_deadline(task, deadline)
             self.edit_status(task, status)
             self.edit_progress(task, progress)
             self.edit_name(task, name)
             self.edit_description(task, description)
             self.edit_linked(task, linked)
             self.edit_priority(task, priority)
-            self.edit_start(task, start, deadline)
-            self.edit_deadline(task, deadline)
             self.edit_tags(task, tags)
             self.edit_reminder(task, reminder)
             self.edit_responsible(task, responsible)
@@ -250,8 +250,9 @@ class TaskController:
 
             if status == TaskStatus.OPENED:
                 if task.status == TaskStatus.FAILED:
-                    raise TaskStatusError(
-                        Messages.CANNOT_SET_STATUS_OPENED_FOR_FAILED)
+                    if get_date(task.deadline) < dt.now():
+                        raise TaskStatusError(
+                            Messages.CANNOT_SET_STATUS_OPENED_FOR_FAILED)
                 for sub_task in self.get_sub_tasks(task):
                     if sub_task.status == TaskStatus.FAILED:
                         raise TaskStatusError(
@@ -331,14 +332,13 @@ class TaskController:
         return self.tasks_storage.get_sub_tasks(parent_task)
 
     def update_tasks(self):
-        # TODO: переделать метод
         failed_tasks = []
         for task in self.tasks_storage.tasks:
-            if task.deadline and get_date(task.deadline) < dt.now():
-                task.status = TaskStatus.FAILED
-                queue = self.tasks_storage.get_queue_with_task(task)
-                self.move_in_failed(queue, task)
-                failed_tasks.append(task)
+            if task.status != TaskStatus.FAILED:
+                if task.deadline and get_date(task.deadline) < dt.now():
+                    task.status = TaskStatus.FAILED
+                    failed_tasks.append(task)
+        self.tasks_storage.save_tasks()
         return failed_tasks
 
     def check_reminders(self):

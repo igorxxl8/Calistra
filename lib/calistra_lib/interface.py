@@ -108,10 +108,19 @@ class Interface:
         reminders = self.task_controller.check_reminders()
 
         for task in failed_tasks:
-            author = self.user_controller.find_user(nick=task.author)
-            self.delete_link_with_users(task, author, Messages.TASK_WAS_FAILED)
+            queue = self.queue_controller.get_queue_by_key(task.queue)
+            self.queue_controller.move_in_failed(queue, task)
+            users = self.find_users_by_name_list(
+                task.responsible + [task.author]
+            )
 
-        #    self.
+            self.send_message_to_users(
+                users, Messages.TASK_WAS_FAILED.format(task.name)
+            )
+
+    def send_message_to_users(self, users, message):
+        for user in users:
+            self.user_controller.notify_user(user, message)
 
     # functions for work with queue instance
     def add_queue(self, name, key, owner=None):
@@ -136,7 +145,6 @@ class Interface:
             raise e
 
     def remove_queue(self, key, recursive):
-        # TODO: после создания метода удаления таски потестить
         user = self.get_online_user()
         try:
             queue = self.queue_controller.remove_queue(key, recursive, user)
@@ -167,8 +175,6 @@ class Interface:
             queue = self.queue_controller.get_queue_by_key(queue_key)
         if queue.owner != owner.uid:
             raise AccessDeniedError(Messages.CANNOT_USE_SOMEONE_ELSE_QUEUE)
-        # if queue is None:
-        #    raise QueueNotFoundError(Messages.SHOW_KEY.format(queue_key))
         return queue
 
     def find_queues(self, name):
@@ -190,6 +196,7 @@ class Interface:
         queue = self.get_queue(queue_key, author)
 
         try:
+            responsible_users = self.find_users_by_name_list(responsible)
 
             task = self.task_controller.add_task(
                 author=author, name=name, queue=queue,
@@ -201,7 +208,6 @@ class Interface:
         except AppError as e:
             raise e
 
-        responsible_users = self.find_users_by_name_list(responsible)
         for user in responsible_users:
             if user.uid == author.uid:
                 self.user_controller.link_responsible_with_task(user, task)
@@ -252,16 +258,11 @@ class Interface:
             new_responsible = self.find_users_by_name_list(invited_users)
             dismissed_responsible = self.find_users_by_name_list(
                 dismissed_users)
-            responsible_users = self.find_users_by_name_list(task.responsible)
 
             for user in dismissed_responsible:
                 self.user_controller.unlink_responsible_and_task(user, task)
                 message = (Messages.YOU_SUSPENDED.format(task.name))
                 self.user_controller.notify_user(user, message)
-
-            author = self.user_controller.find_user(nick=task.author)
-            self.user_controller.notify_user(
-                author, TaskController.EDITING_MESSAGE)
 
             for user in new_responsible:
                 if user.uid == editor.uid:
@@ -271,18 +272,29 @@ class Interface:
 
                 self.user_controller.notify_user(user, message)
 
-            for user in responsible_users:
-                if user.nick == task.author:
-                    continue
-                self.user_controller.notify_user(
-                    user, TaskController.EDITING_MESSAGE)
+            users = self.find_users_by_name_list(
+                task.responsible + [task.author])
+            self.send_message_to_users(users,
+                                       TaskController.EDITING_MESSAGE)
+
+            if status is None:
+                return task
 
             if task.status == TaskStatus.SOLVED:
                 self.queue_controller.move_in_solved(task_queue, task)
+                self.send_message_to_users(
+                    users, Messages.TASK_SOLVED.format(task.name, editor.nick))
+
             elif task.status == TaskStatus.OPENED:
                 self.queue_controller.move_in_opened(task_queue, task)
+                self.send_message_to_users(
+                    users,
+                    Messages.TASK_REOPENED.format(task.name, editor.nick))
+
             elif task.status == TaskStatus.FAILED:
                 self.queue_controller.move_in_failed(task_queue, task)
+                self.send_message_to_users(
+                    users, Messages.TASK_WAS_FAILED.format(task.name))
 
             return task
 
@@ -320,14 +332,13 @@ class Interface:
         except AppError as e:
             raise e
 
-        self.delete_link_with_queue(tasks, remover)
-        self.delete_link_with_users(tasks, remover, Messages.TASK_WAS_DELETED)
-        return tasks
-
-    def delete_link_with_queue(self, tasks, remover):
         for task in tasks:
+            #  TODO: сделать чтобы не выводилось сообщение
             queue = self.queue_controller.get_queue_by_key(task.queue)
             self.queue_controller.unlink_queue_and_task(queue, task)
+
+        self.delete_link_with_users(tasks, remover, Messages.TASK_WAS_DELETED)
+        return tasks
 
     def delete_link_with_users(self, tasks, author, message):
         for task in tasks:

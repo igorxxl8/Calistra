@@ -30,6 +30,7 @@ class ParserArgs:
     FIND = 'find'
     ACTIVATE = 'activate'
     KEY = Argument(name='key', help='access key')
+    UPDATE = Argument(name='update', help='update all entities')
     RECURSIVE = OptionalArgument(
         dest='recursive',
         long='--recursive',

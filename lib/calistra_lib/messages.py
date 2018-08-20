@@ -1,10 +1,12 @@
 class Messages:
     QUEUES_NOT_FOUND = 'Queues not found.'
     SIGN_IN = 'please sign in system'
-    TASK_WAS_DELETED = 'The task {} was deleted'
-    TASK_WAS_FAILED = 'The task {} was failed'
+    TASK_WAS_DELETED = 'The task "{}" was deleted'
+    TASK_WAS_FAILED = 'The task "{}" was failed'
+    TASK_REOPENED = 'The task "{}" reopened by user "{}"'
+    TASK_SOLVED = 'The task "{}" was solved by user "{}"'
     SHOW_KEY = 'key - {}'
-    SHOW_PARENT_KEY = 'parent task key "{}"'
+    SHOW_PARENT_KEY = 'parent task key - {}'
     CANNOT_SEE_TASK = 'you cannot see this task'
     CANNOT_SEE_QUEUE = 'you cannot see this queue'
     CANNOT_EDIT_QUEUE = 'you cannot edit this queue'
@@ -18,7 +20,7 @@ class Messages:
                                     'task, where you take participation!')
     CANNOT_NAME_AS_DEFAULT_QUEUE = 'this name booked by program'
     TASK_FAILED = 'Task {}, key {} was failed'
-    NEED_ACTIVATE_TASK = 'you need to activate this task'
+    NEED_ACTIVATE_TASK = 'you need to activate this task. See help'
     CANNOT_USE_SOMEONE_ELSE_QUEUE = 'you cannot use someone else queue'
     YOU_ASSIGNED = ('User "{}" assigned you responsible for the task:'
                     ' "{}", key - {}. You need to confirm participation')

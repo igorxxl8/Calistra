@@ -46,6 +46,11 @@ def get_parsers():
         help=ParserArgs.NOTIFICATIONS.help
     )
 
+    updater_parser = subparsers.add_parser(
+        name=ParserArgs.UPDATE.name,
+        help=ParserArgs.UPDATE.help
+    )
+
     # check console args, create subparsers for necessary args
     if ParserArgs.USER.name in sys.argv:
         FormattedParser.active_sub_parser = user_parser
@@ -66,6 +71,9 @@ def get_parsers():
     elif ParserArgs.NOTIFICATIONS.name in sys.argv:
         FormattedParser.active_sub_parser = notifications_parser
         _create_notification_subparsers(notifications_parser)
+
+    elif ParserArgs.UPDATE.name in sys.argv:
+        FormattedParser.active_sub_parser = updater_parser
 
     return parser
 

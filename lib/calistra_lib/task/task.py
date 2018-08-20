@@ -7,7 +7,6 @@ class TaskStatus:
     OPENED = 'opened'
     SOLVED = 'solved'
     ACTIVATED = 'activated'
-    CLOSED = 'closed'
     FAILED = 'failed'
 
 
@@ -31,7 +30,7 @@ class Task:
         self.reminder = reminder
         self.status = TaskStatus.OPENED
         self.key = key
-        self.creating_teme = creating_time
+        self.creating_time = creating_time
         self.editing_time = creating_time
 
         if responsible is None:

@@ -1,28 +1,26 @@
 from datetime import datetime as dt
 from .task import Task, TaskStatus
 from .task_storage import TaskStorage
-from queue.queue import Queue
 
 try:
+    from lib.calistra_lib.constants import Constants
+    from lib.calistra_lib.queue.queue import Queue
     from lib.calistra_lib.messages import Messages
     from lib.calistra_lib.exceptions.task_exceptions import *
     from lib.calistra_lib.exceptions.access_exceptions import *
     from lib.calistra_lib.exceptions.queue_exceptions import *
 
 except ImportError:
+    from calistra_lib.constants import Constants
+    from calistra_lib.queue.queue import Queue
     from calistra_lib.messages import Messages
     from calistra_lib.exceptions.task_exceptions import *
     from calistra_lib.exceptions.access_exceptions import *
     from calistra_lib.exceptions.queue_exceptions import *
 
-TIME_FORMAT = '%d.%m.%Y.%H:%M'
-
-DEFAULT_QUEUE = 'default'
-UNDEFINED = '?'
-
 
 def get_date(string):
-    return dt.strptime(string, TIME_FORMAT)
+    return dt.strptime(string, Constants.TIME_FORMAT)
 
 
 class TaskController:
@@ -35,95 +33,20 @@ class TaskController:
     def attach_message(cls, message):
         cls.EDITING_MESSAGE = ''.join([cls.EDITING_MESSAGE, ' ', message])
 
-    def add_queue(self, name, key, owner) -> Queue:
-        queue = self.tasks_storage.add_queue(name, key, owner.nick)
-        self.tasks_storage.save_tasks()
-        return queue
-
-    def edit_queue(self, key, new_name, editor) -> Queue:
-        queue = self.tasks_storage.get_queue_by_key(key)
-
-        if queue is None:
-            raise QueueNotFoundError(Messages.SHOW_KEY.format(key))
-
-        if queue.owner != editor.nick:
-            raise AccessDeniedError(Messages.CANNOT_EDIT_QUEUE)
-
-        if queue.name == DEFAULT_QUEUE:
-            raise EditingQueueError(Messages.DEFAULT_QUEUE_IMMUTABLE.
-                                    format(DEFAULT_QUEUE))
-
-        queue.name = new_name
-        self.tasks_storage.save_tasks()
-        return queue
-
-    def del_queue(self, key, recursive, owner) -> Queue:
-        queue = self.tasks_storage.get_queue_by_key(key)
-        if queue is None:
-            raise QueueNotFoundError(Messages.SHOW_KEY.format(key))
-
-        if queue.owner != owner.nick:
-            raise AccessDeniedError(Messages.CANNOT_DELETE_QUEUE)
-
-        all_tasks = self.tasks_storage.get_all_queue_tasks(queue)
-        if not recursive and all_tasks:
-            raise DeletingQueueError(Messages.QUEUE_NOT_EMPTY.format(key))
-
-        deleted_tasks = []
-        all_tasks = self.tasks_storage.get_all_queue_tasks(queue)
-        for task in all_tasks:
-            deleted_tasks += self.del_task(owner, task.key, recursive)
-        self.tasks_storage.remove_queue(queue)
-        self.tasks_storage.save_tasks()
-        queue.opened = deleted_tasks
-        return queue
-
-    def get_queue_by_key(self, key):
-        return self.tasks_storage.get_queue_by_key(key)
-
-    def get_queues_by_owner(self, owner) -> list:
-        queues = []
-        for key in owner.queues:
-            queues.append(self.tasks_storage.get_queue_by_key(key))
-        return queues
-
-    def get_queue_tasks(self, q_key, owner):
-        queue = self.tasks_storage.get_queue_by_key(q_key)
-        if queue is None:
-            raise QueueNotFoundError(Messages.SHOW_KEY.format(q_key))
-
-        if queue.owner != owner.nick:
-            raise AccessDeniedError(Messages.CANNOT_SEE_QUEUE)
-
-        return queue.tasks
-
-    def find_queues(self, key=None, name=None):
-        if key is None and name is None:
-            return []
-        result = []
-        if key:
-            result = self.tasks_storage.get_queue_by_key(key)
-        if name and not result:
-            result = self.tasks_storage.get_queue_by_name(name)
-        return result
-
-    def add_task(self, author, name, queue_key, description, parent, linked,
+    def add_task(self, author, name, queue, description, parent, linked,
                  responsible, priority, progress, start, deadline, tags,
                  reminder, key, creating_time):
 
-        if queue_key == UNDEFINED:
-            queue_key = author.uid
-
-        if deadline == UNDEFINED:
+        if deadline == Constants.UNDEFINED:
             deadline = None
 
-        if start == UNDEFINED:
+        if start == Constants.UNDEFINED:
             start = None
 
-        if responsible == UNDEFINED:
+        if responsible == Constants.UNDEFINED:
             responsible = []
 
-        if tags == UNDEFINED:
+        if tags == Constants.UNDEFINED:
             tags = None
 
         if priority is None:
@@ -141,45 +64,44 @@ class TaskController:
                 raise TaskDeadlineError(Messages.DEADLINE_CANNOT_EARLIER_START)
 
         parent_task = self.tasks_storage.get_task_by_key(parent)
+
         if parent and parent_task is None:
             raise TaskNotFoundError(Messages.SHOW_PARENT_KEY.format(parent))
 
-        queue = self.tasks_storage.get_queue_by_key(queue_key)
-        if queue is None:
-            raise QueueNotFoundError(Messages.SHOW_KEY.format(queue_key))
+        if parent_task and parent_task.author != author.nick:
+            raise AccessDeniedError(Messages.CANNOT_USE_SOMEONE_ELSE_TASK)
 
-        parent_queue = self.tasks_storage.get_queue_with_task(parent_task)
-        if parent_task and queue is not parent_queue:
+        if parent_task and queue.key != parent_task.queue:
             raise SubTaskError(Messages.PARENT_IN_OTHER_QUEUE)
 
         task = self.tasks_storage.add_task(
-            author=author.nick, name=name, queue=queue, description=description,
-            parent=parent, linked=linked, responsible=responsible,
-            priority=priority, progress=progress, start=start,
-            deadline=deadline, tags=tags, reminder=reminder, key=key,
-            creating_time=creating_time)
-
+            author=author, name=name, start=start, queue=queue,
+            description=description, parent=parent, progress=progress,
+            tags=tags, responsible=responsible, priority=priority,
+            linked=linked, deadline=deadline, key=key, reminder=reminder,
+            creating_time=creating_time
+        )
+        if parent_task:
+            self.link_task_with_sub_task(parent_task, task)
         self.tasks_storage.save_tasks()
         return task
 
-    def edit_task(self, task, editor, name, description, parent, linked,
+    def edit_task(self, task, task_queue, editor, name, description, parent,
+                  linked,
                   responsible, priority, progress, start, deadline, tags,
                   reminder, status, editing_time):
 
         TaskController.EDITING_MESSAGE = (Messages.USER_EDIT_TASK.
                                           format(editor.nick, task.name))
 
-        task_queue = self.tasks_storage.get_queue_with_task(task)
-
         try:
             self.check_access(editor, task, responsible, name, description,
                               parent, linked, responsible, priority, start,
                               deadline, tags, reminder)
-            self.edit_status(task, task_queue, status, editor)
+            self.edit_status(task, status)
             self.edit_progress(task, progress)
             self.edit_name(task, name)
             self.edit_description(task, description)
-            self.edit_parent(task, task_queue, parent)
             self.edit_linked(task, linked)
             self.edit_priority(task, priority)
             self.edit_start(task, start, deadline)
@@ -187,6 +109,7 @@ class TaskController:
             self.edit_tags(task, tags)
             self.edit_reminder(task, reminder)
             self.edit_responsible(task, responsible)
+            self.edit_parent(task, task_queue, parent)
         except AppError as e:
             raise e
 
@@ -195,11 +118,21 @@ class TaskController:
         self.tasks_storage.save_tasks()
         return task
 
-    def check_access(self, user, task, responsible, *args):
+    def link_task_with_sub_task(self, parent_task: Task, sub_task: Task):
+        parent_task.sub_tasks.append(sub_task.key)
+        self.tasks_storage.save_tasks()
+
+    def unlink_task_and_sub_task(self, parent_task: Task, sub_task: Task):
+        for task_key in parent_task.sub_tasks:
+            if task_key == sub_task.key:
+                parent_task.sub_tasks.remove(task_key)
+                break
+
+        self.tasks_storage.save_tasks()
+
+    @staticmethod
+    def check_access(user, task, responsible, *args):
         nick = user.nick
-        if (nick not in task.responsible and
-                nick != task.author):
-            raise AccessDeniedError(Messages.CANNOT_EDIT_TASK)
 
         if task.key not in user.tasks_responsible and task.author != nick:
             raise AccessDeniedError(Messages.NEED_ACTIVATE_TASK)
@@ -210,7 +143,7 @@ class TaskController:
                     raise AccessDeniedError(Messages.CANNOT_EDIT_PARAM)
 
         if responsible:
-            if responsible == UNDEFINED:
+            if responsible == Constants.UNDEFINED:
                 responsible = []
             task.responsible = responsible
 
@@ -232,31 +165,6 @@ class TaskController:
             task.description = description
             TaskController.attach_message('description: {}'.format(description))
 
-    def edit_parent(self, task, task_queue, parent):
-        if parent:
-            parent_task = self.tasks_storage.get_task_by_key(parent)
-            parent_queue = self.tasks_storage.get_queue_with_task(parent_task)
-
-            if parent == UNDEFINED:
-                task.parent = None
-
-            elif parent_task is None:
-                raise TaskNotFoundError(Messages.SHOW_PARENT_KEY.format(parent))
-
-            elif parent_task and task_queue is not parent_queue:
-                raise SubTaskError(Messages.PARENT_IN_OTHER_QUEUE)
-
-            elif task.key == parent:
-                raise SubTaskError(Messages.PARENT_SAME_TASK)
-
-            else:
-                subtasks = self.tasks_storage.get_sub_tasks(task)
-                for subtask in subtasks:
-                    if parent == subtask.key:
-                        raise SubTaskError(Messages.PARENT_IS_TASK_SUBTASK)
-                task.parent = parent
-                TaskController.attach_message('parent {}'.format(parent))
-
     @staticmethod
     def edit_linked(task, linked):
         if linked:
@@ -272,7 +180,7 @@ class TaskController:
     @staticmethod
     def edit_responsible(task, responsible):
         if responsible:
-            if responsible == UNDEFINED:
+            if responsible == Constants.UNDEFINED:
                 responsible = []
             task.responsible = responsible
             TaskController.attach_message('responsible: {}'.format(responsible))
@@ -280,7 +188,7 @@ class TaskController:
     @staticmethod
     def edit_start(task, start, deadline):
         if start:
-            if start == UNDEFINED:
+            if start == Constants.UNDEFINED:
                 task.start = None
             elif (task.deadline and get_date(task.deadline) < get_date(start)
                   and deadline and get_date(deadline) < get_date(start)):
@@ -299,7 +207,7 @@ class TaskController:
     @staticmethod
     def edit_tags(task, tags):
         if tags:
-            if tags == UNDEFINED:
+            if tags == Constants.UNDEFINED:
                 task.tags = None
             else:
                 task.tags = tags
@@ -308,7 +216,7 @@ class TaskController:
     @staticmethod
     def edit_deadline(task, deadline):
         if deadline:
-            if deadline == UNDEFINED:
+            if deadline == Constants.UNDEFINED:
                 task.deadline = None
             elif get_date(deadline) < dt.now():
                 raise TaskDeadlineError(Messages.DEADLINE_CANNOT_EARLIER_NOW)
@@ -318,104 +226,99 @@ class TaskController:
                 task.deadline = deadline
                 TaskController.attach_message('deadline: {}'.format(deadline))
 
-    def edit_status(self, task: Task, queue, status, editor):
+    def edit_status(self, task: Task, status):
         if status:
-            if status == TaskStatus.CLOSED:
-                if editor.nick != task.author:
-                    raise TaskStatusError(Messages.CANNOT_SET_STATUS_CLOSED)
+            if status == task.status:
+                raise TaskStatusError(
+                    Messages.CANNOT_SET_SAME_STATUS.format(
+                        status, task.name, status)
+                )
 
-                if task.status == TaskStatus.SOLVED:
-                    self.close_task(queue, task)
-                else:
-                    raise TaskStatusError(
-                        Messages.CANNOT_SET_STATUS_CLOSED_FOR_UNSOLVED
-                    )
-
-            sub_tasks = self.find_sub_tasks(task)
             if status == TaskStatus.SOLVED:
-                for sub_task in sub_tasks:
+                if task.status == TaskStatus.FAILED:
+                    raise TaskStatusError(
+                        Messages.CANNOT_SET_STATUS_SOLVED_FOR_FAILED)
+
+                for sub_task in self.get_sub_tasks(task):
                     if sub_task.status != TaskStatus.SOLVED:
                         raise TaskStatusError(
-                            Messages.CANNOT_SET_STATUS_SOLVED_UNS_ST
+                            Messages.CANNOT_SET_STATUS_SOLVED_UNS_ST)
+
+                    if sub_task.status == TaskStatus.FAILED:
+                        raise TaskStatusError(
+                            Messages.CANNOT_SET_STATUS_SOLVED_FAILED_ST)
+
+            if status == TaskStatus.OPENED:
+                if task.status == TaskStatus.FAILED:
+                    raise TaskStatusError(
+                        Messages.CANNOT_SET_STATUS_OPENED_FOR_FAILED)
+                for sub_task in self.get_sub_tasks(task):
+                    if sub_task.status == TaskStatus.FAILED:
+                        raise TaskStatusError(
+                            Messages.CANNOT_SET_STATUS_OPENED_FAILED_ST
                         )
 
             task.status = status
             TaskController.attach_message('status: {}'.format(status))
-            if status == TaskStatus.SOLVED:
-                self.move_in_solved(queue, task)
-            if status == TaskStatus.FAILED:
-                self.move_in_failed(queue, task)
-            if status == TaskStatus.OPENED:
-                self.move_in_opened(queue, task)
 
-    def close_task(self, queue: Queue, task: Task):
-        self.tasks_storage.remove_solved_task(task, queue)
-        # notify user
+    def edit_parent(self, task, task_queue, parent):
+        if parent:
+            parent_task = self.tasks_storage.get_task_by_key(task.parent)
+            new_parent_task = self.tasks_storage.get_task_by_key(parent)
+
+            if parent == Constants.UNDEFINED:
+                task.parent = None
+
+            elif new_parent_task is None:
+                raise TaskNotFoundError(Messages.SHOW_PARENT_KEY.format(parent))
+
+            elif new_parent_task and task_queue.key != new_parent_task.queue:
+                raise SubTaskError(Messages.PARENT_IN_OTHER_QUEUE)
+
+            elif task.key == parent:
+                raise SubTaskError(Messages.PARENT_SAME_TASK)
+
+            else:
+                for subtask in task.sub_tasks:
+                    if parent == subtask:
+                        raise SubTaskError(Messages.PARENT_IS_TASK_SUBTASK)
+                if parent_task:
+                    self.unlink_task_and_sub_task(parent_task, task)
+                task.parent = parent
+                self.link_task_with_sub_task(new_parent_task, task)
+                TaskController.attach_message('parent {}'.format(parent))
 
     def activate_task(self, task):
         if task.status == TaskStatus.OPENED:
             task.status = TaskStatus.ACTIVATED
         self.tasks_storage.save_tasks()
 
-    def move_in_opened(self, queue: Queue, task: Task):
-        if task in self.tasks_storage.opened_tasks:
-            raise TaskStatusError(Messages.TASK_ALREADY_SOLVED)
-
-        if task in self.tasks_storage.failed_tasks:
-            if task.deadline and get_date(task.deadline) < dt.now():
-                raise TaskStatusError(
-                    Messages.CANNOT_SET_STATUS_OPENED_FOR_FAILED
-                )
-
-            queue.failed_tasks.remove(task)
-        if task in self.tasks_storage.solved_tasks:
-            queue.solved_tasks.remove(task)
-        queue.opened_tasks.append(task)
-
-    def move_in_solved(self, queue: Queue, task: Task):
-        if task in self.tasks_storage.solved_tasks:
-            raise TaskStatusError(Messages.TASK_ALREADY_SOLVED)
-
-        if task in self.tasks_storage.failed_tasks:
-            raise TaskStatusError(Messages.CANNOT_SET_STATUS_SOLVED_FOR_FAILED)
-
-        queue.opened_tasks.remove(task)
-        queue.solved_tasks.append(task)
-        # notify user
-
-    def move_in_failed(self, queue: Queue, task: Task):
-        if task in self.tasks_storage.failed_tasks:
-            raise TaskStatusError(Messages.CANNOT_SET_STATUS_FAILED)
-
-        if task in self.tasks_storage.solved_tasks:
-            queue.solved_tasks.remove(task)
-
-        elif task in self.tasks_storage.opened_tasks:
-            queue.opened_tasks.remove(task)
-        queue.failed_tasks.append(task)
-        # notify user
-
-    def del_task(self, owner, key, recursive):
-        task = self.find_task(key=key)
-        if task is None:
-            raise TaskNotFoundError(Messages.SHOW_KEY.format(key))
-
-        if owner.nick != task.author:
+    def remove_task(self, task: Task, remover, recursive):
+        if remover.nick != task.author:
             raise AccessDeniedError(Messages.CANNOT_DELETE_TASK)
 
-        sub_tasks = self.find_sub_tasks(task)
+        sub_tasks = self.get_sub_tasks(task)
         if sub_tasks and recursive is False:
             raise DeletingTaskError(Messages.TASK_HAS_SUBTASKS)
 
-        self.tasks_storage.remove_opened_task(task)
+        self.tasks_storage.remove_task(task)
+        parent_task = self.tasks_storage.get_task_by_key(task.parent)
+        if parent_task:
+            self.unlink_task_and_sub_task(parent_task, task)
         all_deleted_tasks = [task]
 
         for sub_task in sub_tasks:
-            deleted_sub_tasks = self.del_task(owner, sub_task.key, recursive)
+            deleted_sub_tasks = self.remove_task(sub_task, remover, recursive)
             all_deleted_tasks += deleted_sub_tasks
 
         self.tasks_storage.save_tasks()
         return all_deleted_tasks
+
+    def get_task_by_key(self, key):
+        task = self.tasks_storage.get_task_by_key(key)
+        if task is None:
+            raise TaskNotFoundError(Messages.SHOW_KEY.format(key))
+        return task
 
     def find_task(self, name=None, key=None):
         if key is None:
@@ -424,12 +327,13 @@ class TaskController:
             return self.tasks_storage.get_task_by_name(name)
         return self.tasks_storage.get_task_by_key(key)
 
-    def find_sub_tasks(self, parent_task):
+    def get_sub_tasks(self, parent_task):
         return self.tasks_storage.get_sub_tasks(parent_task)
 
     def update_tasks(self):
+        # TODO: переделать метод
         failed_tasks = []
-        for task in self.tasks_storage.opened_tasks:
+        for task in self.tasks_storage.tasks:
             if task.deadline and get_date(task.deadline) < dt.now():
                 task.status = TaskStatus.FAILED
                 queue = self.tasks_storage.get_queue_with_task(task)
@@ -439,5 +343,5 @@ class TaskController:
 
     def check_reminders(self):
         # TODO: Проверка напоминаний
-        for task in self.tasks_storage.opened_tasks:
-            pass
+        # for task in self.tasks_storage.opened_tasks:
+        pass

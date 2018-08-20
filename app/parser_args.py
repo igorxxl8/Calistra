@@ -192,7 +192,7 @@ class ParserArgs:
         dest='STATUS',
         long='--status',
         short='-st',
-        help='define task status: opened, closed, solved or activated'
+        help='define task status: opened, solved or activated'
     )
 
     # Constants for work with queues
@@ -206,26 +206,27 @@ class ParserArgs:
         long='--opened',
         short='-op',
         dest='OPEN',
-        help='confirm for opened tasks'
+        help='perform for opened tasks'
     )
 
     SOLVED_TASKS = OptionalArgument(
         long='--solved',
         short='-do',
         dest='SOLVED',
-        help='confirm for solved tasks'
+        help='perform for solved tasks'
     )
 
     FAILED_TASKS = OptionalArgument(
         long='--failed',
         short='-f',
         dest='FAILED',
-        help='confirm for failed tasks'
+        help='perform for failed tasks'
     )
 
     SET_QUEUE_HELP = 'edit queue'
     DELETE_QUEUE_HELP = 'delete existing queue'
-    SHOW_QUEUE_HELP = 'show user queues or tasks in queue with defined key'
+    SHOW_QUEUE_HELP = ('show user tasks in queue with defined key'
+                       '(opened tasks by default)')
 
     # Constants, which represent plan parser commands and settings
     PLAN = Argument(name='plan', help='work with plans')

@@ -3,7 +3,7 @@
 
 __author__ = "Igor Turcevich <vip.turcevich3@gmail.com>"
 
-from app import command_parser
+from app import console_interface
 import sys
 
 # TODO: 1) Логирование
@@ -14,7 +14,7 @@ def start():
     :return: None
     """
     # TODO: enable logging
-    code = command_parser.run()
+    code = console_interface.run()
     sys.exit(code)
 
 

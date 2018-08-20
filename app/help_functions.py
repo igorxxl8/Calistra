@@ -1,10 +1,10 @@
 from datetime import datetime
 try:
+    from lib.calistra_lib.constants import Constants
     from lib.calistra_lib.task.task import TaskStatus
 except ImportError:
+    from lib.calistra_lib.constants import Constants
     from calistra_lib.task.task import TaskStatus
-
-TIME_FORMAT = '%d.%m.%Y.%H:%M'
 
 
 # TODO: сделать корректные сообщения об ошибках для консоли и для веба отдельно
@@ -34,7 +34,7 @@ def check_priority_correctness(priority, action='add'):
             raise ValueError()
     except ValueError:
         raise ValueError(concat('calistra: incorrect value of priority. '
-                                'See "calistra task ', action, ' --help"'))
+                                'See "calistra task ', action, ' --help\n"'))
     return priority
 
 
@@ -43,35 +43,35 @@ def check_status_correctness(status, action='add'):
         return None
     if status not in TaskStatus.__dict__.values():
         raise ValueError(concat('calistra: incorrect value of status. '
-                                'See "calistra task ', action, ' --help"'))
+                                'See "calistra task ', action, ' --help\n"'))
 
     return status
 
 
 def check_progress_correctness(progress, action='add'):
     try:
-        if progress is None or progress == '?':
+        if progress is None or progress == Constants.UNDEFINED:
             return None
         progress = int(progress)
         if 100 < progress or progress < 0:
             raise ValueError()
     except ValueError:
         raise ValueError(concat('calistra: incorrect value of progress. '
-                                'See "calistra task ', action, ' --help"'))
+                                'See "calistra task ', action, ' --help\n"'))
     return progress
 
 
 def check_time_format(time, action='add'):
-    if time == '?':
-        return '?'
+    if time == Constants.UNDEFINED:
+        return Constants.UNDEFINED
     try:
         if time is None:
             return None
-        datetime.strptime(time, TIME_FORMAT)
+        datetime.strptime(time, Constants.TIME_FORMAT)
     except ValueError:
         raise ValueError(
             concat('calistra: invalid format of date and time. See '
-                   '"calistra task ', action, ' --help"')
+                   '"calistra task ', action, ' --help\n"')
         )
 
     return time
@@ -85,8 +85,8 @@ def check_tags_correctness(tags_to_check: str, action='add'):
 
 
 def check_list_format_correctness(objects_list: str, obj_type, action, ):
-    if objects_list == '?':
-        return '?'
+    if objects_list == Constants.UNDEFINED:
+        return Constants.UNDEFINED
     if objects_list is None:
         return None
     objects_list = objects_list.split(',')
@@ -99,7 +99,7 @@ def check_list_format_correctness(objects_list: str, obj_type, action, ):
                 raise ValueError()
     except ValueError:
         raise ValueError(concat('calistra: invalid format of ', obj_type,
-                                '. See "calistra task ', action, ' --help"'))
+                                '. See "calistra task ', action, ' --help\n"'))
 
     return right_list
 

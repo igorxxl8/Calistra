@@ -1,4 +1,5 @@
 class Messages:
+    QUEUES_NOT_FOUND = 'Queues not found.'
     SIGN_IN = 'please sign in system'
     TASK_WAS_DELETED = 'The task {} was deleted'
     TASK_WAS_FAILED = 'The task {} was failed'
@@ -12,7 +13,13 @@ class Messages:
     CANNOT_DELETE_TASK = 'you cannot delete this task.'
     CANNOT_SET_STATUS_FAILED = 'cannot set status "failed". Task already failed'
     CANNOT_EDIT_PARAM = 'You cannot edit task param besides status and progress'
+    CANNOT_USE_SOMEONE_ELSE_TASK = ('you cannot use someone else task. '
+                                    'Use only tasks created by you and '
+                                    'task, where you take participation!')
+    CANNOT_NAME_AS_DEFAULT_QUEUE = 'this name booked by program'
+    TASK_FAILED = 'Task {}, key {} was failed'
     NEED_ACTIVATE_TASK = 'you need to activate this task'
+    CANNOT_USE_SOMEONE_ELSE_QUEUE = 'you cannot use someone else queue'
     YOU_ASSIGNED = ('User "{}" assigned you responsible for the task:'
                     ' "{}", key - {}. You need to confirm participation')
     YOU_SUSPENDED = 'You are suspended from task execution: "{}".'
@@ -23,6 +30,7 @@ class Messages:
 
     USER_NOT_FOUND = 'User not found: name - "{}"'
     DEFAULT_QUEUE_IMMUTABLE = 'default queue "{}" immutable'
+    DEFAULT_QUEUE_UNREMOVABLE = 'you cannot delete default queue'
     QUEUE_NOT_EMPTY = ('queue with key "{}" isn\'t empty.Delete all queue'
                        ' tasks or delete queue recursively')
 
@@ -35,6 +43,15 @@ class Messages:
                                            ' deadline and open task again')
     CANNOT_SET_STATUS_SOLVED_UNS_ST = ('cannot set status "solved". Task has '
                                        'unsolved sub tasks.')
+
+    CANNOT_SET_STATUS_SOLVED_FAILED_ST = (
+        'cannot set status "solved". Task has failed sub tasks!')
+
+    CANNOT_SET_STATUS_OPENED_FAILED_ST = (
+        'cannot set status "opened". Task has failed sub tasks!'
+    )
+
+    CANNOT_SET_SAME_STATUS = 'Cannot set status "{}". Task "{}" already {}'
 
     TASK_ALREADY_SOLVED = 'cannot set status "solved". Task already solved'
 

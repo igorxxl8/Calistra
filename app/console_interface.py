@@ -285,6 +285,7 @@ def _show_messages(messages) -> int:
                 messages.remove(message)
 
         Printer.print_reminders(reversed(reminders))
+        print()
         Printer.print_notifications(reversed(messages))
         return 0
 

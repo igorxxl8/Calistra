@@ -102,46 +102,50 @@ class Interface:
         except ValueError as e:
             raise ValueError(e)
 
-    def clear_new_messages(self):
-        self.user_controller.clear_new_messages(self.online_user)
+    def clear_new_messages(self, user=None):
+        if user is None:
+            user = self.online_user
+        self.user_controller.clear_new_messages(user)
 
     def update_all(self):
-        failed_tasks = self.task_controller.check_deadlines()
-        controllers, blockers, dependents = self.task_controller.update_related_tasks()
-        reminders = self.task_controller.check_reminders()
+        ctrls, blcks, failed, notified = self.task_controller.update_all()
 
-        for task in failed_tasks:
+        for task, messages in notified:
+            users = self.find_users_by_name_list(task.responsible+[task.author])
+            for message in messages:
+                self.send_message_to_users(users, message, False)
+
+        for task in failed:
             queue = self.queue_controller.get_queue_by_key(task.queue)
             self.queue_controller.move_in_failed(queue, task)
             users = self.find_users_by_name_list(
                 task.responsible + [task.author])
 
             self.send_message_to_users(
-                users, Messages.TASK_WAS_FAILED.format(task.name)
+                users, Messages.TASK_WAS_FAILED_DEADLINE_PASSED.format(
+                    task.name, task.key, task.deadline)
             )
 
-        for task in controllers:
-            users = self.find_users_by_name_list(task.responsible+[task.author])
+        for task in ctrls:
+            users = self.find_users_by_name_list(
+                task.responsible + [task.author])
             self.send_message_to_users(
                 users,
                 Messages.TASK_WAS_UPDATED_BY_CONTROLLER.format(
                     task.name, task.status)
             )
 
-        for task in blockers:
-            users = self.find_users_by_name_list(task.responsible+[task.author])
+        for task in blcks:
+            users = self.find_users_by_name_list(
+                task.responsible + [task.author])
             self.send_message_to_users(
                 users,
                 Messages.TASK_BLOCKERS_WERE_SOLVED.format(task.name)
             )
 
-
-        for task in dependents:
-            pass
-
-    def send_message_to_users(self, users, message):
+    def send_message_to_users(self, users, message, show_time=True):
         for user in users:
-            self.user_controller.notify_user(user, message)
+            self.user_controller.notify_user(user, message, show_time)
 
     # functions for work with queue instance
     def add_queue(self, name, key, owner=None):
@@ -303,7 +307,8 @@ class Interface:
                 self.user_controller.notify_user(user, message)
 
             if task.author not in task.responsible:
-                users = self.find_users_by_name_list(task.responsible + [task.author])
+                users = self.find_users_by_name_list(
+                    task.responsible + [task.author])
             else:
                 users = self.find_users_by_name_list(task.responsible)
 
@@ -383,10 +388,15 @@ class Interface:
                 user = self.user_controller.find_user(nick=nick)
                 self.user_controller.unlink_responsible_and_task(user, task)
                 self.user_controller.notify_user(user,
-                                                 message.format(task.name, task.key, task.author))
+                                                 message.format(task.name,
+                                                                task.key,
+                                                                task.author))
             if author is not None:
                 self.user_controller.unlink_author_and_task(author, task)
-                self.user_controller.notify_user(author, message.format(task.name, task.key, task.author))
+                self.user_controller.notify_user(author,
+                                                 message.format(task.name,
+                                                                task.key,
+                                                                task.author))
 
     def activate_task(self, key):
         user = self.get_online_user()

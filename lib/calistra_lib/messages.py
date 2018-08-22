@@ -3,6 +3,9 @@ class Messages:
     SIGN_IN = 'please sign in system'
     TASK_WAS_DELETED = 'The task "{}"({}) was deleted by author - "{}"'
     TASK_WAS_FAILED = 'The task "{}" was failed'
+    TASK_WAS_FAILED_DEADLINE_PASSED = ('task "{}"({}) failed. '
+                                       'The deadline has passed - {}')
+
     TASK_REOPENED = 'The task "{}" reopened by user "{}"'
     TASK_SOLVED = 'The task "{}" was solved by user "{}"'
     SHOW_KEY = 'key - {}'
@@ -18,6 +21,7 @@ class Messages:
     CANNOT_USE_SOMEONE_ELSE_TASK = ('you cannot use someone else task. '
                                     'Use only tasks created by you and '
                                     'task, where you take participation!')
+
     CANNOT_USE_TASK_AS_BLOCKER = ('you cannot use task "{}"({}) as blocker,'
                                   'this task already solved.')
 
@@ -111,3 +115,24 @@ class Messages:
                               'of this task')
 
     USER_EDIT_TASK = 'User "{}" edit task "{}":'
+
+    # REMINDERS MESSAGES
+    TASK_START_IN_A_HOUR = 'REMINDER: Task "{}"({}) start within an hour at {}'
+    TASK_START_IN_TWO_HOURS = ('REMINDER: task "{}"({}) will start in two hours'
+                               ' at {}')
+
+    TASK_START_TOMORROW = 'task "{}"({}) starts tomorrow at {}'
+
+    TASK_DEADLINE_IN_A_HOUR = ('REMINDER: Task "{}"({}) deadline within '
+                               'an hour at {}. You should solve this task'
+                               ' as soon as possible!')
+
+    TASK_DEADLINE_IN_TWO_HOURS = ('REMINDER: Task "{}"({}) deadline in two hour'
+                                  ' - {}. You should hurry!')
+
+    TASK_DEADLINE_TOMORROW = 'task "{}"({}) deadline tomorrow at {}'
+
+    TASK_START_TODAY = 'task "{}"({}) starts today at {}'
+    TASK_BEGIN = 'today at {}, task "{}"({}) task was started'
+
+    TASK_REMINDER = 'REMINDER: You have task "{}"({}). It\'s time to do it - {}'

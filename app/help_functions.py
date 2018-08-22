@@ -1,9 +1,11 @@
 from datetime import datetime as dt
 
 try:
+    from lib.calistra_lib.task.reminder import Reminder
     from lib.calistra_lib.constants import Constants
     from lib.calistra_lib.task.task import TaskStatus, RelatedTaskType
 except ImportError:
+    from calistra_lib.task.reminder import Reminder
     from calistra_lib.constants import Constants
     from calistra_lib.task.task import TaskStatus, RelatedTaskType
 
@@ -86,7 +88,7 @@ def check_time_format(time, action=ADD):
         return Constants.UNDEFINED
 
     try:
-        dt.strptime(time, Constants.TIME_FORMAT)
+        get_date(time)
     except ValueError:
         raise ValueError(
             concat('calistra: invalid format of date and time. See '
@@ -140,6 +142,10 @@ def check_list_format_correctness(objects_list: str, obj_type, action, ):
 
 
 def check_reminder_format(reminder, action=ADD):
+    reminder = Reminder.check_format(reminder)
+    if reminder is False:
+        raise ValueError(concat('calistra: invalid format of reminder. '
+                                'See "calistra task ', action, ' --help\n'))
 
     return reminder
 

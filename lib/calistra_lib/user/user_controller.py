@@ -74,14 +74,10 @@ class UserController:
             return self.users_storage.get_user_by_nick(nick)
         return self.users_storage.get_user_by_uid(uid)
 
-    def notify_user(self, user, message):
-        message = ''.join(
-            [
-                dt.now().strftime(Constants.EXTENDED_TIME_FORMAT),
-                ': ',
-                message
-            ]
-        )
+    def notify_user(self, user, message, show_time=True):
+        if show_time:
+            time = dt.now().strftime(Constants.EXTENDED_TIME_FORMAT)
+            message = ''.join([time, ': ', message])
 
         if user:
             user.new_messages.append(message)

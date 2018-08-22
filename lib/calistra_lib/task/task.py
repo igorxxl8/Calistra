@@ -13,7 +13,6 @@ class TaskStatus:
 class RelatedTaskType:
     BLOCKER = 'blocker'
     CONTROLLER = 'controller'
-    DEPENDENT = 'dependent'
 
 
 class Task:

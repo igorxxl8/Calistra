@@ -127,12 +127,13 @@ class ParserArgs:
         long='--related',
         short='-li',
         help='key and type of related task. '
-             'Format: related_tasks_keys:related_task_type '
-             '(blocker, dependent, controller):'
+             'Format: "related_tasks_keys:related_task_type" '
+             '(blocker or controller):'
              'blocker - this task cannot be solved, while not solved blocker '
-             'task, controller - the task-controller sets the same status'
-             ' to the current task (there can be only one controller task), '
-             'dependent - . In format avoid spaces'
+             'tasks, controller - the task-controller sets the same status'
+             ' to the current task (there can be only one controller task).'
+             'In format avoid spaces. '
+             'For example: "89fdsg8s9df, 9f08g98990:blocker"'
     )
 
     TASK_PRIORITY = OptionalArgument(
@@ -156,8 +157,8 @@ class ParserArgs:
         short='-s',
         help='time, when task begin. It must have correct number of days '
              'in month, month in year, hour and minutes. '
-             'Format: day.month.year.hour:min (only numbers allowed, '
-             'ex. 12.08.2028.9:00. '
+             'Format: "day.month.year.hour:min" (only numbers allowed, '
+             'ex. "12.08.2028.9:00". '
              'or type symbol "?" to erase start time for task)'
     )
 
@@ -166,7 +167,7 @@ class ParserArgs:
         long='--deadline',
         short='-dl',
         help='the deadline for the completion of a task.'
-             'Format: day.month.year.hour:min (only numbers allowed)'
+             'Format: "day.month.year.hour:min" (only numbers allowed)'
              'or type symbol "?" to erase deadline for task'
     )
 
@@ -175,7 +176,7 @@ class ParserArgs:
         long='--tags',
         short='-t',
         help='marks for task, defines category or group. '
-             'Format: tag1,tag2,tag3 (avoid space near comma)'
+             'Format: "tag1,tag2,tag3" (avoid space near comma)'
              ' or type symbol "?" to erase all tags'
     )
 
@@ -184,7 +185,11 @@ class ParserArgs:
         long='--reminder',
         short='-re',
         help='time, when app warns user about necessary to perform a task. '
-             'Format: month:day:time_of_day:repeat'
+             'Format: "frequency:time", '
+             'frequency - every_week, every_day, or day of week(monday, '
+             'tuesday, wednesday, thursday, friday, saturday, sunday)'
+             'for example: "every_day:17.00" or "monday,tuesday:17.00,18.00". '
+             'You cannot mix day of week with every_day or every_week!'
     )
 
     TASK_RESPONSIBLE = OptionalArgument(
@@ -192,7 +197,7 @@ class ParserArgs:
         long='--responsible',
         short='-rp',
         help='users how can access this task and can perform it.'
-             'Format: user1,user2,user3 (avoid space near comma)'
+             'Format: "user1,user2,user3" (avoid space near comma)'
     )
 
     TASK_STATUS = OptionalArgument(

@@ -1,8 +1,10 @@
 from datetime import datetime as dt
 from .task import Task, TaskStatus, RelatedTaskType
 from .task_storage import TaskStorage
+from .reminder import Reminder
 
 try:
+    from lib.calistra_lib.task.reminder import Reminder, Time
     from lib.calistra_lib.constants import Constants
     from lib.calistra_lib.queue.queue import Queue
     from lib.calistra_lib.messages import Messages
@@ -11,6 +13,7 @@ try:
     from lib.calistra_lib.exceptions.queue_exceptions import *
 
 except ImportError:
+    from calistra_lib.task.reminder import Reminder, Time
     from calistra_lib.constants import Constants
     from calistra_lib.queue.queue import Queue
     from calistra_lib.messages import Messages
@@ -355,38 +358,57 @@ class TaskController:
     def get_sub_tasks(self, parent_task):
         return self.tasks_storage.get_sub_tasks(parent_task)
 
-    def check_deadlines(self):
-        failed_tasks = []
-        for task in self.tasks_storage.tasks:
-            if task.status != TaskStatus.FAILED:
-                if task.deadline and get_date(task.deadline) < dt.now():
-                    task.status = TaskStatus.FAILED
-                    failed_tasks.append(task)
-        self.tasks_storage.save_tasks()
-        return failed_tasks
+    # functions whick working with task params and in dependts of it change
+    # status and notify users
+    def check_terms_and_reminders(self, task, notified_tasks, failed_tasks):
+        if task.status != TaskStatus.FAILED:
+            self.check_task_reminders(task, notified_tasks)
+            self.check_task_deadline(task, failed_tasks)
 
-    def update_related_tasks(self):
+    @staticmethod
+    def check_task_deadline(task, failed_tasks):
+        now = dt.now()
+        if task.deadline:
+            deadline_time = get_date(task.deadline)
+            if deadline_time < now:
+                task.status = TaskStatus.FAILED
+                failed_tasks.append(task)
+
+    @staticmethod
+    def check_task_reminders(task, notified_tasks):
+        messages = Reminder.check_auto_reminder(task)
+        if messages:
+            notified_tasks.append(Reminder.Reminder(task=task, messages=messages))
+
+        if task.reminder:
+            messages = Reminder.check_reminder_time(task)
+            if messages:
+                notified_tasks.append(Reminder.Reminder(task=task, messages=messages))
+
+    def update_all(self):
         controllers = []
         blockers = []
-        dependents = []
+        failed_tasks = []
+        notified_tasks = []
         for task in self.tasks_storage.tasks:
-            if task.related:
-                link_attrs = task.related.split(':')
-                task_keys = link_attrs[0].split(',')
-                if link_attrs[1] == RelatedTaskType.CONTROLLER:
-                    self.update_related_controller(task, task_keys[0],
-                                                   controllers)
-
-                elif link_attrs[1] == RelatedTaskType.BLOCKER:
-                    if self.is_task_has_unsolved_blockers(task) is False:
-                        if task.status != TaskStatus.SOLVED:
-                            blockers.append(task)
-
-                elif link_attrs[1] == RelatedTaskType.DEPENDENT:
-                    self.update_related_dependents(task, task_keys, dependents)
+            self.update_related_tasks(task, controllers, blockers)
+            self.check_terms_and_reminders(task, notified_tasks, failed_tasks)
 
         self.tasks_storage.save_tasks()
-        return controllers, blockers, dependents
+        return controllers, blockers, failed_tasks, notified_tasks
+
+    def update_related_tasks(self, task, controllers, blockers):
+        if task.related:
+            link_attrs = task.related.split(':')
+            task_keys = link_attrs[0].split(',')
+            if link_attrs[1] == RelatedTaskType.CONTROLLER:
+                self.update_related_controller(task, task_keys[0],
+                                               controllers)
+
+            elif link_attrs[1] == RelatedTaskType.BLOCKER:
+                if self.is_task_has_unsolved_blockers(task) is False:
+                    if task.status != TaskStatus.SOLVED:
+                        blockers.append(task)
 
     def update_related_controller(self, task, related_task_key, controllers):
         try:
@@ -396,9 +418,6 @@ class TaskController:
                 controllers.append(task)
         except AppError:
             task.related = None
-
-    def update_related_dependents(self, task, related_task_keys, dependents):
-        pass
 
     def is_task_has_unsolved_blockers(self, task):
         flag = False
@@ -426,8 +445,3 @@ class TaskController:
         task.related = new_related
 
         return flag
-
-    def check_reminders(self):
-        # TODO: Проверка напоминаний
-        # for task in self.tasks_storage.opened_tasks:
-        pass

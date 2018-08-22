@@ -436,14 +436,15 @@ def _add_task(args, library) -> int:
     queue_key = args.pop(ParserArgs.TASK_QUEUE.dest)
 
     try:
+
         name = args.pop(ParserArgs.TASK_NAME.name).strip(' ')
         name = check_str_len(name)
 
         description = args.pop(ParserArgs.TASK_DESCRIPTION.dest)
         description = check_str_len(description)
 
-        linked = args.pop(ParserArgs.TASK_LINKED.dest)
-        linked = check_link_correctness(linked)
+        related = args.pop(ParserArgs.TASK_RELATED.dest)
+        check_related_correctness(related)
 
         responsible = args.pop(ParserArgs.TASK_RESPONSIBLE.dest)
         responsible = check_responsible_correctness(responsible)
@@ -460,6 +461,8 @@ def _add_task(args, library) -> int:
         deadline = args.pop(ParserArgs.TASK_DEADLINE.dest)
         deadline = check_time_format(deadline)
 
+        check_terms_correctness(start, deadline)
+
         tags = args.pop(ParserArgs.TASK_TAGS.dest)
         tags = check_tags_correctness(tags)
 
@@ -471,12 +474,12 @@ def _add_task(args, library) -> int:
         return ERROR_CODE
 
     try:
-        library.add_task(
+        library.create_task(
             name=name,
             queue_key=queue_key,
             description=description,
             parent=args.pop(ParserArgs.TASK_PARENT.dest),
-            linked=linked,
+            related=related,
             responsible=responsible,
             priority=priority,
             progress=progress,
@@ -505,8 +508,8 @@ def _edit_task(args, library) -> int:
         description = args.pop(ParserArgs.TASK_DESCRIPTION.dest)
         description = check_str_len(description)
 
-        linked = args.pop(ParserArgs.TASK_LINKED.dest)
-        linked = check_link_correctness(linked, action=ParserArgs.SET)
+        related = args.pop(ParserArgs.TASK_RELATED.dest)
+        check_related_correctness(related, action=ParserArgs.SET)
 
         responsible = args.pop(ParserArgs.TASK_RESPONSIBLE.dest)
         responsible = check_responsible_correctness(responsible,
@@ -523,6 +526,8 @@ def _edit_task(args, library) -> int:
 
         deadline = args.pop(ParserArgs.TASK_DEADLINE.dest)
         deadline = check_time_format(deadline, action=ParserArgs.SET)
+
+        check_terms_correctness(start, deadline)
 
         tags = args.pop(ParserArgs.TASK_TAGS.dest)
         tags = check_tags_correctness(tags, action=ParserArgs.SET)
@@ -544,7 +549,7 @@ def _edit_task(args, library) -> int:
             description=description,
             status=status,
             parent=args.pop(ParserArgs.TASK_PARENT.dest),
-            linked=linked,
+            related=related,
             responsible=responsible,
             priority=priority,
             progress=progress,

@@ -10,8 +10,14 @@ class TaskStatus:
     FAILED = 'failed'
 
 
+class RelatedTaskType:
+    BLOCKER = 'blocker'
+    CONTROLLER = 'controller'
+    DEPENDENT = 'dependent'
+
+
 class Task:
-    def __init__(self, name, queue, description, parent, linked, author,
+    def __init__(self, name, queue, description, parent, related, author,
                  responsible: list, priority, progress, start, deadline,
                  tags, reminder, key, creating_time):
 
@@ -20,7 +26,7 @@ class Task:
         self.description = description
         self.parent = parent
         self.sub_tasks = []
-        self.linked = linked
+        self.related = related
         self.author = author
         self.priority = priority
         self.progress = progress

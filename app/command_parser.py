@@ -427,11 +427,11 @@ def __add_common_optional_task_args(action_subparser):
         dest=ParserArgs.TASK_PARENT.dest,
         help=ParserArgs.TASK_PARENT.help)
 
-    # calistra task <action> [--linked=<LINKED>]
+    # calistra task <action> [--related=<RELATED>]
     action_subparser.add_argument(
-        ParserArgs.TASK_LINKED.long,
-        dest=ParserArgs.TASK_LINKED.dest,
-        help=ParserArgs.TASK_LINKED.help)
+        ParserArgs.TASK_RELATED.long,
+        dest=ParserArgs.TASK_RELATED.dest,
+        help=ParserArgs.TASK_RELATED.help)
 
     # calistra task <action> [--responsible=<RESP>]
     action_subparser.add_argument(

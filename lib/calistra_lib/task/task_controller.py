@@ -1,5 +1,5 @@
 from datetime import datetime as dt
-from .task import Task, TaskStatus
+from .task import Task, TaskStatus, RelatedTaskType
 from .task_storage import TaskStorage
 
 try:
@@ -33,35 +33,9 @@ class TaskController:
     def attach_message(cls, message):
         cls.EDITING_MESSAGE = ''.join([cls.EDITING_MESSAGE, ' ', message])
 
-    def add_task(self, author, name, queue, description, parent, linked,
+    def add_task(self, author, name, queue, description, parent, related,
                  responsible, priority, progress, start, deadline, tags,
                  reminder, key, creating_time):
-
-        if deadline == Constants.UNDEFINED:
-            deadline = None
-
-        if start == Constants.UNDEFINED:
-            start = None
-
-        if responsible == Constants.UNDEFINED:
-            responsible = []
-
-        if tags == Constants.UNDEFINED:
-            tags = None
-
-        if priority is None:
-            priority = 0
-
-        if progress is None:
-            progress = 0
-
-        if deadline:
-            deadline_date = get_date(deadline)
-            if deadline_date < dt.now():
-                raise TaskDeadlineError(Messages.DEADLINE_CANNOT_EARLIER_NOW)
-
-            if start and (deadline_date < get_date(start)):
-                raise TaskDeadlineError(Messages.DEADLINE_CANNOT_EARLIER_START)
 
         parent_task = self.tasks_storage.get_task_by_key(parent)
 
@@ -74,37 +48,73 @@ class TaskController:
         if parent_task and queue.key != parent_task.queue:
             raise SubTaskError(Messages.PARENT_IN_OTHER_QUEUE)
 
-        task = self.tasks_storage.add_task(
-            author=author, name=name, start=start, queue=queue,
+        task = Task(
+            author=author.nick, name=name, start=start, queue=queue.key,
             description=description, parent=parent, progress=progress,
             tags=tags, responsible=responsible, priority=priority,
-            linked=linked, deadline=deadline, key=key, reminder=reminder,
+            related=related, deadline=deadline, key=key, reminder=reminder,
             creating_time=creating_time
         )
+        self.tasks_storage.add_task(task)
+
         if parent_task:
             self.link_task_with_sub_task(parent_task, task)
+
         self.tasks_storage.save_tasks()
         return task
 
+    def check_related_tasks(self, related, task_key):
+        if related == Constants.UNDEFINED:
+            return None
+
+        link_attrs = related.split(':')
+
+        task_keys = link_attrs[0].split(',')
+        if link_attrs[1] == RelatedTaskType.CONTROLLER:
+            if len(task_keys) != 1:
+                raise RelatedTaskError(
+                    Messages.CAN_BE_ONLY_ONE_CONTROLLER_TASK.format(
+                        len(task_keys))
+                )
+
+        for key in task_keys:
+            if key == task_key:
+                raise RelatedTaskError(
+                    Messages.TASK_CANNOT_BE_RELATED_TO_ITSELF.format(key))
+
+            task = self.get_task_by_key(key)
+            if (link_attrs[1] == RelatedTaskType.BLOCKER and
+                    task.status == TaskStatus.SOLVED):
+                raise RelatedTaskError(
+                    Messages.CANNOT_USE_TASK_AS_BLOCKER.format(
+                        task.name, task.key
+                    )
+                )
+
+            if task.status == TaskStatus.SOLVED or task.status == TaskStatus.FAILED:
+                raise RelatedTaskError(
+                    Messages.CANNOT_LINK_TASK_WITH_SOLVED_TASK.format(
+                        task.name, task.key)
+                )
+
     def edit_task(self, task, task_queue, editor, name, description, parent,
-                  linked,
-                  responsible, priority, progress, start, deadline, tags,
-                  reminder, status, editing_time):
+                  related, responsible, priority, progress, start, deadline,
+                  tags, reminder, status, editing_time):
 
         TaskController.EDITING_MESSAGE = (Messages.USER_EDIT_TASK.
                                           format(editor.nick, task.name))
 
         try:
             self.check_access(editor, task, responsible, name, description,
-                              parent, linked, responsible, priority, start,
+                              parent, related, responsible, priority, start,
                               deadline, tags, reminder)
             self.edit_start(task, start, deadline)
             self.edit_deadline(task, deadline)
+            self.edit_related(task, related)
             self.edit_status(task, status)
             self.edit_progress(task, progress)
             self.edit_name(task, name)
             self.edit_description(task, description)
-            self.edit_linked(task, linked)
             self.edit_priority(task, priority)
             self.edit_tags(task, tags)
             self.edit_reminder(task, reminder)
@@ -166,10 +176,14 @@ class TaskController:
             TaskController.attach_message('description: {}'.format(description))
 
     @staticmethod
-    def edit_linked(task, linked):
-        if linked:
-            task.linked = linked
-            TaskController.attach_message('linked: {}'.format(linked))
+    def edit_related(task, related):
+        if related:
+            if related == Constants.UNDEFINED:
+                task.related = None
+            else:
+                task.related = related
+
+            TaskController.attach_message('Related: {}'.format(related))
 
     @staticmethod
     def edit_priority(task, priority):
@@ -228,6 +242,12 @@ class TaskController:
 
     def edit_status(self, task: Task, status):
         if status:
+            if task.related and task.related.endswith(
+                    RelatedTaskType.CONTROLLER):
+                raise TaskStatusError(
+                    Messages.CANNOT_CHANGE_RELATED_TASK_STATUS.format(
+                        task.name, task.status))
+
             if status == task.status:
                 raise TaskStatusError(
                     Messages.CANNOT_SET_SAME_STATUS.format(
@@ -235,6 +255,10 @@ class TaskController:
                 )
 
             if status == TaskStatus.SOLVED:
+                if self.is_task_has_unsolved_blockers(task):
+                    raise TaskStatusError(
+                        Messages.CANNOT_SOLVE_TASK_WITH_UNSOLVED_BLOCKERS
+                    )
                 if task.status == TaskStatus.FAILED:
                     raise TaskStatusError(
                         Messages.CANNOT_SET_STATUS_SOLVED_FOR_FAILED)
@@ -250,7 +274,7 @@ class TaskController:
 
             if status == TaskStatus.OPENED:
                 if task.status == TaskStatus.FAILED:
-                    if get_date(task.deadline) < dt.now():
+                    if task.deadline and get_date(task.deadline) < dt.now():
                         raise TaskStatusError(
                             Messages.CANNOT_SET_STATUS_OPENED_FOR_FAILED)
                 for sub_task in self.get_sub_tasks(task):
@@ -299,7 +323,7 @@ class TaskController:
             raise AccessDeniedError(Messages.CANNOT_DELETE_TASK)
 
         sub_tasks = self.get_sub_tasks(task)
-        if sub_tasks and recursive is False:
+        if task.sub_tasks and recursive is False:
             raise DeletingTaskError(Messages.TASK_HAS_SUBTASKS)
 
         self.tasks_storage.remove_task(task)
@@ -331,7 +355,7 @@ class TaskController:
     def get_sub_tasks(self, parent_task):
         return self.tasks_storage.get_sub_tasks(parent_task)
 
-    def update_tasks(self):
+    def check_deadlines(self):
         failed_tasks = []
         for task in self.tasks_storage.tasks:
             if task.status != TaskStatus.FAILED:
@@ -340,6 +364,68 @@ class TaskController:
                     failed_tasks.append(task)
         self.tasks_storage.save_tasks()
         return failed_tasks
+
+    def update_related_tasks(self):
+        controllers = []
+        blockers = []
+        dependents = []
+        for task in self.tasks_storage.tasks:
+            if task.related:
+                link_attrs = task.related.split(':')
+                task_keys = link_attrs[0].split(',')
+                if link_attrs[1] == RelatedTaskType.CONTROLLER:
+                    self.update_related_controller(task, task_keys[0],
+                                                   controllers)
+
+                elif link_attrs[1] == RelatedTaskType.BLOCKER:
+                    if self.is_task_has_unsolved_blockers(task) is False:
+                        if task.status != TaskStatus.SOLVED:
+                            blockers.append(task)
+
+                elif link_attrs[1] == RelatedTaskType.DEPENDENT:
+                    self.update_related_dependents(task, task_keys, dependents)
+
+        self.tasks_storage.save_tasks()
+        return controllers, blockers, dependents
+
+    def update_related_controller(self, task, related_task_key, controllers):
+        try:
+            related_task = self.get_task_by_key(related_task_key)
+            if related_task.status != task.status:
+                task.status = related_task.status
+                controllers.append(task)
+        except AppError:
+            task.related = None
+
+    def update_related_dependents(self, task, related_task_keys, dependents):
+        pass
+
+    def is_task_has_unsolved_blockers(self, task):
+        flag = False
+        if task.related is None:
+            return False
+        link_attrs = task.related.split(':')
+        task_keys = link_attrs[0].split(',')
+        for key in task_keys[:]:
+            if task.key == key:
+                continue
+            try:
+                related_task = self.get_task_by_key(key)
+                if related_task.status != TaskStatus.SOLVED:
+                    flag = True
+            except AppError:
+                task_keys.remove(key)
+
+        # update related tasks if they change
+        new_task_keys = ','.join(task_keys)
+        new_related = new_task_keys
+        if new_related:
+            new_related = ':'.join([new_related, link_attrs[1]])
+        if new_related == "":
+            new_related = None
+        task.related = new_related
+
+        return flag
 
     def check_reminders(self):
         # TODO: Проверка напоминаний

@@ -122,11 +122,17 @@ class ParserArgs:
              'in the same queue as the edited task. Type "?" to reset'
     )
 
-    TASK_LINKED = OptionalArgument(
-        dest='LINKED',
-        long='--linked',
+    TASK_RELATED = OptionalArgument(
+        dest='RELATED',
+        long='--related',
         short='-li',
-        help='type of linked task'
+        help='key and type of related task. '
+             'Format: related_tasks_keys:related_task_type '
+             '(blocker, dependent, controller):'
+             'blocker - this task cannot be solved, while not solved blocker '
+             'task, controller - the task-controller sets the same status'
+             ' to the current task (there can be only one controller task), '
+             'dependent - . In format avoid spaces'
     )
 
     TASK_PRIORITY = OptionalArgument(
@@ -178,7 +184,7 @@ class ParserArgs:
         long='--reminder',
         short='-re',
         help='time, when app warns user about necessary to perform a task. '
-             'Format: month|day|time_of_day|repeat'
+             'Format: month:day:time_of_day:repeat'
     )
 
     TASK_RESPONSIBLE = OptionalArgument(

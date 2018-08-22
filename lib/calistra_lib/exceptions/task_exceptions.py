@@ -7,6 +7,12 @@ class TaskNotFoundError(AppError):
         super().__init__(message)
 
 
+class RelatedTaskError(AppError):
+    def __init__(self, message):
+        message = ''.join(['Task cannot be related: ', message])
+        super().__init__(message)
+
+
 class SubTaskError(AppError):
     def __init__(self, message):
         message = ''.join(['Sub task error: ', message])

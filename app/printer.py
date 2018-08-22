@@ -100,17 +100,25 @@ class Printer:
         print(formatted_string('Responsible: {}'.format(task.responsible)))
 
         print(formatted_string('Parent: {}'.format(task.parent)))
-        print(formatted_string('Linked: {}'.format(task.linked)))
+        print(formatted_string('Related: {}'.format(task.related)))
         print(formatted_string('Priority:{}'.format(task.priority)))
 
     @staticmethod
     def print_reminders(reminders):
         # TODO: форматированный вывод
+        sys.stdout.write(Printer.CL_YELLOW)
         for reminder in reminders:
             print(reminder)
+
+        sys.stdout.write(Printer.RESET)
+
 
     @staticmethod
     def print_notifications(notifications):
         # TODO: форматированный вывод
+        sys.stdout.write(Printer.UNDERLINE)
+        index = 1
         for notification in notifications:
-            print(notification)
+            print('{}) {}'.format(index, notification))
+            index += 1
+        sys.stdout.write(Printer.RESET)

@@ -1,7 +1,7 @@
 class Messages:
     QUEUES_NOT_FOUND = 'Queues not found.'
     SIGN_IN = 'please sign in system'
-    TASK_WAS_DELETED = 'The task "{}" was deleted'
+    TASK_WAS_DELETED = 'The task "{}"({}) was deleted by author - "{}"'
     TASK_WAS_FAILED = 'The task "{}" was failed'
     TASK_REOPENED = 'The task "{}" reopened by user "{}"'
     TASK_SOLVED = 'The task "{}" was solved by user "{}"'
@@ -18,17 +18,44 @@ class Messages:
     CANNOT_USE_SOMEONE_ELSE_TASK = ('you cannot use someone else task. '
                                     'Use only tasks created by you and '
                                     'task, where you take participation!')
-    CANNOT_NAME_AS_DEFAULT_QUEUE = 'this name booked by program'
-    TASK_FAILED = 'Task {}, key {} was failed'
+    CANNOT_USE_TASK_AS_BLOCKER = ('you cannot use task "{}"({}) as blocker,'
+                                  'this task already solved.')
+
+    TASK_WAS_UPDATED_BY_CONTROLLER = ('Task "{}" was {} by related controller'
+                                      ' task.')
+
+    TASK_CANNOT_BE_RELATED_TO_ITSELF = ('the task cannot be related to itself.'
+                                        ' Task key - {}.')
+
+    CANNOT_LINK_TASK_WITH_SOLVED_TASK = ('you cannot relate a task with'
+                                         ' solved or failed task - "{}", '
+                                         'key - {}.')
+
+    CANNOT_CHANGE_RELATED_TASK_STATUS = ('you cannot change the status '
+                                         'of task which has related task. '
+                                         'You can reset related controller '
+                                         'task and try again.')
+
+    CAN_BE_ONLY_ONE_CONTROLLER_TASK = ('there can be only one controller task. '
+                                       '{} task keys found.')
+
+    CANNOT_SOLVE_TASK_WITH_UNSOLVED_BLOCKERS = ('you cannot solve task. Task '
+                                                'has blockers that haven\'t '
+                                                'been resolved yet')
+    TASK_BLOCKERS_WERE_SOLVED = ('For task "{}" all blockers were solved. '
+                                 'You can solve this task too!')
+
+    CANNOT_NAME_AS_DEFAULT_QUEUE = 'this name booked by program.'
+    TASK_FAILED = 'Task {}, key {} was failed.'
     NEED_ACTIVATE_TASK = 'you need to activate this task. See help'
-    CANNOT_USE_SOMEONE_ELSE_QUEUE = 'you cannot use someone else queue'
+    CANNOT_USE_SOMEONE_ELSE_QUEUE = 'you cannot use someone else queue.'
     YOU_ASSIGNED = ('User "{}" assigned you responsible for the task:'
-                    ' "{}", key - {}. You need to confirm participation')
+                    ' "{}", key - {}. You need to confirm participation.')
     YOU_SUSPENDED = 'You are suspended from task execution: "{}".'
     ALREADY_CONFIRMED = 'you already confirmed'
     CANNOT_ACTIVATE = 'you cannot activate this task. You not responsible'
     USER_CONFIRMED = ('User "{}" confirmed participation in the task "{}", '
-                      'key - {}')
+                      'key - {}.')
 
     USER_NOT_FOUND = 'User not found: name - "{}"'
     DEFAULT_QUEUE_IMMUTABLE = 'default queue "{}" immutable'

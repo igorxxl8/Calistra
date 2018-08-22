@@ -18,19 +18,8 @@ class TaskStorage:
         self.tasks_db = tasks_db
         self.tasks = self.tasks_db.load()
 
-    def add_task(self, queue, name, description, parent, linked, author,
-                 responsible, priority, progress, start, deadline, tags,
-                 reminder, key, creating_time):
-
-        task = Task(queue=queue.key, name=name, description=description,
-                    parent=parent, linked=linked, author=author.nick,
-                    responsible=responsible, priority=priority,
-                    progress=progress, start=start, deadline=deadline,
-                    tags=tags, reminder=reminder, key=key,
-                    creating_time=creating_time)
-
+    def add_task(self, task):
         self.tasks.append(task)
-        return task
 
     def remove_task(self, task):
         self.tasks.remove(task)

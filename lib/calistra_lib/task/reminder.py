@@ -4,7 +4,7 @@ try:
     from lib.calistra_lib.constants import Time
     from lib.calistra_lib.messages import Messages
 except ImportError:
-    from lib.calistra_lib.constants import Time
+    from calistra_lib.constants import Time
     from calistra_lib.messages import Messages
 
 

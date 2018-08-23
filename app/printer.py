@@ -15,6 +15,7 @@ class Printer:
     LINE_LEN = 125
     TAB_LEN = 7
     DELIMETER = '|\t'
+    LINE = '-'*LINE_LEN
     SEPARATOR = concat(DELIMETER, '+', '-' * LINE_LEN, '+')
     CL_RED = "\033[1;31m"
     CL_BLUE = "\033[1;34m"

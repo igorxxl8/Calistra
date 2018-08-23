@@ -77,19 +77,6 @@ def run() -> int:
     apply_settings()
     check_program_data_files(FOLDER, FILES)
 
-    parser = get_parsers()
-    args = vars(parser.parse_args())
-
-    # check that target is defined
-    target = args.pop(ParserArgs.TARGET.name)
-    if target is None:
-        parser.error('target is required')
-
-    # check that action is defined
-    action = args.pop(ParserArgs.ACTION)
-    if action is None:
-        FormattedParser.active_sub_parser.error('action is required')
-
     users_wrapper_storage = UserWrapperStorage(
         JsonDatabase(AUTH_FILE, [UserWrapper]),
         JsonDatabase(ONLINE, [])
@@ -105,6 +92,22 @@ def run() -> int:
     # update reminders deadlines queue and other
     library.update_all()
     _show_new_messages(library)
+
+    parser = get_parsers()
+    args = vars(parser.parse_args())
+
+    # check that target is defined
+    target = args.pop(ParserArgs.TARGET.name)
+    if target is None:
+        parser.error('target is required')
+
+    if target == ParserArgs.UPDATE.name:
+        return 0
+
+    # check that action is defined
+    action = args.pop(ParserArgs.ACTION)
+    if action is None:
+        FormattedParser.active_sub_parser.error('action is required')
 
     # check that target is user and do action with it
     if target == ParserArgs.USER.name:
@@ -208,10 +211,12 @@ def run() -> int:
     if target == ParserArgs.NOTIFICATIONS.name:
         if action == ParserArgs.SHOW:
             notifications = library.online_user.notifications
-            print(
-                'Notifications for user "{}":'.format(library.online_user.nick))
+            print('Notifications for user "{}":'.format(
+                library.online_user.nick)
+            )
             if _show_messages(notifications):
                 print('Notifications not found!')
+            library.clear_new_messages()
 
         if action == ParserArgs.DELETE:
             _del_notifications(
@@ -272,18 +277,17 @@ def _show_new_messages(library) -> int:
         print('New messages:')
         _show_messages(new_messages)
         library.clear_new_messages()
-        print(Printer.SEPARATOR)
+        print(Printer.LINE)
     return 0
 
 
 def _show_messages(messages) -> int:
     if messages:
         reminders = []
-        for message in messages:  # type: str
+        for message in messages[:]:  # type: str
             if message.lower().startswith('reminder'):
                 reminders.append(message)
                 messages.remove(message)
-
         Printer.print_reminders(reversed(reminders))
         print()
         Printer.print_notifications(reversed(messages))

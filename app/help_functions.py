@@ -142,6 +142,8 @@ def check_list_format_correctness(objects_list: str, obj_type, action, ):
 
 
 def check_reminder_format(reminder, action=ADD):
+    if reminder == Constants.UNDEFINED and action != ADD:
+        return
     reminder = Reminder.check_format(reminder)
     if reminder is False:
         raise ValueError(concat('calistra: invalid format of reminder. '

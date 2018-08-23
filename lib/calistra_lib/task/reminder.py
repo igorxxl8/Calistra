@@ -77,6 +77,7 @@ class Reminder:
 
     @staticmethod
     def check_auto_reminder(task):
+        # TODO: отредактировать чтобы не показывалось постоянно
         messages = []
         if task.start:
             start = get_date(task.start)
@@ -112,27 +113,30 @@ class Reminder:
 
             elif (time_diff < Time.DAY
                   and deadline.day != Time.NOW.day):
-                messages.append(Messages.TASK_START_TOMORROW.format(
+                messages.append(Messages.TASK_DEADLINE_TOMORROW.format(
                     task.name, task.key, deadline.time()))
 
         return messages
 
     @staticmethod
     def check_reminder_time(task):
+        # TODO: отредактировать чтобы не показывалось постоянно
+        # и тестировать
         messeges = []
         reminder = task.reminder.split(':')
         frequency = list(set(reminder[0].split(',')))
         times = list(set(reminder[1].split(',')))
-        if Frequency.EVERY_DAY in frequency:
+
+        if (Frequency.EVERY_DAY in frequency or
+                get_day_name(Time.NOW) in frequency):
+
             for time in times:
-                if get_time(time) == Time.NOW:
+                reminder_time = get_time(time).time()
+                lower_bound = (Time.NOW - Time.DELTA).time()
+                upper_bound = (Time.NOW + Time.DELTA).time()
+                if lower_bound < reminder_time < upper_bound:
                     messeges.append(Messages.TASK_REMINDER.format(
                         task.name, task.key, time)
                     )
-        elif get_day_name(Time.NOW) in frequency:
-            for time in times:
-                current_time = get_time(time)
-                if current_time.hour == Time.NOW.hour:
-                    messeges.append(Messages.TASK_REMINDER.format(
-                        task.name, task.key, time)
-                    )
+
+        return messeges

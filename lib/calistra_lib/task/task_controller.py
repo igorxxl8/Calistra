@@ -104,8 +104,9 @@ class TaskController:
                   related, responsible, priority, progress, start, deadline,
                   tags, reminder, status, editing_time):
 
-        TaskController.EDITING_MESSAGE = (Messages.USER_EDIT_TASK.
-                                          format(editor.nick, task.name))
+        TaskController.EDITING_MESSAGE = (
+            Messages.USER_EDIT_TASK.format(editor.nick, task.name, task.key)
+        )
 
         try:
             self.check_access(editor, task, responsible, name, description,
@@ -213,11 +214,14 @@ class TaskController:
                 raise TaskDeadlineError(Messages.DEADLINE_CANNOT_EARLIER_START)
             else:
                 task.start = start
-                TaskController.attach_message('start: {}'.format(start))
+
+            TaskController.attach_message('start: {}'.format(start))
 
     @staticmethod
     def edit_reminder(task, reminder):
         if reminder:
+            if reminder == Constants.UNDEFINED:
+                reminder = None
             task.reminder = reminder
             TaskController.attach_message('reminder: {}'.format(reminder))
 
@@ -228,7 +232,8 @@ class TaskController:
                 task.tags = None
             else:
                 task.tags = tags
-                TaskController.attach_message('tags: {}'.format(task.tags))
+
+            TaskController.attach_message('tags: {}'.format(task.tags))
 
     @staticmethod
     def edit_deadline(task, deadline):
@@ -241,7 +246,8 @@ class TaskController:
                 raise TaskDeadlineError(Messages.DEADLINE_CANNOT_EARLIER_START)
             else:
                 task.deadline = deadline
-                TaskController.attach_message('deadline: {}'.format(deadline))
+
+            TaskController.attach_message('deadline: {}'.format(deadline))
 
     def edit_status(self, task: Task, status):
         if status:
@@ -314,7 +320,8 @@ class TaskController:
                     self.unlink_task_and_sub_task(parent_task, task)
                 task.parent = parent
                 self.link_task_with_sub_task(new_parent_task, task)
-                TaskController.attach_message('parent {}'.format(parent))
+
+            TaskController.attach_message('parent {}'.format(parent))
 
     def activate_task(self, task):
         if task.status == TaskStatus.OPENED:

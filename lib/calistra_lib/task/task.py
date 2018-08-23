@@ -16,9 +16,10 @@ class RelatedTaskType:
 
 
 class Task:
-    def __init__(self, name, queue, description, parent, related, author,
-                 responsible: list, priority, progress, start, deadline,
-                 tags, reminder, key, creating_time):
+    def __init__(self, name, key, queue=None, description=None, parent=None,
+                 related=None, author=None, responsible: list=None, priority=0,
+                 progress=0, start=None, deadline=None, tags=None,
+                 reminder=None, creating_time=None):
 
         self.name = name
         self.queue = queue

@@ -2,11 +2,11 @@ from datetime import datetime as dt
 
 try:
     from lib.calistra_lib.task.reminder import Reminder
-    from lib.calistra_lib.constants import Constants
+    from lib.calistra_lib.constants import Constants, Time, PlanPeriod
     from lib.calistra_lib.task.task import TaskStatus, RelatedTaskType
 except ImportError:
     from calistra_lib.task.reminder import Reminder
-    from calistra_lib.constants import Constants
+    from calistra_lib.constants import Constants, Time, PlanPeriod
     from calistra_lib.task.task import TaskStatus, RelatedTaskType
 
 # TODO: сделать корректные сообщения об ошибках для консоли и для веба отдельно
@@ -20,13 +20,13 @@ def concat(*args):
 
 
 def get_date(string):
-    return dt.strptime(string, Constants.TIME_FORMAT)
+    return dt.strptime(string, Time.DATETIME_FORMAT)
 
 
 def check_str_len(string):
-    if isinstance(string, str) and len(string) > 100:
+    if isinstance(string, str) and 100 < len(string) < 1:
         raise ValueError('calistra: description and name must not '
-                         'exceed 100 characters')
+                         'exceed 100 characters or be empty.\n')
     return string
 
 
@@ -78,7 +78,7 @@ def check_progress_correctness(progress, action=ADD):
     return progress
 
 
-def check_time_format(time, action=ADD):
+def check_time_format(time, entity, action=ADD):
     if time is None:
         return None
 
@@ -92,10 +92,22 @@ def check_time_format(time, action=ADD):
     except ValueError:
         raise ValueError(
             concat('calistra: invalid format of date and time. See '
-                   '"calistra task ', action, ' --help\n"')
+                   '"calistra ', entity, ' ', action, ' --help\n"')
         )
 
     return time
+
+
+def validate_activation_time(time):
+    if get_date(time) < dt.now():
+        raise ValueError('calistra: activation time cannot be earlier '
+                         'than current moment.\n')
+
+
+def check_period_format(period, action=ADD):
+    if period not in PlanPeriod.__dict__.values():
+        raise ValueError(concat('calistra: invalid format of plan period. See '
+                                '"calistra plan ', action, ' --help"\n'))
 
 
 def check_terms_correctness(start, deadline):
@@ -141,13 +153,15 @@ def check_list_format_correctness(objects_list: str, obj_type, action, ):
     return right_list
 
 
-def check_reminder_format(reminder, action=ADD):
+def check_reminder_format(reminder, entity, action=ADD):
     if reminder == Constants.UNDEFINED and action != ADD:
         return
     reminder = Reminder.check_format(reminder)
     if reminder is False:
         raise ValueError(concat('calistra: invalid format of reminder. '
-                                'See "calistra task ', action, ' --help\n'))
+                                'See "calistra ', entity, ' ', action,
+                                ' --help"\n')
+                         )
 
     return reminder
 

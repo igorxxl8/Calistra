@@ -1,9 +1,9 @@
 from datetime import datetime as dt
 
 try:
-    from lib.calistra_lib.constants import Constants
+    from lib.calistra_lib.constants import Time
 except ImportError:
-    from calistra_lib.constants import Constants
+    from calistra_lib.constants import Time
 
 
 class UserController:
@@ -76,7 +76,7 @@ class UserController:
 
     def notify_user(self, user, message, show_time=True):
         if show_time:
-            time = dt.now().strftime(Constants.EXTENDED_TIME_FORMAT)
+            time = dt.now().strftime(Time.EXTENDED_TIME_FORMAT)
             message = ''.join([time, ': ', message])
 
         if user:

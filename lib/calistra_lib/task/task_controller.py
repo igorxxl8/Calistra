@@ -1,11 +1,11 @@
 from datetime import datetime as dt
+
 from .task import Task, TaskStatus, RelatedTaskType
 from .task_storage import TaskStorage
-from .reminder import Reminder
 
 try:
-    from lib.calistra_lib.task.reminder import Reminder, Time
-    from lib.calistra_lib.constants import Constants
+    from lib.calistra_lib.task.reminder import Reminder
+    from lib.calistra_lib.constants import Constants, Time
     from lib.calistra_lib.queue.queue import Queue
     from lib.calistra_lib.messages import Messages
     from lib.calistra_lib.exceptions.task_exceptions import *
@@ -13,17 +13,13 @@ try:
     from lib.calistra_lib.exceptions.queue_exceptions import *
 
 except ImportError:
-    from calistra_lib.task.reminder import Reminder, Time
-    from calistra_lib.constants import Constants
+    from calistra_lib.task.reminder import Reminder
+    from calistra_lib.constants import Constants, Time
     from calistra_lib.queue.queue import Queue
     from calistra_lib.messages import Messages
     from calistra_lib.exceptions.task_exceptions import *
     from calistra_lib.exceptions.access_exceptions import *
     from calistra_lib.exceptions.queue_exceptions import *
-
-
-def get_date(string):
-    return dt.strptime(string, Constants.TIME_FORMAT)
 
 
 class TaskController:
@@ -35,6 +31,10 @@ class TaskController:
     @classmethod
     def attach_message(cls, message):
         cls.EDITING_MESSAGE = ''.join([cls.EDITING_MESSAGE, ' ', message])
+
+    def connect_planed_task(self, task: Task):
+        self.tasks_storage.add_task(task)
+        self.tasks_storage.save_tasks()
 
     def add_task(self, author, name, queue, description, parent, related,
                  responsible, priority, progress, start, deadline, tags,
@@ -206,10 +206,12 @@ class TaskController:
     @staticmethod
     def edit_start(task, start, deadline):
         if start:
+            deadline_time = Time.get_date(task.deadline)
+            start_time = Time.get_date(start)
             if start == Constants.UNDEFINED:
                 task.start = None
-            elif (task.deadline and get_date(task.deadline) < get_date(start)
-                  and deadline and get_date(deadline) < get_date(start)):
+            elif (task.deadline and deadline_time < start_time
+                  and deadline and Time.get_date(deadline) < start_time):
 
                 raise TaskDeadlineError(Messages.DEADLINE_CANNOT_EARLIER_START)
             else:
@@ -240,10 +242,13 @@ class TaskController:
         if deadline:
             if deadline == Constants.UNDEFINED:
                 task.deadline = None
-            elif get_date(deadline) < dt.now():
+            elif Time.get_date(deadline) < dt.now():
                 raise TaskDeadlineError(Messages.DEADLINE_CANNOT_EARLIER_NOW)
-            elif task.start and get_date(deadline) < get_date(task.start):
+            elif (task.start and Time.get_date(deadline) <
+                  Time.get_date(task.start)):
+
                 raise TaskDeadlineError(Messages.DEADLINE_CANNOT_EARLIER_START)
+
             else:
                 task.deadline = deadline
 
@@ -283,7 +288,7 @@ class TaskController:
 
             if status == TaskStatus.OPENED:
                 if task.status == TaskStatus.FAILED:
-                    if task.deadline and get_date(task.deadline) < dt.now():
+                    if task.deadline and Time.get_date(task.deadline) < dt.now():
                         raise TaskStatusError(
                             Messages.CANNOT_SET_STATUS_OPENED_FOR_FAILED)
                 for sub_task in self.get_sub_tasks(task):
@@ -376,7 +381,7 @@ class TaskController:
     def check_task_deadline(task, failed_tasks):
         now = dt.now()
         if task.deadline:
-            deadline_time = get_date(task.deadline)
+            deadline_time = Time.get_date(task.deadline)
             if deadline_time < now:
                 task.status = TaskStatus.FAILED
                 failed_tasks.append(task)

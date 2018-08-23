@@ -23,6 +23,7 @@ try:
     from lib.calistra_lib.storage.json_serializer import JsonDatabase
     from lib.calistra_lib.user.user import User
     from lib.calistra_lib.task.task import Task, TaskStatus
+    from lib.calistra_lib.plan.plan import Plan
     from lib.calistra_lib.queue.queue import Queue
     from lib.calistra_lib.exceptions.base_exception import AppError
     from lib.calistra_lib.interface import Interface
@@ -31,12 +32,14 @@ except ImportError:
     from calistra_lib.storage.json_serializer import JsonDatabase
     from calistra_lib.user.user import User
     from calistra_lib.task.task import Task, TaskStatus
+    from calistra_lib.plan.plan import Plan
     from calistra_lib.queue.queue import Queue
     from calistra_lib.exceptions.base_exception import AppError
     from calistra_lib.interface import Interface
 
 FOLDER = os.path.join(os.environ['HOME'], 'calistra_data')
 TASKS_FILE = os.path.join(FOLDER, 'tasks.json')
+PLANS_FILE = os.path.join(FOLDER, 'plans.json')
 QUEUES_FILE = os.path.join(FOLDER, 'queues.json')
 USERS_FILE = os.path.join(FOLDER, 'users.json')
 AUTH_FILE = os.path.join(FOLDER, 'auth.json')
@@ -44,6 +47,7 @@ ONLINE = os.path.join(FOLDER, 'online_user.json')
 FILES = [
     (TASKS_FILE, '[]'),
     (QUEUES_FILE, '[]'),
+    (PLANS_FILE, '[]'),
     (USERS_FILE, '[]'),
     (AUTH_FILE, '[]'),
     (ONLINE, '""')
@@ -52,6 +56,7 @@ FILES = [
 ERROR_CODE = 1
 TASK_KEY_BYTES = 8
 QUEUE_KEY_BYTES = 4
+PLAN_KEY_BYTES = 6
 
 
 def apply_settings():
@@ -86,7 +91,8 @@ def run() -> int:
         users_wrapper_storage.online_user,
         JsonDatabase(QUEUES_FILE, [Queue]),
         JsonDatabase(USERS_FILE, [User]),
-        JsonDatabase(TASKS_FILE, [Task])
+        JsonDatabase(TASKS_FILE, [Task]),
+        JsonDatabase(PLANS_FILE, [Plan])
     )
 
     # update reminders deadlines queue and other
@@ -206,7 +212,29 @@ def run() -> int:
     # check that target is plan and do action with it
     if target == ParserArgs.PLAN.name:
         if action == ParserArgs.ADD:
-            pass
+            name = args.pop(ParserArgs.PLAN_NAME.name)
+            period = args.pop(ParserArgs.PLAN_PERIOD.name)
+            activation_time = args.pop(ParserArgs.PLAN_ACTIVATION_TIME.name)
+            reminder = args.pop(ParserArgs.TASK_REMINDER.dest)
+            return _add_plan(name, activation_time, period, reminder, library)
+
+        if action == ParserArgs.SET:
+            key = args.pop(ParserArgs.KEY.name)
+            new_name = args.pop(ParserArgs.PLAN_NAME_OPTIONAL.dest)
+            period = args.pop(ParserArgs.PLAN_PERIOD_OPTIONAL.dest)
+            activation_time = args.pop(
+                ParserArgs.PLAN_ACTIVATION_TIME_OPTIONAL.dest)
+
+            reminder = args.pop(ParserArgs.TASK_REMINDER.dest)
+            return _edit_plan(key, new_name, period, activation_time,
+                              reminder, library)
+
+        if action == ParserArgs.SHOW:
+            return _show_plans(library)
+
+        if action == ParserArgs.DELETE:
+            key = args.pop(ParserArgs.KEY.name)
+            return _delete_plan(key, library)
 
     if target == ParserArgs.NOTIFICATIONS.name:
         if action == ParserArgs.SHOW:
@@ -274,7 +302,7 @@ def _show_new_messages(library) -> int:
         return ERROR_CODE
     new_messages = library.online_user.new_messages
     if new_messages:
-        print('New messages:')
+        print('Reminders and new messages:')
         _show_messages(new_messages)
         library.clear_new_messages()
         print(Printer.LINE)
@@ -389,7 +417,6 @@ def _show_queue(library) -> int:
 
 
 def _show_queue_tasks(key, library, opened, archive, failed, long, sortby):
-
     def load_tasks(task_keys):
         _tasks = []
         for _key in task_keys:
@@ -461,10 +488,10 @@ def _add_task(args, library) -> int:
         progress = check_progress_correctness(progress)
 
         start = args.pop(ParserArgs.TASK_START.dest)
-        start = check_time_format(start)
+        start = check_time_format(start, entity=ParserArgs.TASK.name)
 
         deadline = args.pop(ParserArgs.TASK_DEADLINE.dest)
-        deadline = check_time_format(deadline)
+        deadline = check_time_format(deadline, entity=ParserArgs.TASK.name)
 
         check_terms_correctness(start, deadline)
 
@@ -472,7 +499,7 @@ def _add_task(args, library) -> int:
         tags = check_tags_correctness(tags)
 
         reminder = args.pop(ParserArgs.TASK_REMINDER.dest)
-        reminder = check_reminder_format(reminder)
+        reminder = check_reminder_format(reminder, entity=ParserArgs.TASK.name)
 
     except ValueError as e:
         sys.stderr.write(str(e))
@@ -527,10 +554,12 @@ def _edit_task(args, library) -> int:
         progress = check_progress_correctness(progress, action=ParserArgs.SET)
 
         start = args.pop(ParserArgs.TASK_START.dest)
-        start = check_time_format(start, action=ParserArgs.SET)
+        start = check_time_format(
+            start, entity=ParserArgs.TASK.name, action=ParserArgs.SET)
 
         deadline = args.pop(ParserArgs.TASK_DEADLINE.dest)
-        deadline = check_time_format(deadline, action=ParserArgs.SET)
+        deadline = check_time_format(
+            deadline, entity=ParserArgs.TASK.name, action=ParserArgs.SET)
 
         check_terms_correctness(start, deadline)
 
@@ -538,7 +567,8 @@ def _edit_task(args, library) -> int:
         tags = check_tags_correctness(tags, action=ParserArgs.SET)
 
         reminder = args.pop(ParserArgs.TASK_REMINDER.dest)
-        reminder = check_reminder_format(reminder, action=ParserArgs.SET)
+        reminder = check_reminder_format(reminder, entity=ParserArgs.TASK.name,
+                                         action=ParserArgs.SET)
 
         status = args.pop(ParserArgs.TASK_STATUS.dest)
         status = check_status_correctness(status, action=ParserArgs.SET)
@@ -627,4 +657,73 @@ def _activate_task(key, library) -> int:
         return ERROR_CODE
 
     print('Participation in task "{}" is confirmed!'.format(task.name))
+    return 0
+
+
+# =================================================
+# functions for work with plan instance           =
+# =================================================
+
+def _add_plan(name, activation_time, period, reminder, library) -> int:
+    key = os.urandom(PLAN_KEY_BYTES).hex()
+    try:
+        check_period_format(period)
+        check_str_len(name)
+        activation_time = check_time_format(activation_time,
+                                            entity=ParserArgs.PLAN.name)
+        validate_activation_time(activation_time)
+        reminder = check_reminder_format(reminder, entity=ParserArgs.PLAN.name)
+        plan = library.add_plan(key, name, period, activation_time, reminder)
+    except ValueError as e:
+        sys.stderr.write(str(e))
+        return ERROR_CODE
+
+    print('Plan "{}" successfully created. '
+          'It\'s key - {}'.format(plan.name, plan.key)
+          )
+
+    return 0
+
+
+def _edit_plan(key, new_name, period, activation_time, reminder,
+               library) -> int:
+    try:
+        reminder = check_reminder_format(reminder, ParserArgs.PLAN.name,
+                                         ParserArgs.SET)
+        print(key)
+        print(new_name)
+        print(reminder)
+        print(activation_time)
+        plan = library.edit_plan(key, new_name, period,
+                                 activation_time, reminder)
+
+    except ValueError as e:
+        sys.stderr.write(str(e))
+        return ERROR_CODE
+
+    print('Plan "{}"({}) was successfully edited.'.format(plan.name, plan.key))
+    return 0
+
+
+def _show_plans(library) -> int:
+    plans = library.get_plans()
+    if plans:
+        print('Plans:')
+        for i in range(len(plans)):
+            print('{}) {}'.format(i + 1, str(plans[i])))
+    else:
+        print('calistra: Plans not found')
+
+    return 0
+
+
+def _delete_plan(key, library) -> int:
+    try:
+        plan = library.del_plan(key)
+
+    except AppError as e:
+        sys.stderr.write(str(e))
+        return ERROR_CODE
+
+    print('Plan "{}"({}) successfully deleted'.format(plan.name, plan.key))
     return 0

@@ -1,5 +1,5 @@
 try:
-    from lib.calistra_lib.constants import Constants
+    from lib.calistra_lib.constants import Constants, Time
     from lib.calistra_lib.messages import Messages
     from lib.calistra_lib.queue.queue_controller import QueueController
     from lib.calistra_lib.queue.queue_storage import QueueStorage
@@ -10,6 +10,8 @@ try:
     from lib.calistra_lib.user.user_controller import UserController
     from lib.calistra_lib.user.user_storage import UserStorage
     from lib.calistra_lib.user.user import User
+    from lib.calistra_lib.plan.plan_controller import PlanController
+    from lib.calistra_lib.plan.plan_storage import PlanStorage
     from lib.calistra_lib.exceptions.access_exceptions import AccessDeniedError
     from lib.calistra_lib.exceptions.task_exceptions import (
         TaskNotFoundError,
@@ -21,7 +23,7 @@ try:
         QueueNotFoundError
     )
 except ImportError:
-    from calistra_lib.constants import Constants
+    from calistra_lib.constants import Constants, Time
     from calistra_lib.messages import Messages
     from calistra_lib.queue.queue_controller import QueueController
     from calistra_lib.queue.queue_storage import QueueStorage
@@ -32,6 +34,8 @@ except ImportError:
     from calistra_lib.user.user_storage import UserStorage
     from calistra_lib.user.user_controller import UserController
     from calistra_lib.user.user import User
+    from calistra_lib.plan.plan_controller import PlanController
+    from calistra_lib.plan.plan_storage import PlanStorage
     from calistra_lib.exceptions.access_exceptions import AccessDeniedError
     from calistra_lib.exceptions.task_exceptions import (
         TaskNotFoundError,
@@ -50,34 +54,12 @@ from datetime import datetime as dt
 # TODO: 3) Логирование
 
 
-#                        Add    Set     Show    Logic
-# TODO: 1) Name            +     +                +
-# TODO: 2) Descrip         +     +                +
-# TODO: 3) Author          +    (-)
-# TODO: 4) Priority        +     +
-# TODO: 5) Progress        +     +
-# TODO: 6) Start           +     +                +
-# TODO: 7) Deadline        +     +                +
-# TODO: 8) Tags            +     +
-# TODO: 9) Status         (-)    +
-# TODO: 10) Reminder
-# TODO: 11) Responsible    +     +
-# TODO: 12) Parent         +     +
-# TODO: 13) linked      ctrl,blc,dep
-# TODO: запретить создание таск без имени
-# TODO: рассылка уведомлений ответственным при добавлении и изменении задач
-# TODO: написать перемещение задач в архив при выполнении
-# TODO: перемещениче задач в проваленные при прошедшем дедлайне
-
-def get_date(string):
-    return dt.strptime(string, Constants.TIME_FORMAT)
-
-
 class Interface:
 
-    def __init__(self, online_user, queues_db, users_db, tasks_db):
+    def __init__(self, online_user, queues_db, users_db, tasks_db, plans_db):
         self.queue_controller = QueueController(QueueStorage(queues_db))
         self.task_controller = TaskController(TaskStorage(tasks_db))
+        self.plan_controller = PlanController(PlanStorage(plans_db))
         self.user_controller = UserController(UserStorage(users_db))
         self.online_user = self.user_controller.find_user(nick=online_user)
 
@@ -108,10 +90,23 @@ class Interface:
         self.user_controller.clear_new_messages(user)
 
     def update_all(self):
+        planed_tasks = self.plan_controller.update_all_plans()
         ctrls, blcks, failed, notified = self.task_controller.update_all()
 
+        for task in planed_tasks:
+            user = self.user_controller.find_user(nick=task.author)
+            queue = self.queue_controller.get_user_default_queue(user)
+            self.task_controller.connect_planed_task(task)
+            self.queue_controller.link_queue_with_task(queue, task)
+            self.user_controller.link_author_with_task(user, task)
+            self.send_message_to_users(
+                [user],
+                Messages.PLANNED_TASK_WAS_ACTIVATED.format(task.name, task.key)
+            )
+
         for task, messages in notified:
-            users = self.find_users_by_name_list(task.responsible+[task.author])
+            users = self.find_users_by_name_list(
+                task.responsible + [task.author])
             for message in messages:
                 self.send_message_to_users(users, message, False)
 
@@ -219,7 +214,7 @@ class Interface:
                     responsible, priority, progress, start, deadline, tags,
                     reminder, key):
 
-        creating_time = dt.strftime(dt.now(), Constants.EXTENDED_TIME_FORMAT)
+        creating_time = dt.strftime(dt.now(), Time.EXTENDED_TIME_FORMAT)
         author = self.get_online_user()
         queue = self.get_queue(queue_key, author)
 
@@ -257,7 +252,7 @@ class Interface:
                   responsible, priority, progress, start, deadline, tags,
                   reminder, status):
 
-        editing_time = dt.strftime(dt.now(), Constants.EXTENDED_TIME_FORMAT)
+        editing_time = dt.strftime(dt.now(), Time.EXTENDED_TIME_FORMAT)
         editor = self.get_online_user()
 
         if related:
@@ -461,14 +456,18 @@ class Interface:
                 users.append(user)
         return users
 
-    #
-    #
-    # Приступить после окончания работы с задачами
-    def add_plan(self):
-        pass
+    # functions for work with plans
+    def add_plan(self, key, name, period, time, reminder):
+        author = self.get_online_user()
+        return self.plan_controller.create_plan(key, author, name, period,
+                                                time, reminder)
 
-    def del_plan(self):
-        pass
+    def del_plan(self, key):
+        return self.plan_controller.delete_plan(key)
 
-    def edit_plan(self):
-        pass
+    def edit_plan(self, key, new_name, period, time, reminder):
+        return self.plan_controller.edit_plan(key, new_name, period, time,
+                                              reminder)
+
+    def get_plans(self):
+        return self.plan_controller.get_user_plans(self.get_online_user())

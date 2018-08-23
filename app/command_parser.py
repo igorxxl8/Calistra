@@ -485,6 +485,93 @@ def _create_plan_subparsers(plan_parser):
         dest=ParserArgs.ACTION,
         help=ParserArgs.PLAN_ACTION)
 
+    add_subparsers = plan_subparsers.add_parser(
+        name=ParserArgs.ADD,
+        help=ParserArgs.ADD_PLAN
+    )
+
+    edit_subparsers = plan_subparsers.add_parser(
+        name=ParserArgs.SET,
+        help=ParserArgs.SET_PLAN
+    )
+
+    show_suparsers = plan_subparsers.add_parser(
+        name=ParserArgs.SHOW,
+        help=ParserArgs.SHOW_PLAN_HELP
+    )
+
+    delete_subparsers = plan_subparsers.add_parser(
+        name=ParserArgs.DELETE,
+        help=ParserArgs.DEL_PLAN
+    )
+
+    if ParserArgs.ADD in sys.argv:
+        add_subparsers.add_argument(
+            ParserArgs.PLAN_NAME.name,
+            help=ParserArgs.PLAN_NAME.help
+        )
+
+        add_subparsers.add_argument(
+            ParserArgs.PLAN_PERIOD.name,
+            help=ParserArgs.PLAN_PERIOD.help
+        )
+
+        add_subparsers.add_argument(
+            ParserArgs.PLAN_ACTIVATION_TIME.name,
+            help=ParserArgs.PLAN_ACTIVATION_TIME.help
+        )
+
+        add_subparsers.add_argument(
+            ParserArgs.TASK_REMINDER.long,
+            dest=ParserArgs.TASK_REMINDER.dest,
+            help=ParserArgs.TASK_REMINDER.help
+        )
+
+        FormattedParser.active_sub_parser = add_subparsers
+
+    elif ParserArgs.SET in sys.argv:
+        edit_subparsers.add_argument(
+            ParserArgs.KEY.name,
+            help=ParserArgs.KEY.help
+        )
+
+        edit_subparsers.add_argument(
+            ParserArgs.PLAN_NAME_OPTIONAL.long,
+            dest=ParserArgs.PLAN_NAME_OPTIONAL.dest,
+            help=ParserArgs.PLAN_NAME_OPTIONAL.help
+        )
+
+        edit_subparsers.add_argument(
+            ParserArgs.PLAN_ACTIVATION_TIME_OPTIONAL.long,
+            dest=ParserArgs.PLAN_ACTIVATION_TIME_OPTIONAL.dest,
+            help=ParserArgs.PLAN_ACTIVATION_TIME_OPTIONAL.help
+        )
+
+        edit_subparsers.add_argument(
+            ParserArgs.PLAN_PERIOD_OPTIONAL.long,
+            dest=ParserArgs.PLAN_PERIOD_OPTIONAL.dest,
+            help=ParserArgs.PLAN_PERIOD_OPTIONAL.help
+        )
+
+        edit_subparsers.add_argument(
+            ParserArgs.TASK_REMINDER.long,
+            dest=ParserArgs.TASK_REMINDER.dest,
+            help=ParserArgs.TASK_REMINDER.help
+        )
+
+        FormattedParser.active_sub_parser = edit_subparsers
+
+    elif ParserArgs.SHOW in sys.argv:
+        FormattedParser.active_sub_parser = show_suparsers
+
+    elif ParserArgs.DELETE in sys.argv:
+        delete_subparsers.add_argument(
+            ParserArgs.KEY.name,
+            help=ParserArgs.KEY.help
+        )
+
+        FormattedParser.active_sub_parser = delete_subparsers
+
 
 def _create_notification_subparsers(notification_parser):
     notification_subparsers = notification_parser.add_subparsers(

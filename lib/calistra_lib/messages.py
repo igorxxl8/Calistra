@@ -130,10 +130,12 @@ class Messages:
     TASK_DEADLINE_IN_TWO_HOURS = ('REMINDER: Task "{}"({}) deadline in two hour'
                                   ' - {}. You should hurry!')
 
-    TASK_DEADLINE_TOMORROW = 'REMINDER: task "{}"({}) deadline tomorrow at {}'
+    TASK_DEADLINE_TOMORROW = 'REMINDER: Task "{}"({}) deadline tomorrow at {}'
 
     TASK_START_TODAY = 'REMINDER: task "{}"({}) starts today at {}'
-    TASK_BEGIN = 'today at {}, task "{}"({}) task was started'
+    TASK_BEGIN = 'Today at {}, task "{}"({}) task was started'
 
     TASK_REMINDER = 'REMINDER: You have task "{}"({}). It\'s good time to do ' \
                     'it - {} '
+
+    PLANNED_TASK_WAS_ACTIVATED = 'plan "{}" activate new task. It\'s key {}'

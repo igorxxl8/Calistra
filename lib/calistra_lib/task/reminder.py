@@ -1,24 +1,11 @@
-from datetime import datetime, timedelta
-import calendar
 from collections import namedtuple
 
 try:
+    from lib.calistra_lib.constants import Time
     from lib.calistra_lib.messages import Messages
 except ImportError:
+    from lib.calistra_lib.constants import Time
     from calistra_lib.messages import Messages
-
-
-class Time:
-    WEEK = timedelta(days=7)
-    DAY = timedelta(days=1)
-    HOUR = timedelta(hours=1)
-    TWO_HOURS = timedelta(hours=2)
-    DELTA = timedelta(minutes=15)
-    ZERO = timedelta(hours=0, days=0)
-    NOW = datetime.now()
-    MONTH = calendar.mdays[NOW.month]
-    TIME_FORMAT = '%H.%M'
-    DATETIME_FORMAT = '%d.%m.%Y.%H:%M'
 
 
 class Frequency:
@@ -31,18 +18,6 @@ class Frequency:
     FRIDAY = 'friday'
     SATURDAY = 'saturday'
     SUNDAY = 'sunday'
-
-
-def get_time(string):
-    return datetime.strptime(string, Time.TIME_FORMAT)
-
-
-def get_date(string):
-    return datetime.strptime(string, Time.DATETIME_FORMAT)
-
-
-def get_day_name(date: datetime):
-    return calendar.day_name[date.weekday()].lower()
 
 
 class Reminder:
@@ -67,7 +42,7 @@ class Reminder:
                         return False
 
             for time in times:
-                get_time(time)
+                Time.get_time(time)
         except ValueError:
             return False
 
@@ -80,7 +55,7 @@ class Reminder:
         # TODO: отредактировать чтобы не показывалось постоянно
         messages = []
         if task.start:
-            start = get_date(task.start)
+            start = Time.get_date(task.start)
             time_diff = start - Time.NOW
             if Time.ZERO < time_diff < Time.HOUR:
                 messages.append(Messages.TASK_START_IN_A_HOUR.format(
@@ -99,7 +74,7 @@ class Reminder:
                 ))
 
         if task.deadline:
-            deadline = get_date(task.deadline)
+            deadline = Time.get_date(task.deadline)
             time_diff = deadline - Time.NOW
             if Time.ZERO < time_diff < Time.HOUR:
                 messages.append(Messages.TASK_DEADLINE_IN_A_HOUR.format(
@@ -128,10 +103,10 @@ class Reminder:
         times = list(set(reminder[1].split(',')))
 
         if (Frequency.EVERY_DAY in frequency or
-                get_day_name(Time.NOW) in frequency):
+                Time.get_day_name(Time.NOW) in frequency):
 
             for time in times:
-                reminder_time = get_time(time).time()
+                reminder_time = Time.get_time(time).time()
                 lower_bound = (Time.NOW - Time.DELTA).time()
                 upper_bound = (Time.NOW + Time.DELTA).time()
                 if lower_bound < reminder_time < upper_bound:

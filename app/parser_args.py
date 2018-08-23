@@ -243,3 +243,41 @@ class ParserArgs:
     # Constants, which represent plan parser commands and settings
     PLAN = Argument(name='plan', help='work with plans')
     PLAN_ACTION = 'action with plans'
+    ADD_PLAN = 'add new periodic plan'
+    SET_PLAN = 'edit existing plan'
+    DEL_PLAN = 'remove plan'
+    SHOW_PLAN_HELP = 'show all plans'
+
+    PLAN_NAME = Argument(name='name', help='the name of the plan that creates'
+                                           ' the task with the same name')
+
+    PLAN_PERIOD = Argument(name='period', help='plan time interval. Choose '
+                                               'from: daily, weekly, monthly,'
+                                               ' yearly')
+
+    PLAN_ACTIVATION_TIME = Argument(
+        name='time',
+        help='time when plan create task.Format: day.month.year.hour:minutes. '
+             'For example: 20.08.2018.9:00'
+    )
+
+    PLAN_NAME_OPTIONAL = OptionalArgument(
+        long='--new_name',
+        short='-pn',
+        dest='NEW_NAME',
+        help='new name for plan'
+    )
+
+    PLAN_PERIOD_OPTIONAL = OptionalArgument(
+        long='--period',
+        short='-pe',
+        dest='PERIOD',
+        help='new period for plan'
+    )
+
+    PLAN_ACTIVATION_TIME_OPTIONAL = OptionalArgument(
+        long='--activation',
+        short='-ac',
+        dest='ACTIVATION',
+        help='new time when plan will be activated and create task'
+    )

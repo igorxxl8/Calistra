@@ -22,18 +22,18 @@ A console application is a program running in the command window. It performs va
 ## Installing
 For installing application perform next operations:
 
-1. Clone repository:
+#### Clone repository:
 ```bash
 $ git clone https://IgorTurcevich@bitbucket.org/IgorTurcevich/calistra.git
 ```
 
-2. Install console application:
+#### Install console application:
 ```bash
 $ cd calistra
 $ python3 -m pip install . --user
 ```
 
-3. Install program library
+#### Install program library
 ```bash
 $ cd lib
 $ python3 -m pip install . --user

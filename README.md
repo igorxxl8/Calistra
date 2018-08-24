@@ -25,7 +25,7 @@ For installing application perform next operations:
 1. Clone repository:
 ```bash
 $ git clone https://IgorTurcevich@bitbucket.org/IgorTurcevich/calistra.git
-```bash
+```
 
 2. Install console application:
 ```bash
@@ -75,7 +75,7 @@ Congratulations! Now you can take advantage of the full functionality of the pro
 ### Working with tasks
 Let's look at the basic functionality of the program, its main features and commands for executing:
 
-1. Creating a simple task:
+#### Creating a simple task:
 ```bash
 $ calistra task add 'First task'
 ```
@@ -86,7 +86,7 @@ After that you will see message, for example:
 Key is set of numbers and letters. It is using for access, deleting and editing task. It's not neccessary to remember this key. If you want to remind this key you can find task by name.
 If an argument consists of several words, it must be quoted !!!
 
-2. Search task:
+#### Search task:
 ```bash
 $ calistra task find 'First task'
 ```
@@ -96,7 +96,7 @@ Search:
 |	Result for "First task":
 |	|	1) Name: "First task", key: 0e723a3aada16c7e, queue: 26da9808 updated: 24.08.2018.03:20:12, status: opened, deadline: None
 
-3. Editing task:
+#### Editing task:
 ```bash
 $ calistra task set <task_key> <task_attrs>
 ```
@@ -115,20 +115,20 @@ For more information:
 $ calistra task set --help
 ```
 
-4. Creating sub task:
+#### Creating sub task:
 Organizing task using sub task can help decompose problem into smaller part. 
 For this you need to have created task. For example we use task created above:
 ```bash
 $ calistra task add 'Sub task' --parent=0e723a3aada16c7e
 ```
 
-5. Solving task:
+#### Solving task:
 The status parameter is responsible for the status of the task:
 ```bash
 $ calistra task set <task_key> --status=solved
 
 
-6. Removing task:
+#### Removing task:
 
 ```bash
 $ calistra task del <task_key>
@@ -144,21 +144,21 @@ $ calistra task del <task_key> -r
 ### Working with queues
 А queue is a container for tasks. Сonsider the basic functionality of queues:
 
-1. Creating a queue:
+#### Creating a queue:
 ```bash
 $ calistra queue add 'My queue'
 
-2. Adding task to the queue:
+#### Adding task to the queue:
 ```bash
 $ calistra task set <task_key> --queue=<queue_key>
 
-3. View queue content:
+#### View queue content:
 
 ```bash
 $ calistra queue show <queue_key>
 ```
 
-4. Delete queue:
+#### Delete queue:
 ```bash
 $ calistra queue del <queue_key>
 ```
@@ -195,7 +195,4 @@ $ calistra plan del <plan_key>
 
 
 We have reviewed the basic principles of the application. For the rest of information see program help messages...
-
-
-
 

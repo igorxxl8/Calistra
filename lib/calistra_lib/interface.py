@@ -1,52 +1,24 @@
-try:
-    from lib.calistra_lib.constants import Constants, Time
-    from lib.calistra_lib.messages import Messages
-    from lib.calistra_lib.queue.queue_controller import QueueController
-    from lib.calistra_lib.queue.queue_storage import QueueStorage
-    from lib.calistra_lib.task.task import TaskStatus
-    from lib.calistra_lib.task.task_storage import TaskStorage
-    from lib.calistra_lib.task.task_controller import TaskController
-    from lib.calistra_lib.exceptions.base_exception import AppError
-    from lib.calistra_lib.user.user_controller import UserController
-    from lib.calistra_lib.user.user_storage import UserStorage
-    from lib.calistra_lib.user.user import User
-    from lib.calistra_lib.plan.plan_controller import PlanController
-    from lib.calistra_lib.plan.plan_storage import PlanStorage
-    from lib.calistra_lib.exceptions.access_exceptions import AccessDeniedError
-    from lib.calistra_lib.exceptions.task_exceptions import (
-        TaskNotFoundError,
-        ActivationTaskError,
-        TaskDeadlineError
-    )
-    from lib.calistra_lib.exceptions.queue_exceptions import (
-        AddingQueueError,
-        QueueNotFoundError
-    )
-except ImportError:
-    from calistra_lib.constants import Constants, Time
-    from calistra_lib.messages import Messages
-    from calistra_lib.queue.queue_controller import QueueController
-    from calistra_lib.queue.queue_storage import QueueStorage
-    from calistra_lib.task.task import TaskStatus
-    from calistra_lib.task.task_storage import TaskStorage
-    from calistra_lib.task.task_controller import TaskController
-    from calistra_lib.exceptions.base_exception import AppError
-    from calistra_lib.user.user_storage import UserStorage
-    from calistra_lib.user.user_controller import UserController
-    from calistra_lib.user.user import User
-    from calistra_lib.plan.plan_controller import PlanController
-    from calistra_lib.plan.plan_storage import PlanStorage
-    from calistra_lib.exceptions.access_exceptions import AccessDeniedError
-    from calistra_lib.exceptions.task_exceptions import (
-        TaskNotFoundError,
-        ActivationTaskError,
-        TaskDeadlineError
-    )
-    from calistra_lib.exceptions.queue_exceptions import (
-        AddingQueueError,
-        QueueNotFoundError
-    )
 from datetime import datetime as dt
+from calistra_lib.constants import Constants, Time
+from calistra_lib.messages import Messages
+from calistra_lib.queue.queue_controller import QueueController
+from calistra_lib.queue.queue_storage import QueueStorage
+from calistra_lib.task.task import TaskStatus
+from calistra_lib.task.task_storage import TaskStorage
+from calistra_lib.task.task_controller import TaskController
+from calistra_lib.exceptions.base_exception import AppError
+from calistra_lib.user.user_storage import UserStorage
+from calistra_lib.user.user_controller import UserController
+from calistra_lib.plan.plan_controller import PlanController
+from calistra_lib.plan.plan_storage import PlanStorage
+from calistra_lib.exceptions.access_exceptions import AccessDeniedError
+from calistra_lib.exceptions.task_exceptions import (
+    TaskNotFoundError,
+    ActivationTaskError
+)
+from calistra_lib.exceptions.queue_exceptions import (
+    AddingQueueError
+)
 
 
 # TODO: 1) дописать документацию

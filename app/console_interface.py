@@ -19,23 +19,13 @@ from app.user_wrapper import (
     SaveUserError
 )
 
-try:
-    from lib.calistra_lib.storage.json_serializer import JsonDatabase
-    from lib.calistra_lib.user.user import User
-    from lib.calistra_lib.task.task import Task, TaskStatus
-    from lib.calistra_lib.plan.plan import Plan
-    from lib.calistra_lib.queue.queue import Queue
-    from lib.calistra_lib.exceptions.base_exception import AppError
-    from lib.calistra_lib.interface import Interface
-
-except ImportError:
-    from calistra_lib.storage.json_serializer import JsonDatabase
-    from calistra_lib.user.user import User
-    from calistra_lib.task.task import Task, TaskStatus
-    from calistra_lib.plan.plan import Plan
-    from calistra_lib.queue.queue import Queue
-    from calistra_lib.exceptions.base_exception import AppError
-    from calistra_lib.interface import Interface
+from calistra_lib.storage.json_serializer import JsonDatabase
+from calistra_lib.user.user import User
+from calistra_lib.task.task import Task, TaskStatus
+from calistra_lib.plan.plan import Plan
+from calistra_lib.queue.queue import Queue
+from calistra_lib.exceptions.base_exception import AppError
+from calistra_lib.interface import Interface
 
 FOLDER = os.path.join(os.environ['HOME'], 'calistra_data')
 TASKS_FILE = os.path.join(FOLDER, 'tasks.json')

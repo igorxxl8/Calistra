@@ -1,16 +1,8 @@
-try:
-    from lib.calistra_lib.constants import Time
-    from lib.calistra_lib.exceptions.plan_exceptions import PlanNotFoundError
-    from lib.calistra_lib.plan.plan_storage import PlanStorage
-    from lib.calistra_lib.task.task import Task
-    from lib.calistra_lib.plan.plan import Plan
-
-except ImportError:
-    from calistra_lib.constants import Time
-    from calistra_lib.exceptions.plan_exceptions import PlanNotFoundError
-    from calistra_lib.plan.plan_storage import PlanStorage
-    from calistra_lib.task.task import Task
-    from calistra_lib.plan.plan import Plan
+from calistra_lib.constants import Time
+from calistra_lib.exceptions.plan_exceptions import PlanNotFoundError
+from calistra_lib.plan.plan_storage import PlanStorage
+from calistra_lib.task.task import Task
+from calistra_lib.plan.plan import Plan
 
 
 class PlanController:

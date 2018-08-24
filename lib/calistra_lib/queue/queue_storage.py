@@ -1,11 +1,6 @@
-try:
-    from lib.calistra_lib.constants import Constants
-    from lib.calistra_lib.queue.queue import Queue
-    from lib.calistra_lib.storage.database import Database
-except ImportError:
-    from calistra_lib.constants import Constants
-    from calistra_lib.queue.queue import Queue
-    from calistra_lib.storage.database import Database
+from calistra_lib.constants import Constants
+from calistra_lib.queue.queue import Queue
+from calistra_lib.storage.database import Database
 
 
 class QueueStorage:

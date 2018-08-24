@@ -1,9 +1,5 @@
-try:
-    from lib.calistra_lib.plan.plan import Plan
-    from lib.calistra_lib.storage.database import Database
-except ImportError:
-    from calistra_lib.plan.plan import Plan
-    from calistra_lib.storage.database import Database
+from calistra_lib.plan.plan import Plan
+from calistra_lib.storage.database import Database
 
 
 class PlanStorage:

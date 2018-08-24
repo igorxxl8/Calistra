@@ -2,24 +2,12 @@ from datetime import datetime as dt
 
 from .task import Task, TaskStatus, RelatedTaskType
 from .task_storage import TaskStorage
-
-try:
-    from lib.calistra_lib.task.reminder import Reminder
-    from lib.calistra_lib.constants import Constants, Time
-    from lib.calistra_lib.queue.queue import Queue
-    from lib.calistra_lib.messages import Messages
-    from lib.calistra_lib.exceptions.task_exceptions import *
-    from lib.calistra_lib.exceptions.access_exceptions import *
-    from lib.calistra_lib.exceptions.queue_exceptions import *
-
-except ImportError:
-    from calistra_lib.task.reminder import Reminder
-    from calistra_lib.constants import Constants, Time
-    from calistra_lib.queue.queue import Queue
-    from calistra_lib.messages import Messages
-    from calistra_lib.exceptions.task_exceptions import *
-    from calistra_lib.exceptions.access_exceptions import *
-    from calistra_lib.exceptions.queue_exceptions import *
+from calistra_lib.task.reminder import Reminder
+from calistra_lib.constants import Constants, Time
+from calistra_lib.messages import Messages
+from calistra_lib.exceptions.task_exceptions import *
+from calistra_lib.exceptions.access_exceptions import *
+from calistra_lib.exceptions.queue_exceptions import *
 
 
 class TaskController:

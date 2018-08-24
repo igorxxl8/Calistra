@@ -1,13 +1,7 @@
 from datetime import datetime as dt
-
-try:
-    from lib.calistra_lib.task.reminder import Reminder
-    from lib.calistra_lib.constants import Constants, Time, PlanPeriod
-    from lib.calistra_lib.task.task import TaskStatus, RelatedTaskType
-except ImportError:
-    from calistra_lib.task.reminder import Reminder
-    from calistra_lib.constants import Constants, Time, PlanPeriod
-    from calistra_lib.task.task import TaskStatus, RelatedTaskType
+from calistra_lib.task.reminder import Reminder
+from calistra_lib.constants import Constants, Time, PlanPeriod
+from calistra_lib.task.task import TaskStatus, RelatedTaskType
 
 # TODO: сделать корректные сообщения об ошибках для консоли и для веба отдельно
 # TODO: сделав тем самым константу какую нибудь

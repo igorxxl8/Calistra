@@ -1,20 +1,11 @@
 from .queue import Queue
 
-try:
-    from lib.calistra_lib.task.task import Task, TaskStatus
-    from lib.calistra_lib.constants import Constants
-    from lib.calistra_lib.messages import Messages
-    from lib.calistra_lib.exceptions.access_exceptions import *
-    from lib.calistra_lib.exceptions.queue_exceptions import *
-    from lib.calistra_lib.queue.queue_storage import QueueStorage
-
-except ImportError:
-    from calistra_lib.task.task import Task, TaskStatus
-    from calistra_lib.constants import Constants
-    from calistra_lib.messages import Messages
-    from calistra_lib.exceptions.queue_exceptions import *
-    from calistra_lib.exceptions.access_exceptions import *
-    from calistra_lib.queue.queue_storage import QueueStorage
+from calistra_lib.task.task import Task
+from calistra_lib.constants import Constants
+from calistra_lib.messages import Messages
+from calistra_lib.exceptions.queue_exceptions import *
+from calistra_lib.exceptions.access_exceptions import *
+from calistra_lib.queue.queue_storage import QueueStorage
 
 
 class QueueController:

@@ -1,9 +1,3 @@
-try:
-    from lib.calistra_lib.constants import Time
-except ImportError:
-    from calistra_lib.constants import Time
-
-
 class Plan:
     def __init__(self, key, author, name, period, activation_time, reminder):
 

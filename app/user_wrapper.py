@@ -3,12 +3,8 @@ This module contains user wrapper that stores registration data
 for authenticate users in the console interface
 """
 
-try:
-    from lib.calistra_lib.storage.database import Database
-    from lib.calistra_lib.exceptions.base_exception import AppError
-except ImportError:
-    from calistra_lib.storage.database import Database
-    from calistra_lib.exceptions.base_exception import AppError
+from calistra_lib.storage.database import Database
+from calistra_lib.exceptions.base_exception import AppError
 
 
 # TODO: 1) дописать документацию

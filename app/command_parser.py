@@ -4,10 +4,6 @@ recognize user's console input and call library's functions for
 work with program's entities
 """
 
-# TODO: 1) дописать документацию
-# TODO: 2) Рефакторинг
-# TODO: 3) Логирование
-# TODO: 4) еще можно выделить в сущность даже функции парсера!
 import sys
 from app.formatted_argparse import FormattedParser
 from app.parser_args import ParserArgs
@@ -154,8 +150,12 @@ def _create_user_subparsers(user_parser):
         FormattedParser.active_sub_parser = logout_subparsers
 
 
-# TODO: добавить документацию и опциональные параметры
 def _create_queue_subparsers(queue_parser):
+    """
+    Create sub parser for processing queue data
+    :param queue_parser: level highier parser
+    :return: None
+    """
     queue_subparsers = queue_parser.add_subparsers(
         dest=ParserArgs.ACTION,
         help=ParserArgs.QUEUE_ACTION)
@@ -415,6 +415,10 @@ def _create_task_subparsers(task_parser):
 
 
 def __add_common_optional_task_args(action_subparser):
+    """
+    :param action_subparser: subparser of a certain action with a task
+    :return: None
+    """
     # calistra task <action> [--description=<DESCR>]
     action_subparser.add_argument(
         ParserArgs.TASK_DESCRIPTION.long,
@@ -574,6 +578,11 @@ def _create_plan_subparsers(plan_parser):
 
 
 def _create_notification_subparsers(notification_parser):
+    """
+    Create subparsers for processing notifications
+    :param notification_parser: high level parser
+    :return: None
+    """
     notification_subparsers = notification_parser.add_subparsers(
         dest=ParserArgs.ACTION,
         help=ParserArgs.NTF_ACTION

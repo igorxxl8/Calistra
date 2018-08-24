@@ -1,12 +1,17 @@
+"""This module contains functions for logging program executing"""
+
 import functools
 import logging
 from calistra_lib.constants import LoggingConstants
-import traceback
 
 logger = None
 
 
 def get_logger():
+    """
+    This function for creating program logger
+    :return logger
+    """
     global logger
     if logger:
         return logger

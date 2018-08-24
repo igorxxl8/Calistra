@@ -74,6 +74,21 @@ class JsonTests(unittest.TestCase):
         expected = [{'name': 'igor'}]
         self.assertEqual(expected, actual)
 
+    def test_obj_from_json(self):
+        class Obj:
+            def __init__(self, string: str):
+                self.string = string
+
+            def __eq__(self, other):
+                return type(self) == type(other) and self.string == other.string
+
+        json_str = '{"string": "5"}'
+        actual = from_json([Obj], json_str)
+        print(actual)
+        expected = Obj("5")
+        print(expected)
+        self.assertEqual(expected, actual)
+
 
 if __name__ == '__main__':
     unittest.main()

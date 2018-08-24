@@ -1,4 +1,8 @@
+"""This module contains class Messages for necessary program messages"""
+
+
 class Messages:
+    """This class contains all important messages of program"""
     QUEUES_NOT_FOUND = 'Queues not found.'
     SIGN_IN = 'please sign in system'
     TASK_WAS_DELETED = 'The task "{}"({}) was deleted by author - "{}"'

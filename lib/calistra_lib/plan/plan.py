@@ -1,4 +1,8 @@
+"""This module contains class Plan which describe periodic plans"""
+
+
 class Plan:
+    """This class describe single plan entity"""
     def __init__(self, key, author, name, period, activation_time, reminder):
 
         self.author = author

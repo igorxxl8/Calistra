@@ -1,6 +1,5 @@
-# TODO: 1) дописать документацию
-# TODO: 2) Рефакторинг
-# TODO: 3) Логгирование
+"""This module contains class Task for represent single task entity,
+class TaskStatus"""
 
 
 class TaskStatus:
@@ -11,11 +10,17 @@ class TaskStatus:
 
 
 class RelatedTaskType:
+    """
+    This class defines constants which using in related tasks
+    """
     BLOCKER = 'blocker'
     CONTROLLER = 'controller'
 
 
 class Task:
+    """
+    This class defines single task entity attributes
+    """
     def __init__(self, name, key, queue=None, description=None, parent=None,
                  related=None, author=None, responsible: list=None, priority=0,
                  progress=0, start=None, deadline=None, tags=None,

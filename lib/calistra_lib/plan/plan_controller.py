@@ -1,3 +1,6 @@
+"""This module contains PlanController class for working with periodic plans"""
+
+
 from calistra_lib.constants import Time
 from calistra_lib.exceptions.plan_exceptions import PlanNotFoundError
 from calistra_lib.plan.plan_storage import PlanStorage
@@ -6,16 +9,40 @@ from calistra_lib.plan.plan import Plan
 
 
 class PlanController:
+    """
+    This class describe entity for work with periodic plans.
+    """
     def __init__(self, plan_storage: PlanStorage):
         self.plans_storage = plan_storage
 
     def create_plan(self, key, author, name, period, activation_time, reminder):
+        """
+        This method create plan
+        :param key: plan key
+        :param author: plan creator
+        :param name: plan name, this name get task too
+        :param period: interval of time
+        :param activation_time: time when plan create task
+        :param reminder: entity which create notification for user about
+         necessary to do task
+        :return: plan entity
+        """
         plan = Plan(key, author.nick, name, period, activation_time, reminder)
         self.plans_storage.add_plan(plan)
         self.plans_storage.save_plans()
         return plan
 
     def edit_plan(self, key, new_name, period, time, reminder):
+        """
+        This method delete task by key
+        :param key: plan key
+        :param new_name: new name for plan
+        :param period: interval of time
+        :param time: time when plan create task
+        :param reminder: entity which create notification for user about
+         necessary to do task
+        :return: edited plan
+        """
         plan = self.plans_storage.get_plan_by_key(key)
         if plan is None:
             raise PlanNotFoundError(' key - {}'.format(key))
@@ -36,6 +63,11 @@ class PlanController:
         return plan
 
     def delete_plan(self, key):
+        """
+        Delete plan by key
+        :param key: plan access key
+        :return: deleted plan
+        """
         plan = self.plans_storage.get_plan_by_key(key)
         if plan is None:
             raise PlanNotFoundError('key - {}'.format(key))
@@ -44,6 +76,11 @@ class PlanController:
         return plan
 
     def get_user_plans(self, user):
+        """
+        This module using for getting all user plans
+        :param user:
+        :return: user plans
+        """
         plans = []
         for plan in self.plans_storage.plans:
             if plan.author == user.nick:
@@ -52,6 +89,10 @@ class PlanController:
         return plans
 
     def update_all_plans(self):
+        """
+        This method check all plans and
+        :return: planned tasks
+        """
         planned_tasks = []
         for plan in self.plans_storage.plans:
             if Time.NOW >= Time.get_date(plan.time):
@@ -68,6 +109,11 @@ class PlanController:
 
     @staticmethod
     def make_plan_task(plan):
+        """
+        This method using for creating task from plan attributes
+        :param plan: plan which create task
+        :return: task which create by plan
+        """
         start = Time.get_date_string(Time.NOW)
         deadline = Time.get_date_string(Time.NOW + Time.Interval[plan.period])
         return Task(key=plan.key, name=plan.name, reminder=plan.reminder,

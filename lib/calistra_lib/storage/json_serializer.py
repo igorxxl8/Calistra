@@ -12,6 +12,9 @@ def concat(*args):
 
 
 class Serializable:
+    """
+    This class using as indicator for models and shows that it can serialize
+    """
     def __iter__(self):
         pass
 
@@ -20,6 +23,9 @@ class Serializable:
 
 
 class JsonDatabase(Database):
+    """
+    This class describe mechanism which parse data in json format
+    """
     def load(self) -> list:
         with open(self.filename, 'r') as file:
             s = file.read()
@@ -31,6 +37,14 @@ class JsonDatabase(Database):
 
 
 def array_to_json(array, ctrl_char, indent, level):
+    """
+    This method parse array into json
+    :param array: array for parsing
+    :param ctrl_char: control char
+    :param indent:
+    :param level:
+    :return: string in json format
+    """
     if not array:
         return '[]'
     result = ''.join(['[', ctrl_char, ' ' * level * indent])
@@ -61,6 +75,13 @@ def array_to_json(array, ctrl_char, indent, level):
 
 
 def to_json(instance=None, indentation=None, level=1) -> str:
+    """
+    This method parse instance into json format
+    :param instance: instance for parsing
+    :param indentation:
+    :param level: level of indentation
+    :return: string in json format
+    """
     try:
         res = json.dumps(instance, indent=indentation)
     except TypeError:
@@ -113,6 +134,12 @@ def to_json(instance=None, indentation=None, level=1) -> str:
 
 
 def from_json(cls_seq: list, string):
+    """
+    Parse string in json format and return instance
+    :param cls_seq: sequence of classes of object inside instance
+    :param string: string in json format
+    :return: instance
+    """
     def set_dict_attr(instance, data, num):
         for key, value in data.items():
             if isinstance(value, list):
@@ -126,6 +153,13 @@ def from_json(cls_seq: list, string):
                 instance[key] = value
 
     def set_object_attr(instance, data, num):
+        """
+        For object set its attrs
+        :param instance:
+        :param data:
+        :param num: number of class in class sequence
+        :return: None
+        """
         for key, value in data.items():
             if isinstance(value, list):
                 # print('list in make_object')
@@ -138,6 +172,12 @@ def from_json(cls_seq: list, string):
                 setattr(instance, key, value)
 
     def make_object(num, data):
+        """
+        This method collect object
+        :param num: number of class in class sequence
+        :param data:
+        :return: instance
+        """
         if cls_seq[num] is dict:
             instance = dict.__new__(dict)
             set_dict_attr(instance, data, num)
@@ -147,6 +187,12 @@ def from_json(cls_seq: list, string):
         return instance
 
     def make_objects_array(num, array):
+        """
+        This method create array of objects
+        :param num:
+        :param array:
+        :return: array of objects
+        """
         entity = []
         for item in array:
             # print(item)

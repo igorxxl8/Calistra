@@ -1,3 +1,8 @@
+"""This module contains class Interface which manipulate all entities
+in library
+"""
+
+
 from datetime import datetime as dt
 from calistra_lib.constants import Constants, Time
 from calistra_lib.messages import Messages
@@ -19,16 +24,14 @@ from calistra_lib.exceptions.task_exceptions import (
 from calistra_lib.exceptions.queue_exceptions import (
     AddingQueueError
 )
-from calistra_lib.logger import get_logger, log
-
-
-# TODO: 1) дописать документацию
-# TODO: 2) Рефакторинг
-# TODO: 3) Логирование
+from calistra_lib.logger import log
 
 
 class Interface:
-
+    """
+    This class as facade combines functionality of task, queue, plan and user
+     controllers, for convenient using
+    """
     def __init__(self, online_user, queues_db, users_db, tasks_db, plans_db):
         self.queue_controller = QueueController(QueueStorage(queues_db))
         self.task_controller = TaskController(TaskStorage(tasks_db))
@@ -39,22 +42,45 @@ class Interface:
     # functions for work with user instance
     @log
     def get_online_user(self):
+        """
+        This method using for getting current online object
+        :raise: AccessDeniedError
+        :return: online user
+        """
         if self.online_user is None:
             raise AccessDeniedError(Messages.SIGN_IN)
         return self.online_user
 
     @log
     def set_online_user(self, user_nick):
+        """
+        This method using for setting current online user
+        :param user_nick: nick of user
+        :return: None
+        """
         self.online_user = self.user_controller.find_user(nick=user_nick)
 
     @log
     def add_user(self, nick, uid, queue_key):
+        """
+        This method using for creating new user
+        :param nick: user nick
+        :param uid: user uid
+        :param queue_key: key of default queue
+        :return: added user
+        """
         user = self.user_controller.add_user(nick, uid)
         self.add_queue(Constants.DEFAULT_QUEUE, queue_key, user)
         return user
 
     @log
     def clear_notifications(self, quantity=None):
+        """
+        This method using for delete user notifications
+        :param quantity: quantity of deleting messages
+        :raise ValueError
+        :return: None
+        """
         try:
             self.user_controller.clear_user_notifications(
                 self.online_user, quantity)
@@ -63,13 +89,27 @@ class Interface:
 
     @log
     def clear_new_messages(self, user=None):
+        """
+        This method clear new messages and transfer it in notifications storage
+        :param user: user which new message will be deleted
+        :return: None
+        """
         if user is None:
             user = self.online_user
         self.user_controller.clear_new_messages(user)
 
     @log
     def update_all(self):
+        """
+        This method verifies and updated deadlines and plans tasks and notify
+         user about in changing
+        :return: None
+        """
+        # getting all entities which could changing
+        # tasks which were creating by plans
         planed_tasks = self.plan_controller.update_all_plans()
+
+        # controllers, blockers, failed tasks, task which produce notifications
         ctrls, blcks, failed, notified = self.task_controller.update_all()
 
         for task in planed_tasks:
@@ -119,11 +159,27 @@ class Interface:
 
     @log
     def send_message_to_users(self, users, message, show_time=True):
+        """
+        This method using for sending message and notifications to users
+        :param users: notified users
+        :param message: message which users get
+        :param show_time: flag, which defines necessary to show time in
+        notification
+        :return: None
+        """
         for user in users:
             self.user_controller.notify_user(user, message, show_time)
 
     # functions for work with queue instance
     def add_queue(self, name, key, owner=None):
+        """
+        This method using for creating queue
+        :param name: name of queue
+        :param key: access key
+        :param owner: queue owner
+        :return: added queue
+        :raise: AppError
+        """
         if owner is None:
             owner = self.get_online_user()
             if name == Constants.DEFAULT_QUEUE:
@@ -139,6 +195,13 @@ class Interface:
 
     @log
     def edit_queue(self, key, new_name):
+        """
+        This method using for editing queue
+        :param key: access key
+        :param new_name: new queue name
+        :return: edited queue
+        :raise: AppError
+        """
         editor = self.get_online_user()
         try:
             return self.queue_controller.edit_queue(key, new_name, editor)
@@ -147,6 +210,13 @@ class Interface:
 
     @log
     def remove_queue(self, key, recursive):
+        """
+        This method using for removing queue
+        :param key: access key
+        :param recursive: flag, which mean that this operation repeated
+         for tasks inside queue
+        :return: removed queue
+        """
         user = self.get_online_user()
         try:
             queue = self.queue_controller.remove_queue(key, recursive, user)
@@ -165,6 +235,10 @@ class Interface:
 
     @log
     def get_user_queues(self):
+        """
+        This method using for getting online user queues
+        :return: queues
+        """
         try:
             user = self.get_online_user()
             queues = self.queue_controller.get_user_queues(user)
@@ -174,6 +248,12 @@ class Interface:
 
     @log
     def get_queue(self, queue_key, owner=None):
+        """
+        This method using for getting queue by key
+        :param queue_key: access key
+        :param owner: author of queue
+        :return: queried queue
+        """
         if owner is None:
             owner = self.online_user
         if queue_key == Constants.UNDEFINED:
@@ -186,6 +266,11 @@ class Interface:
 
     @log
     def find_queues(self, name):
+        """
+        This method using for getting queues by key
+        :param name: queue name
+        :return: result - queue which approach  by queue name
+        """
         user = self.get_online_user()
         queues = self.queue_controller.get_user_queues(user)
         result = []
@@ -199,6 +284,24 @@ class Interface:
     def create_task(self, name, queue_key, description, parent, related,
                     responsible, priority, progress, start, deadline, tags,
                     reminder, key):
+        """
+        This method create task by rules
+        :param name: task name
+        :param queue_key:
+        :param description:
+        :param parent: key of parent task
+        :param related: keys of related tasks
+        :param responsible: user who can solve task
+        :param priority: task priority
+        :param progress: task progress
+        :param start:
+        :param deadline:
+        :param tags:
+        :param reminder:
+        :param key: task key
+        :raise AppError
+        :return: created task
+        """
 
         creating_time = dt.strftime(dt.now(), Time.EXTENDED_TIME_FORMAT)
         author = self.get_online_user()
@@ -238,6 +341,24 @@ class Interface:
     def edit_task(self, key, name, description, parent, related,
                   responsible, priority, progress, start, deadline, tags,
                   reminder, status):
+        """
+        This method using for editing task
+        :param key:
+        :param name:
+        :param description:
+        :param parent:
+        :param related:
+        :param responsible:
+        :param priority:
+        :param progress:
+        :param start:
+        :param deadline:
+        :param tags:
+        :param reminder:
+        :param status:
+        :raise: AppError
+        :return: edited task
+        """
 
         editing_time = dt.strftime(dt.now(), Time.EXTENDED_TIME_FORMAT)
         editor = self.get_online_user()
@@ -320,6 +441,13 @@ class Interface:
 
     @log
     def get_task(self, key, owner=None):
+        """
+        This method using for getting task by key
+        :param key: access key
+        :param owner: task owner
+        :raise AccessDeniedError
+        :return: queried task
+        """
         if owner is None:
             owner = self.get_online_user()
         task = self.task_controller.get_task_by_key(key)
@@ -329,6 +457,13 @@ class Interface:
 
     @log
     def find_task(self, key=None, name=None):
+        """
+        This method using for getting task by key or by name
+        :param key: access key
+        :param name: access name
+        :raise TaskNotFoundError, AccessDeniedError
+        :return: tasks which approach request
+        """
         user = self.get_online_user()
         tasks = self.task_controller.find_task(key=key, name=name)
 
@@ -347,6 +482,16 @@ class Interface:
 
     @log
     def remove_task(self, key, recursive, rem_que_flag=False):
+        """
+        This method using for removing task
+        :param key: access key
+        :param recursive: flag, which mean executing operation for sub tasks
+        if True
+        :param rem_que_flag: flag, which mean that removing task occurs
+         when deleting queue
+         :raise AppError
+        :return: tasks
+        """
         remover = self.get_online_user()
         task = self.get_task(key)
         try:
@@ -365,6 +510,13 @@ class Interface:
 
     @log
     def delete_link_with_users(self, tasks, author, message):
+        """
+        This method using for
+        :param tasks:
+        :param author: tasks author
+        :param message: message which send to user
+        :return: None
+        """
         for task in tasks:
             while task.responsible:
                 nick = task.responsible.pop()
@@ -383,6 +535,12 @@ class Interface:
 
     @log
     def activate_task(self, key):
+        """
+        This method using for activating task by key
+        :param key: access key
+        :raise: TaskNotFoundError, ActivationTaskError
+        :return: activated task
+        """
         user = self.get_online_user()
         task = self.task_controller.find_task(key=key)
         if task is None:
@@ -408,6 +566,10 @@ class Interface:
 
     @log
     def get_user_tasks(self):
+        """
+        This get all online user tasks
+        :return: author tasks, responsible tasks
+        """
         user = self.get_online_user()
         author_tasks = []
         for key in user.tasks_author:
@@ -423,6 +585,13 @@ class Interface:
 
     @log
     def get_responsible_diff(self, new, old):
+        """
+        This method
+        :param new: new responsible user
+        :param old: old responsible user
+        :return: diff_old - user which suspended from participation
+                 diff_new - user which invite
+        """
         str_olds = [user.nick for user in old]
         str_news = [user.nick for user in new]
         diff_old = []
@@ -437,6 +606,11 @@ class Interface:
 
     @log
     def find_users_by_name_list(self, name_list):
+        """
+        This method using for
+        :param name_list: list of users nicks
+        :return: list of users
+        """
         users = []
         if name_list == Constants.UNDEFINED:
             return users
@@ -451,12 +625,26 @@ class Interface:
     # functions for work with plans
     @log
     def add_plan(self, key, name, period, time, reminder):
+        """
+        This method using for crating plan entity
+        :param key: access key
+        :param name: plan name
+        :param period:
+        :param time: time when plan create task
+        :param reminder:
+        :return: created plan
+        """
         author = self.get_online_user()
         return self.plan_controller.create_plan(key, author, name, period,
                                                 time, reminder)
 
     @log
     def del_plan(self, key):
+        """
+        This method using for deleting plan
+        :param key: access key
+        :return:
+        """
         return self.plan_controller.delete_plan(key)
 
     @log
@@ -466,4 +654,8 @@ class Interface:
 
     @log
     def get_plans(self):
+        """
+        This method using for getting online users plans
+        :return: online users plans
+        """
         return self.plan_controller.get_user_plans(self.get_online_user())

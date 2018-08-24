@@ -1,3 +1,6 @@
+"""This module contains class TaskController, which manipulate tasks entities"""
+
+
 from datetime import datetime as dt
 
 from .task import Task, TaskStatus, RelatedTaskType
@@ -11,6 +14,9 @@ from calistra_lib.exceptions.queue_exceptions import *
 
 
 class TaskController:
+    """
+    This class define entity for work manipulate tasks and its params
+    """
     EDITING_MESSAGE = ""
 
     def __init__(self, task_storage: TaskStorage):
@@ -18,15 +24,44 @@ class TaskController:
 
     @classmethod
     def attach_message(cls, message):
+        """
+        This method appends a message about changing the task attributes
+        :param: message
+        :return None
+        """
         cls.EDITING_MESSAGE = ''.join([cls.EDITING_MESSAGE, ' ', message])
 
     def connect_planed_task(self, task: Task):
+        """
+        This method using for adding task maked by plan to tasks storage
+        :param task:
+        :return:
+        """
         self.tasks_storage.add_task(task)
         self.tasks_storage.save_tasks()
 
     def add_task(self, author, name, queue, description, parent, related,
                  responsible, priority, progress, start, deadline, tags,
                  reminder, key, creating_time):
+        """
+        This method created task entity and append it to other tasks
+        :param author:
+        :param name:
+        :param queue:
+        :param description:
+        :param parent:
+        :param related:
+        :param responsible:
+        :param priority:
+        :param progress:
+        :param start:
+        :param deadline:
+        :param tags:
+        :param reminder:
+        :param key:
+        :param creating_time:
+        :return: added task
+        """
 
         parent_task = self.tasks_storage.get_task_by_key(parent)
 

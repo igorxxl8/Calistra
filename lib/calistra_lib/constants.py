@@ -7,6 +7,7 @@ import os
 
 
 class Files:
+    """This class store all program files paths"""
     FOLDER = os.path.join(os.environ['HOME'], 'calistra_data')
     TASKS_FILE = os.path.join(FOLDER, 'tasks.json')
     PLANS_FILE = os.path.join(FOLDER, 'plans.json')
@@ -28,6 +29,7 @@ class Files:
 
 
 class LoggingConstants:
+    """This class store constants which use logger"""
     LOG_FILE = os.path.join(Files.FOLDER, 'logs.log')
     LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
@@ -61,7 +63,7 @@ def get_year_days_num():
 
 class Time:
     """
-
+    This class contains time constants
     """
     NOW = datetime.now()
 
@@ -88,16 +90,36 @@ class Time:
 
     @staticmethod
     def get_time(string):
+        """
+        This method parse string into time object
+        :param string: string in time format
+        :return: time
+        """
         return datetime.strptime(string, Time.SHORT_TIME_FORMAT)
 
     @staticmethod
     def get_date(string):
+        """
+        This method parse string into datetime object
+        :param string: string in datetime format
+        :return: datetime
+        """
         return datetime.strptime(string, Time.DATETIME_FORMAT)
 
     @staticmethod
     def get_date_string(date):
+        """
+        This method parse datetime object in formatted string
+        :param date: date for parsing
+        :return: formatted string
+        """
         return date.strftime(Time.DATETIME_FORMAT)
 
     @staticmethod
     def get_day_name(date: datetime):
+        """
+        This method for getting day of week name
+        :param date:
+        :return: string
+        """
         return calendar.day_name[date.weekday()].lower()

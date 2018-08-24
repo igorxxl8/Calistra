@@ -1,9 +1,14 @@
+"""This module contains class Reminder and other help classes for working
+with task reminder mechanism"""
+
+
 from collections import namedtuple
 from calistra_lib.constants import Time
 from calistra_lib.messages import Messages
 
 
 class Frequency:
+    """Constants for reminder frequency"""
     EVERY_WEEK = 'every_week'
     EVERY_DAY = 'every_day'
     MONDAY = 'monday'
@@ -16,10 +21,21 @@ class Frequency:
 
 
 class Reminder:
+    """
+    Class for checking reminder format and terms of it executing
+    """
     Reminder = namedtuple('Reminder', ['task', 'messages'])
 
     @staticmethod
     def check_format(reminder):
+        """
+        Method which check reminder format correctness and correct is if
+         possible
+        :param reminder:
+        :raise ValueError
+        :return:
+
+        """
         if reminder is None:
             return None
 
@@ -27,9 +43,12 @@ class Reminder:
         if len(reminder) != 2:
             return False
         frequency = list(set(reminder[0].split(',')))
+
+        # delete repeating elements
         times = list(set(reminder[1].split(',')))
         try:
             for item in frequency:
+                # check that frequency item is available value
                 if item not in Frequency.__dict__.values():
                     return False
                 if item == Frequency.EVERY_DAY or item == Frequency.EVERY_WEEK:
@@ -47,7 +66,12 @@ class Reminder:
 
     @staticmethod
     def check_auto_reminder(task):
-        # TODO: отредактировать чтобы не показывалось постоянно
+        """
+        This method check reminders which notify user an day, 2 hour
+        and hour before the start about necessary to perform task
+        :param task: task with reminder for checking
+        :return: messages
+        """
         messages = []
         if task.start:
             start = Time.get_date(task.start)
@@ -90,8 +114,12 @@ class Reminder:
 
     @staticmethod
     def check_reminder_time(task):
-        # TODO: отредактировать чтобы не показывалось постоянно
-        # и тестировать
+        """
+        This method usign for check tasks for availability of necessary
+         to notiry user
+        :param task: task with reminder for checking
+        :return: messages
+        """
         messeges = []
         reminder = task.reminder.split(':')
         frequency = list(set(reminder[0].split(',')))

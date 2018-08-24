@@ -1,7 +1,7 @@
-from unittest import TestCase
-from calistra_lib.
+from tests.json_tests import JsonTests
 
 
-class HelloworldTestCase(TestCase):
-    def test_helloworld(self):
-        self.assertEqual('Hello World!', 'Hello World!')
+jt = JsonTests()
+jt.test_array_1_to_json()
+
+

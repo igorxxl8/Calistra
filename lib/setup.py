@@ -7,4 +7,5 @@ setup(
     packages=find_packages(),
     long_description="lib",
     include_package_data=True,
+    test_suite='test_lib'
 )

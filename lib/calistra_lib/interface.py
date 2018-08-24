@@ -19,6 +19,7 @@ from calistra_lib.exceptions.task_exceptions import (
 from calistra_lib.exceptions.queue_exceptions import (
     AddingQueueError
 )
+from calistra_lib.logger import get_logger, log
 
 
 # TODO: 1) дописать документацию
@@ -36,19 +37,23 @@ class Interface:
         self.online_user = self.user_controller.find_user(nick=online_user)
 
     # functions for work with user instance
+    @log
     def get_online_user(self):
         if self.online_user is None:
             raise AccessDeniedError(Messages.SIGN_IN)
         return self.online_user
 
+    @log
     def set_online_user(self, user_nick):
         self.online_user = self.user_controller.find_user(nick=user_nick)
 
+    @log
     def add_user(self, nick, uid, queue_key):
         user = self.user_controller.add_user(nick, uid)
         self.add_queue(Constants.DEFAULT_QUEUE, queue_key, user)
         return user
 
+    @log
     def clear_notifications(self, quantity=None):
         try:
             self.user_controller.clear_user_notifications(
@@ -56,11 +61,13 @@ class Interface:
         except ValueError as e:
             raise ValueError(e)
 
+    @log
     def clear_new_messages(self, user=None):
         if user is None:
             user = self.online_user
         self.user_controller.clear_new_messages(user)
 
+    @log
     def update_all(self):
         planed_tasks = self.plan_controller.update_all_plans()
         ctrls, blcks, failed, notified = self.task_controller.update_all()
@@ -110,6 +117,7 @@ class Interface:
                 Messages.TASK_BLOCKERS_WERE_SOLVED.format(task.name)
             )
 
+    @log
     def send_message_to_users(self, users, message, show_time=True):
         for user in users:
             self.user_controller.notify_user(user, message, show_time)
@@ -129,6 +137,7 @@ class Interface:
             self.user_controller.link_user_with_queue(owner, queue)
             return queue
 
+    @log
     def edit_queue(self, key, new_name):
         editor = self.get_online_user()
         try:
@@ -136,6 +145,7 @@ class Interface:
         except AppError as e:
             raise e
 
+    @log
     def remove_queue(self, key, recursive):
         user = self.get_online_user()
         try:
@@ -153,6 +163,7 @@ class Interface:
 
         return queue
 
+    @log
     def get_user_queues(self):
         try:
             user = self.get_online_user()
@@ -161,6 +172,7 @@ class Interface:
             raise e
         return queues
 
+    @log
     def get_queue(self, queue_key, owner=None):
         if owner is None:
             owner = self.online_user
@@ -172,6 +184,7 @@ class Interface:
             raise AccessDeniedError(Messages.CANNOT_USE_SOMEONE_ELSE_QUEUE)
         return queue
 
+    @log
     def find_queues(self, name):
         user = self.get_online_user()
         queues = self.queue_controller.get_user_queues(user)
@@ -182,6 +195,7 @@ class Interface:
         return result
 
     # functions for work with task instance
+    @log
     def create_task(self, name, queue_key, description, parent, related,
                     responsible, priority, progress, start, deadline, tags,
                     reminder, key):
@@ -220,6 +234,7 @@ class Interface:
 
         return task
 
+    @log
     def edit_task(self, key, name, description, parent, related,
                   responsible, priority, progress, start, deadline, tags,
                   reminder, status):
@@ -303,6 +318,7 @@ class Interface:
 
             return task
 
+    @log
     def get_task(self, key, owner=None):
         if owner is None:
             owner = self.get_online_user()
@@ -311,9 +327,7 @@ class Interface:
             raise AccessDeniedError(Messages.CANNOT_USE_SOMEONE_ELSE_TASK)
         return task
 
-    def get_task_tree(self):
-        pass
-
+    @log
     def find_task(self, key=None, name=None):
         user = self.get_online_user()
         tasks = self.task_controller.find_task(key=key, name=name)
@@ -331,6 +345,7 @@ class Interface:
             raise AccessDeniedError(Messages.CANNOT_SEE_TASK)
         return tasks
 
+    @log
     def remove_task(self, key, recursive, rem_que_flag=False):
         remover = self.get_online_user()
         task = self.get_task(key)
@@ -348,6 +363,7 @@ class Interface:
         self.delete_link_with_users(tasks, remover, Messages.TASK_WAS_DELETED)
         return tasks
 
+    @log
     def delete_link_with_users(self, tasks, author, message):
         for task in tasks:
             while task.responsible:
@@ -365,6 +381,7 @@ class Interface:
                                                                 task.key,
                                                                 task.author))
 
+    @log
     def activate_task(self, key):
         user = self.get_online_user()
         task = self.task_controller.find_task(key=key)
@@ -389,6 +406,7 @@ class Interface:
 
         return task
 
+    @log
     def get_user_tasks(self):
         user = self.get_online_user()
         author_tasks = []
@@ -403,6 +421,7 @@ class Interface:
                 responsible_tasks.append(task)
         return author_tasks, responsible_tasks
 
+    @log
     def get_responsible_diff(self, new, old):
         str_olds = [user.nick for user in old]
         str_news = [user.nick for user in new]
@@ -416,6 +435,7 @@ class Interface:
                 diff_new.append(str_new)
         return diff_old, diff_new
 
+    @log
     def find_users_by_name_list(self, name_list):
         users = []
         if name_list == Constants.UNDEFINED:
@@ -429,17 +449,21 @@ class Interface:
         return users
 
     # functions for work with plans
+    @log
     def add_plan(self, key, name, period, time, reminder):
         author = self.get_online_user()
         return self.plan_controller.create_plan(key, author, name, period,
                                                 time, reminder)
 
+    @log
     def del_plan(self, key):
         return self.plan_controller.delete_plan(key)
 
+    @log
     def edit_plan(self, key, new_name, period, time, reminder):
         return self.plan_controller.edit_plan(key, new_name, period, time,
                                               reminder)
 
+    @log
     def get_plans(self):
         return self.plan_controller.get_user_plans(self.get_online_user())

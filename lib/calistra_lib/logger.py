@@ -1,7 +1,7 @@
 import functools
 import logging
-import os
 from calistra_lib.constants import LoggingConstants
+import traceback
 
 logger = None
 
@@ -40,6 +40,7 @@ def log(func):
             return result
         except Exception as e:
             logger.error(str(e))
+            logger.exception(str(e))
             raise e
 
     return logger_func

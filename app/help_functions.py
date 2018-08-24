@@ -1,19 +1,20 @@
+"""This module contains"""
+
 from datetime import datetime as dt
 from calistra_lib.task.reminder import Reminder
 from calistra_lib.constants import Constants, Time, PlanPeriod
 from calistra_lib.task.task import TaskStatus, RelatedTaskType
 
-# TODO: сделать корректные сообщения об ошибках для консоли и для веба отдельно
-# TODO: сделав тем самым константу какую нибудь
-
 ADD = 'add'
 
 
 def concat(*args):
+
     return ''.join(args)
 
 
 def get_date(string):
+
     return dt.strptime(string, Time.DATETIME_FORMAT)
 
 

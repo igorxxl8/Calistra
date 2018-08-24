@@ -5,6 +5,7 @@ __author__ = "Igor Turcevich <vip.turcevich3@gmail.com>"
 
 from app import console_interface
 import sys
+from calistra_lib.logger import get_logger
 
 # TODO: 1) Логирование
 
@@ -13,8 +14,8 @@ def start():
     """Execute program
     :return: None
     """
-    # TODO: enable logging
     code = console_interface.run()
+    logger = get_logger().info('End program.\n')
     sys.exit(code)
 
 

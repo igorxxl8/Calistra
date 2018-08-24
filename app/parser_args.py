@@ -1,9 +1,10 @@
+"""
+This module contains ParserArgs class which store constants
+using by argumnt parser
+"""
+
 from collections import namedtuple
 
-
-# TODO: 1) дописать документацию
-# TODO: 2) Рефакторинг
-# TODO: 3) Логирование
 
 class ParserArgs:
     """Constants, which using in parser as commands and

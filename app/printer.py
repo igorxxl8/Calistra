@@ -1,17 +1,34 @@
+"""This module contains class Printer for formatted output program entities"""
+
+
 import sys
 
 
 def concat(*args):
+    """
+    This function join all args into single one
+    :param args:
+    :return: concat string
+    """
     return ''.join(args)
 
 
 def formatted_string(string):
+    """
+    This function form string for pretty output task attribute
+    :param string:
+    :return: formatted string
+    """
     str_len = len(string) + Printer.TAB_LEN
     return concat(Printer.DELIMETER * 2, string,
                   ' ' * (Printer.LINE_LEN - str_len), '|')
 
 
 class Printer:
+    """
+    This class represent constants and methods for formatted output program
+    entities
+    """
     LINE_LEN = 125
     TAB_LEN = 7
     DELIMETER = '|\t'
@@ -32,6 +49,12 @@ class Printer:
 
     @staticmethod
     def print_queues(queues, queue_type=None):
+        """
+        This method print all queues in pretty format
+        :param queues:
+        :param queue_type:
+        :return: None
+        """
         if queue_type is None:
             queue_type = 'Queues'
         if not queues:
@@ -49,6 +72,14 @@ class Printer:
 
     @staticmethod
     def print_tasks(tasks, tasks_type: str, full=False, color=None):
+        """
+        This method print all tasks in pretty format
+        :param tasks:
+        :param tasks_type: opened, solved, activated or failed
+        :param full: flag, define printing in long format
+        :param color:  output color
+        :return: None
+        """
         if not tasks:
             print('\t{}: tasks not found.'.format(tasks_type))
             return
@@ -68,6 +99,14 @@ class Printer:
 
     @staticmethod
     def print_task_briefly(task, color=None, number=None, indent_level=0):
+        """
+        This function print single task in short format
+        :param task:
+        :param color:
+        :param number:
+        :param indent_level:
+        :return: None
+        """
         if color is None:
             color = Printer.RESET
         if number is None:
@@ -82,6 +121,11 @@ class Printer:
 
     @staticmethod
     def print_task_fully(task):
+        """
+        This function print single task in long format
+        :param task:
+        :return: None
+        """
         print(Printer.SEPARATOR)
         print(formatted_string('Name: {}'.format(task.name)))
         print(formatted_string('Key: {}'.format(task.key)))
@@ -106,6 +150,11 @@ class Printer:
 
     @staticmethod
     def print_reminders(reminders):
+        """
+        This function print all reminders in pretty format
+        :param reminders:
+        :return: None
+        """
         # TODO: форматированный вывод
         sys.stdout.write(Printer.CL_YELLOW)
         for reminder in reminders:
@@ -116,6 +165,11 @@ class Printer:
 
     @staticmethod
     def print_notifications(notifications):
+        """
+        This function print all notifications in pretty format
+        :param notifications:
+        :return: None
+        """
         # TODO: форматированный вывод
         sys.stdout.write(Printer.UNDERLINE)
         index = 1

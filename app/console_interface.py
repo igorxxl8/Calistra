@@ -26,31 +26,14 @@ from calistra_lib.plan.plan import Plan
 from calistra_lib.queue.queue import Queue
 from calistra_lib.exceptions.base_exception import AppError
 from calistra_lib.interface import Interface
+from calistra_lib.constants import Files
+from calistra_lib.logger import get_logger
 
-FOLDER = os.path.join(os.environ['HOME'], 'calistra_data')
-TASKS_FILE = os.path.join(FOLDER, 'tasks.json')
-PLANS_FILE = os.path.join(FOLDER, 'plans.json')
-QUEUES_FILE = os.path.join(FOLDER, 'queues.json')
-USERS_FILE = os.path.join(FOLDER, 'users.json')
-AUTH_FILE = os.path.join(FOLDER, 'auth.json')
-ONLINE = os.path.join(FOLDER, 'online_user.json')
-FILES = [
-    (TASKS_FILE, '[]'),
-    (QUEUES_FILE, '[]'),
-    (PLANS_FILE, '[]'),
-    (USERS_FILE, '[]'),
-    (AUTH_FILE, '[]'),
-    (ONLINE, '""')
-]
 
 ERROR_CODE = 1
 TASK_KEY_BYTES = 8
 QUEUE_KEY_BYTES = 4
 PLAN_KEY_BYTES = 6
-
-
-def apply_settings():
-    pass
 
 
 def check_program_data_files(folder, files):
@@ -69,20 +52,22 @@ def run() -> int:
     """
     # TODO: сделать функцию применения настроек
     # program settings
-    apply_settings()
-    check_program_data_files(FOLDER, FILES)
+    check_program_data_files(Files.FOLDER, Files.FILES)
+
+    logger = get_logger().getChild('calistra_console')
+    logger.info('Start program.')
 
     users_wrapper_storage = UserWrapperStorage(
-        JsonDatabase(AUTH_FILE, [UserWrapper]),
-        JsonDatabase(ONLINE, [])
+        JsonDatabase(Files.AUTH_FILE, [UserWrapper]),
+        JsonDatabase(Files.ONLINE, [])
     )
 
     library = Interface(
         users_wrapper_storage.online_user,
-        JsonDatabase(QUEUES_FILE, [Queue]),
-        JsonDatabase(USERS_FILE, [User]),
-        JsonDatabase(TASKS_FILE, [Task]),
-        JsonDatabase(PLANS_FILE, [Plan])
+        JsonDatabase(Files.QUEUES_FILE, [Queue]),
+        JsonDatabase(Files.USERS_FILE, [User]),
+        JsonDatabase(Files.TASKS_FILE, [Task]),
+        JsonDatabase(Files.PLANS_FILE, [Plan])
     )
 
     # update reminders deadlines queue and other
@@ -248,6 +233,16 @@ def run() -> int:
 # functions for work with user's account instance =
 # =================================================
 def _add_user(nick, password, users_storage, library: Interface):
+    """
+    Function for creating user. Use call from library interface for creating u
+    user in library
+    :param nick: user nick
+    :param password: user password
+    :param users_storage: place where store all users
+    :param library: library interface, join all library functions in one
+    interface
+    :return: int - error code
+    """
     try:
         users_storage.add_user(nick, password)
     except SaveUserError as e:
@@ -262,6 +257,15 @@ def _add_user(nick, password, users_storage, library: Interface):
 
 
 def _login(nick, password, users_storage, library) -> int:
+    """
+    Function for login user in system
+    :param nick: user nick
+    :param password: user password
+    :param users_storage: place where store all users
+    :param library: library interface, join all library functions in one
+    interface
+    :return: error code or 0 in case success
+    """
     controller = UserWrapperController(users_storage)
     try:
         controller.login(nick, password)
@@ -276,6 +280,11 @@ def _login(nick, password, users_storage, library) -> int:
 
 
 def _logout(users_storage) -> int:
+    """
+
+    :param users_storage:
+    :return: error code or 0 in case success
+    """
     controller = UserWrapperController(users_storage)
     try:
         controller.logout()
@@ -496,20 +505,9 @@ def _add_task(args, library) -> int:
         return ERROR_CODE
 
     try:
-        library.create_task(
-            name=name,
-            queue_key=queue_key,
-            description=description,
-            parent=args.pop(ParserArgs.TASK_PARENT.dest),
-            related=related,
-            responsible=responsible,
-            priority=priority,
-            progress=progress,
-            start=start,
-            deadline=deadline,
-            tags=tags,
-            reminder=reminder,
-            key=key
+        library.create_task(name, queue_key, description,
+            args.pop(ParserArgs.TASK_PARENT.dest), related, responsible,
+            priority, progress, start, deadline, tags, reminder, key
         )
 
     except AppError as e:
@@ -568,21 +566,10 @@ def _edit_task(args, library) -> int:
         return ERROR_CODE
 
     try:
-        library.edit_task(
-            key=key,
-            name=name,
-            description=description,
-            status=status,
-            parent=args.pop(ParserArgs.TASK_PARENT.dest),
-            related=related,
-            responsible=responsible,
-            priority=priority,
-            progress=progress,
-            start=start,
-            deadline=deadline,
-            tags=tags,
-            reminder=reminder,
-        )
+        library.edit_task(key, name, description,
+                          args.pop(ParserArgs.TASK_PARENT.dest), related,
+                          responsible, priority, progress, start, deadline,
+                          tags, reminder, status)
 
     except AppError as e:
         sys.stderr.write(str(e))

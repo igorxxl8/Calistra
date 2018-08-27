@@ -1,22 +1,21 @@
-"""This module contains class QueueStorage which store all users queue"""
+"""
+This module contains IQueueStorage - basic interface for all QueueStorage
+ classes, using different methods of storing queues
+"""
 
 
-from calistra_lib.constants import Constants
-from calistra_lib.queue.queue import Queue
-from calistra_lib.storage.database import Database
-
-
-class QueueStorage:
-    def __init__(self, queue_db: Database):
-        self.queue_db = queue_db
-        self.queues = self.queue_db.load()
+class IQueueStorage:
+    """
+    This class represent basic interface for classes realized
+    queue storage logic
+    """
 
     def save_queues(self):
         """
-
+        This method unload queue in database
         :return: None
         """
-        self.queue_db.unload(self.queues)
+        raise NotImplementedError()
 
     def add_queue(self, name, key, owner):
         """
@@ -26,8 +25,7 @@ class QueueStorage:
         :param owner: author of queue
         :return: added queue
         """
-        self.queues.append(Queue(name, key, owner))
-        return self.queues[-1]
+        raise NotImplementedError()
 
     def remove_queue(self, queue):
         """
@@ -35,7 +33,7 @@ class QueueStorage:
         :param queue: queue for removing
         :return: None
         """
-        self.queues.remove(queue)
+        raise NotImplementedError()
 
     def get_queue_by_key(self, key):
         """
@@ -43,9 +41,7 @@ class QueueStorage:
         :param key: access key
         :return: queried queue
         """
-        for queue in self.queues:  # type: Queue
-            if key == queue.key:
-                return queue
+        raise NotImplementedError()
 
     def get_queue_by_name(self, name):
         """
@@ -53,9 +49,7 @@ class QueueStorage:
         :param name: queue name
         :return: queried queue
         """
-        for queue in self.queues:
-            if name == queue.name:
-                return queue
+        raise NotImplementedError()
 
     def get_user_default_queue(self, user):
         """
@@ -63,8 +57,4 @@ class QueueStorage:
         :param user: user for getting queue
         :return: queried queue
         """
-        for queue in self.queues:
-            if queue.owner == user.uid:
-                if queue.name == Constants.DEFAULT_QUEUE:
-                    return queue
-
+        raise NotImplementedError()

@@ -9,12 +9,12 @@ from calistra_lib.constants import Constants
 from calistra_lib.messages import Messages
 from calistra_lib.exceptions.queue_exceptions import *
 from calistra_lib.exceptions.access_exceptions import *
-from calistra_lib.queue.queue_storage import QueueStorage
+from calistra_lib.queue.json_queue_storage import JsonQueueStorage
 
 
 class QueueController:
     """This class represent methods for work with queue entity"""
-    def __init__(self, queue_storage: QueueStorage):
+    def __init__(self, queue_storage: JsonQueueStorage):
         self.queue_storage = queue_storage
 
     def add_queue(self, name, key, owner) -> Queue:

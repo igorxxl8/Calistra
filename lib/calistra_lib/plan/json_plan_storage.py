@@ -3,17 +3,20 @@ This module contains PlanStorage class which using for store plans
 """
 
 from calistra_lib.plan.plan import Plan
-from calistra_lib.storage.database import Database
+from calistra_lib.storage.json_serializer import JsonDatabase
+from calistra_lib.plan.plan_storage_interface import IPlanStorage
 
 
-class PlanStorage:
-    def __init__(self, plans_db: Database):
-        self.plans_db = plans_db
+class JsonPlanStorage(IPlanStorage):
+    """This class implement IPlanStorage interface and represent instance
+     which store plans in file in json format"""
+    def __init__(self, path_to_plans_file):
+        self.plans_db = JsonDatabase(path_to_plans_file, cls_seq=[Plan])
         self.plans = self.plans_db.load()
 
     def add_plan(self, plan):
         """
-
+        This method add plan in plan storage
         :param plan: added plan
         :return: None
         """
@@ -21,7 +24,7 @@ class PlanStorage:
 
     def remove_plan(self, plan):
         """
-
+        This method remove plan from plan storage
         :param plan:
         :return: None
         """
@@ -29,7 +32,7 @@ class PlanStorage:
 
     def save_plans(self):
         """
-
+        This method unload plans in database
         :return: None
         """
         self.plans_db.unload(self.plans)

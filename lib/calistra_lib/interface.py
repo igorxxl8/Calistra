@@ -7,15 +7,11 @@ from datetime import datetime as dt
 from calistra_lib.constants import Constants, Time
 from calistra_lib.messages import Messages
 from calistra_lib.queue.queue_controller import QueueController
-from calistra_lib.queue.queue_storage import QueueStorage
 from calistra_lib.task.task import TaskStatus
-from calistra_lib.task.task_storage import TaskStorage
 from calistra_lib.task.task_controller import TaskController
 from calistra_lib.exceptions.base_exception import AppError
-from calistra_lib.user.user_storage import UserStorage
 from calistra_lib.user.user_controller import UserController
 from calistra_lib.plan.plan_controller import PlanController
-from calistra_lib.plan.plan_storage import PlanStorage
 from calistra_lib.exceptions.access_exceptions import AccessDeniedError
 from calistra_lib.exceptions.task_exceptions import (
     TaskNotFoundError,
@@ -32,11 +28,14 @@ class Interface:
     This class as facade combines functionality of task, queue, plan and user
      controllers, for convenient using
     """
-    def __init__(self, online_user, queues_db, users_db, tasks_db, plans_db):
-        self.queue_controller = QueueController(QueueStorage(queues_db))
-        self.task_controller = TaskController(TaskStorage(tasks_db))
-        self.plan_controller = PlanController(PlanStorage(plans_db))
-        self.user_controller = UserController(UserStorage(users_db))
+    def __init__(self, online_user, queue_controller: QueueController,
+                 user_controller: UserController, task_controller: TaskController,
+                 plan_controller: PlanController):
+
+        self.queue_controller = queue_controller
+        self.task_controller = task_controller
+        self.plan_controller = plan_controller
+        self.user_controller = user_controller
         self.online_user = self.user_controller.find_user(nick=online_user)
 
     # functions for work with user instance

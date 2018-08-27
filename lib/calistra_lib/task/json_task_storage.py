@@ -1,15 +1,16 @@
 """This module contains class TaskStorage which store all tasks entities"""
 
 from .task import Task
-from calistra_lib.storage.database import Database
+from calistra_lib.task.task_storage_interface import ITaskStorage
+from calistra_lib.storage.json_serializer import JsonDatabase
 
 
-class TaskStorage:
+class JsonTaskStorage(ITaskStorage):
     """
-    This class using for store all tasks in one place
+    This class using for store all tasks in one place in json format
     """
-    def __init__(self, tasks_db: Database):
-        self.tasks_db = tasks_db
+    def __init__(self, path_to_tasks_file):
+        self.tasks_db = JsonDatabase(path_to_tasks_file, [Task])
         self.tasks = self.tasks_db.load()
 
     def add_task(self, task):

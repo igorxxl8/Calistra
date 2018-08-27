@@ -20,15 +20,19 @@ from app.user_wrapper import (
 )
 
 from calistra_lib.storage.json_serializer import JsonDatabase
-from calistra_lib.user.user import User
-from calistra_lib.task.task import Task, TaskStatus
-from calistra_lib.plan.plan import Plan
-from calistra_lib.queue.queue import Queue
+from calistra_lib.user.json_user_storage import JsonUserStorage
+from calistra_lib.user.user_controller import UserController
+from calistra_lib.task.task import TaskStatus
+from calistra_lib.task.json_task_storage import JsonTaskStorage
+from calistra_lib.task.task_controller import TaskController
+from calistra_lib.plan.json_plan_storage import JsonPlanStorage
+from calistra_lib.plan.plan_controller import PlanController
+from calistra_lib.queue.queue_controller import QueueController
+from calistra_lib.queue.json_queue_storage import JsonQueueStorage
 from calistra_lib.exceptions.base_exception import AppError
 from calistra_lib.interface import Interface
 from calistra_lib.constants import Files
 from calistra_lib.logger import get_logger
-
 
 ERROR_CODE = 1
 TASK_KEY_BYTES = 8
@@ -57,18 +61,24 @@ def run() -> int:
     logger = get_logger().getChild('calistra_console')
     logger.info('Start program.')
 
-    users_wrapper_storage = UserWrapperStorage(
-        JsonDatabase(Files.AUTH_FILE, [UserWrapper]),
-        JsonDatabase(Files.ONLINE, [])
-    )
+    # load data from storage and create entities controllers
+    users_wrapper_storage = UserWrapperStorage(Files.AUTH_FILE, Files.ONLINE)
 
-    library = Interface(
-        users_wrapper_storage.online_user,
-        JsonDatabase(Files.QUEUES_FILE, [Queue]),
-        JsonDatabase(Files.USERS_FILE, [User]),
-        JsonDatabase(Files.TASKS_FILE, [Task]),
-        JsonDatabase(Files.PLANS_FILE, [Plan])
-    )
+    queue_storage = JsonQueueStorage(Files.QUEUES_FILE)
+    queue_controller = QueueController(queue_storage)
+
+    task_storage = JsonTaskStorage(Files.TASKS_FILE)
+    task_controller = TaskController(task_storage)
+
+    user_storage = JsonUserStorage(Files.USERS_FILE)
+    user_controller = UserController(user_storage)
+
+    plan_storage = JsonPlanStorage(Files.PLANS_FILE)
+    plan_controller = PlanController(plan_storage)
+
+    # init library interface
+    library = Interface(users_wrapper_storage.online_user, queue_controller,
+                        user_controller, task_controller, plan_controller)
 
     # update reminders deadlines queue and other
     library.update_all()
@@ -506,9 +516,11 @@ def _add_task(args, library) -> int:
 
     try:
         library.create_task(name, queue_key, description,
-            args.pop(ParserArgs.TASK_PARENT.dest), related, responsible,
-            priority, progress, start, deadline, tags, reminder, key
-        )
+                            args.pop(ParserArgs.TASK_PARENT.dest), related,
+                            responsible,
+                            priority, progress, start, deadline, tags, reminder,
+                            key
+                            )
 
     except AppError as e:
         sys.stderr.write(str(e))

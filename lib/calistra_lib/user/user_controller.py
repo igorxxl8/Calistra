@@ -1,9 +1,7 @@
 from datetime import datetime as dt
 
-try:
-    from lib.calistra_lib.constants import Time
-except ImportError:
-    from calistra_lib.constants import Time
+from calistra_lib.constants import Time
+from calistra_lib.user.user import User
 
 
 class UserController:
@@ -11,7 +9,8 @@ class UserController:
         self.users_storage = users_storage
 
     def add_user(self, nick, uid):
-        user = self.users_storage.add_user(nick, uid)
+        user = User(nick, uid)
+        self.users_storage.add_user(user)
         self.users_storage.save_users()
         return user
 

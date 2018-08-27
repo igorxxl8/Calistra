@@ -3,7 +3,7 @@ This module contains user wrapper that stores registration data
 for authenticate users in the console interface
 """
 
-from calistra_lib.storage.database import Database
+from calistra_lib.storage.json_serializer import JsonDatabase
 from calistra_lib.exceptions.base_exception import AppError
 
 
@@ -30,11 +30,11 @@ class UserWrapperStorage:
     """
     Store in database all user wrappers
     """
-    def __init__(self, users_wrapper_db: Database, online_user_db: Database):
-        self.online_user_db = online_user_db
-        self.users_wrapper_db = users_wrapper_db
+    def __init__(self, users_wrapper_file, online_user_file):
+        self.online_user_db = JsonDatabase(online_user_file, [])
+        self.users_wrapper_db = JsonDatabase(users_wrapper_file, [UserWrapper])
         self.users = self.users_wrapper_db.load()
-        self.__online_user = online_user_db.load()
+        self.__online_user = self.online_user_db.load()
 
     def add_user(self, nick, password):
         """

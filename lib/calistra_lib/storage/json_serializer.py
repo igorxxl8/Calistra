@@ -1,5 +1,4 @@
 import json
-from .database import Database
 
 
 # TODO: 1) дописать документацию
@@ -22,10 +21,16 @@ class Serializable:
         pass
 
 
-class JsonDatabase(Database):
+class JsonDatabase:
     """
     This class describe mechanism which parse data in json format
     """
+    def __init__(self, filename, cls_seq=None):
+        if cls_seq is None:
+            cls_seq = []
+        self.cls_seq = cls_seq
+        self.filename = filename
+
     def load(self) -> list:
         with open(self.filename, 'r') as file:
             s = file.read()

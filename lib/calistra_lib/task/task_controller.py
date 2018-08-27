@@ -4,7 +4,7 @@
 from datetime import datetime as dt
 
 from .task import Task, TaskStatus, RelatedTaskType
-from .task_storage import TaskStorage
+from .json_task_storage import JsonTaskStorage
 from calistra_lib.task.reminder import Reminder
 from calistra_lib.constants import Constants, Time
 from calistra_lib.messages import Messages
@@ -19,7 +19,7 @@ class TaskController:
     """
     EDITING_MESSAGE = ""
 
-    def __init__(self, task_storage: TaskStorage):
+    def __init__(self, task_storage: JsonTaskStorage):
         self.tasks_storage = task_storage
 
     @classmethod

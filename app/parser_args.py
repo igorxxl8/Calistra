@@ -11,18 +11,18 @@ class ParserArgs:
     settings for arguments
     """
 
-    # tuple for represent arguments
+    # tuple for represent positional argument parser
     Argument = namedtuple('Argument', ['name', 'help'])
-    OptionalArgument = namedtuple(
-        'OptionalArgument',
-        ['dest', 'long', 'short', 'help']
-    )
+
+    # tuple for desctibe optional argument for parser
+    OptionalArgument = namedtuple('OptionalArgument',
+                                  ['dest', 'long', 'short', 'help']
+                                  )
     __STORE_TRUE__ = "store_true"
 
-    # main parser's arguments
+    # main parser's arguments which using in different types of parsers
     DESCRIPTION = 'Calistra - task tracker'
-    TARGET = Argument(name='target',
-                      help='select a target to work with')
+    TARGET = Argument(name='target', help='select a target to work with')
     ACTION = 'action'
     ADD = 'add'
     SET = 'set'
@@ -38,6 +38,7 @@ class ParserArgs:
         short='-r',
         help='applying an action to nested objects'
     )
+
     ALL = OptionalArgument(
         dest='all',
         long='--all',
@@ -91,9 +92,9 @@ class ParserArgs:
     FIND_TASK_HELP = 'find task'
     SET_TASK_HELP = 'edit task'
     SHOW_TASK_HELP = 'show user\'s tasks'
-    ACTIVATE_TASK_HELP = ('confirm participation on task '
-                          '(for responsible user only)')
+    ACTIVATE_TASK_HELP = 'confirm participation (for responsible user only)'
     TASK_NAME = Argument(name='name', help='name for task')
+
     # optional task params
     NEW_NAME = OptionalArgument(
         dest='NEW_NAME',
@@ -134,7 +135,7 @@ class ParserArgs:
              'tasks, controller - the task-controller sets the same status'
              ' to the current task (there can be only one controller task).'
              'In format avoid spaces. '
-             'For example: "89fdsg8s9df, 9f08g98990:blocker"'
+             'For example: "89fdsg8s9df,9f08g98990:blocker"'
     )
 
     TASK_PRIORITY = OptionalArgument(
@@ -213,8 +214,13 @@ class ParserArgs:
     QUEUE_ACTION = 'action with queue'
     ADD_QUEUE_HELP = 'add new queue'
     FIND_QUEUE_HELP = 'find queue by name'
+    SET_QUEUE_HELP = 'edit queue'
+    DELETE_QUEUE_HELP = 'delete existing queue'
+    SHOW_QUEUE_HELP = ('show user tasks in queue with defined key'
+                       '(opened tasks by default)')
     QUEUE_NAME = Argument(name='name', help='queue name')
 
+    # optional queues arguments
     OPEN_TASKS = OptionalArgument(
         long='--opened',
         short='-op',
@@ -235,11 +241,6 @@ class ParserArgs:
         dest='FAILED',
         help='perform for failed tasks'
     )
-
-    SET_QUEUE_HELP = 'edit queue'
-    DELETE_QUEUE_HELP = 'delete existing queue'
-    SHOW_QUEUE_HELP = ('show user tasks in queue with defined key'
-                       '(opened tasks by default)')
 
     # Constants, which represent plan parser commands and settings
     PLAN = Argument(name='plan', help='work with plans')
@@ -262,6 +263,7 @@ class ParserArgs:
              'For example: 20.08.2018.9:00'
     )
 
+    # optional args for plan
     PLAN_NAME_OPTIONAL = OptionalArgument(
         long='--new_name',
         short='-pn',

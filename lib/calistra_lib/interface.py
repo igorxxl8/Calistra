@@ -2,7 +2,6 @@
 in library
 """
 
-
 from datetime import datetime as dt
 from calistra_lib.constants import Constants, Time
 from calistra_lib.messages import Messages
@@ -28,8 +27,10 @@ class Interface:
     This class as facade combines functionality of task, queue, plan and user
      controllers, for convenient using
     """
+
     def __init__(self, online_user, queue_controller: QueueController,
-                 user_controller: UserController, task_controller: TaskController,
+                 user_controller: UserController,
+                 task_controller: TaskController,
                  plan_controller: PlanController):
 
         self.queue_controller = queue_controller
@@ -101,10 +102,10 @@ class Interface:
     def update_all(self):
         """
         This method verifies and updated deadlines and plans tasks and notify
-         user about in changing
+         user about it changing
         :return: None
         """
-        # getting all entities which could changing
+        # getting all entities which could changing and
         # tasks which were creating by plans
         planed_tasks = self.plan_controller.update_all_plans()
 
@@ -112,6 +113,8 @@ class Interface:
         ctrls, blcks, failed, notified = self.task_controller.update_all()
 
         for task in planed_tasks:
+            # creating planned task, locate it in default queue, link with user
+            #  and notified him
             user = self.user_controller.find_user(nick=task.author)
             queue = self.queue_controller.get_user_default_queue(user)
             self.task_controller.connect_planed_task(task)
@@ -123,12 +126,16 @@ class Interface:
             )
 
         for task, messages in notified:
+            # a task that has a reminder whose time has come notified user
+            # about necessary to solve task
             users = self.find_users_by_name_list(
                 task.responsible + [task.author])
             for message in messages:
                 self.send_message_to_users(users, message, False)
 
         for task in failed:
+            # all failed task will be moved in queue in special place -
+            # failed tasks
             queue = self.queue_controller.get_queue_by_key(task.queue)
             self.queue_controller.move_in_failed(queue, task)
             users = self.find_users_by_name_list(
@@ -140,6 +147,8 @@ class Interface:
             )
 
         for task in ctrls:
+            # every task which has controller will be updated.
+            # It give the same status as controller and notified user about it
             users = self.find_users_by_name_list(
                 task.responsible + [task.author])
             self.send_message_to_users(
@@ -149,6 +158,7 @@ class Interface:
             )
 
         for task in blcks:
+            # if all task blockers were solve user get message about it
             users = self.find_users_by_name_list(
                 task.responsible + [task.author])
             self.send_message_to_users(
@@ -223,6 +233,7 @@ class Interface:
             raise e
 
         self.user_controller.unlink_user_and_queue(user, queue)
+        # if set recursive deleting, all task will be deleted
         task_keys = queue.opened_tasks + queue.failed_tasks + queue.solved_tasks
         for task_key in task_keys:
             try:
@@ -307,6 +318,7 @@ class Interface:
         queue = self.get_queue(queue_key, author)
 
         if related:
+            # check that related tasks exists
             self.task_controller.check_related_tasks(related, key)
 
         try:
@@ -322,6 +334,7 @@ class Interface:
         except AppError as e:
             raise e
 
+        # link with user is necessary for get access to task
         for user in responsible_users:
             if user.uid == author.uid:
                 self.user_controller.link_responsible_with_task(user, task)
@@ -363,13 +376,17 @@ class Interface:
         editor = self.get_online_user()
 
         if related:
+            # check that related tasks exists
             self.task_controller.check_related_tasks(related, key)
 
         try:
+            # find editing task and queue where it located
             task = self.get_task(key)
             task_queue = self.queue_controller.get_queue_by_key(task.queue)
 
             if responsible is None:
+                # if user did not change responsible this instantiation
+                # will not change responsible users
                 current_responsible = []
                 new_responsible = []
             else:
@@ -389,12 +406,16 @@ class Interface:
             raise e
 
         else:
+            # after editing task, will be create link with invited users and
+            #  delete link with users who no longer responsible for this task
             dismissed_users, invited_users = self.get_responsible_diff(
                 new_responsible, current_responsible)
             new_responsible = self.find_users_by_name_list(invited_users)
             dismissed_responsible = self.find_users_by_name_list(
                 dismissed_users)
 
+            # every dismissed user will be notified that he was suspended
+            #  and link between him and task will be deleted
             for user in dismissed_responsible:
                 self.user_controller.unlink_responsible_and_task(user, task)
                 message = (Messages.YOU_SUSPENDED.format(task.name))
@@ -408,6 +429,8 @@ class Interface:
                                                         task.key, task.key))
                 self.user_controller.notify_user(user, message)
 
+            # it's checking is avoid sending notification to author twice if
+            #  author one of task responsible users
             if task.author not in task.responsible:
                 users = self.find_users_by_name_list(
                     task.responsible + [task.author])
@@ -417,8 +440,12 @@ class Interface:
             self.send_message_to_users(users,
                                        TaskController.EDITING_MESSAGE)
 
+            # if status did not changed return task
             if status is None:
                 return task
+
+            # in accordance with the status move task in necessary type of
+            # tasks: opened, archive or failed and notified user about it
 
             if task.status == TaskStatus.SOLVED:
                 self.queue_controller.move_in_solved(task_queue, task)
@@ -499,6 +526,7 @@ class Interface:
         except AppError as e:
             raise e
 
+        # when the queue is deleted it's not necessary to delete link with tasks
         if rem_que_flag is False:
             for task in tasks:
                 queue = self.queue_controller.get_queue_by_key(task.queue)
@@ -510,7 +538,7 @@ class Interface:
     @log
     def delete_link_with_users(self, tasks, author, message):
         """
-        This method using for
+        This method is used to remove links between users and tasks
         :param tasks:
         :param author: tasks author
         :param message: message which send to user
@@ -535,7 +563,7 @@ class Interface:
     @log
     def activate_task(self, key):
         """
-        This method using for activating task by key
+        This method using for activating task by responsible user
         :param key: access key
         :raise: TaskNotFoundError, ActivationTaskError
         :return: activated task
@@ -551,6 +579,8 @@ class Interface:
         if key in user.tasks_responsible:
             raise ActivationTaskError(Messages.ALREADY_CONFIRMED)
 
+        # when task is activated program add link with user and this user can
+        #  get access to this task and set status activated for task
         self.user_controller.link_responsible_with_task(user, task)
         self.task_controller.activate_task(task)
 
@@ -571,11 +601,13 @@ class Interface:
         """
         user = self.get_online_user()
         author_tasks = []
+        # search for author tasks
         for key in user.tasks_author:
             task = self.task_controller.find_task(key=key)
             if task:
                 author_tasks.append(task)
         responsible_tasks = []
+        # search for responsible tasks
         for key in user.tasks_responsible:
             task = self.task_controller.find_task(key=key)
             if task:
@@ -585,7 +617,9 @@ class Interface:
     @log
     def get_responsible_diff(self, new, old):
         """
-        This method
+        This method is used to highlight users who are no longer in the list
+         of responsible and users who have been added and get difference between
+          list of old and new users
         :param new: new responsible user
         :param old: old responsible user
         :return: diff_old - user which suspended from participation
@@ -606,8 +640,9 @@ class Interface:
     @log
     def find_users_by_name_list(self, name_list):
         """
-        This method using for
+        This method using for get all users by names defined in list
         :param name_list: list of users nicks
+        :raise AppError
         :return: list of users
         """
         users = []

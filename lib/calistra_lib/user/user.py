@@ -1,9 +1,9 @@
-# TODO: 1) дописать документацию
-# TODO: 2) Рефакторинг
-# TODO: 3) Логгирование
+"""This module contains class User for represent a single user entity"""
 
 
 class User:
+    """This class describe single user"""
+
     def __init__(self, nick, uid):
         self.uid = uid
         self.nick = nick

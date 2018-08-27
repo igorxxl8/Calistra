@@ -60,6 +60,7 @@ class TaskController:
         :param reminder:
         :param key:
         :param creating_time:
+        :raises TaskNotFoundError, AccessDeniedError, SubTaskError
         :return: added task
         """
 
@@ -90,6 +91,13 @@ class TaskController:
         return task
 
     def check_related_tasks(self, related, task_key):
+        """
+        This method check format of related tasks and they existence
+        :param related: keys of associated tasks and its type in string format
+        :param task_key: key of the task for which the associated task is set
+        :raise RelatedTaskError
+        :return: None
+        """
         if related == Constants.UNDEFINED:
             return None
 
@@ -126,6 +134,28 @@ class TaskController:
     def edit_task(self, task, task_queue, editor, name, description, parent,
                   related, responsible, priority, progress, start, deadline,
                   tags, reminder, status, editing_time):
+        """
+        This method using for editing task and its attributes
+        :param task: edited task
+        :param task_queue: queue where task located
+        :param editor: user who want to edit this task
+        :param name: new task name
+        :param description:
+        :param parent:
+        :param related:
+        :param responsible:
+        :param priority:
+        :param progress:
+        :param start:
+        :param deadline:
+        :param tags:
+        :param reminder:
+        :param status:
+        :param editing_time: time when task was edited
+        :raise AccessDeniedError, SubTaskError, TaskDeadlineError,
+        TaskNotFoundError
+        :return: edited task
+        """
 
         TaskController.EDITING_MESSAGE = (
             Messages.USER_EDIT_TASK.format(editor.nick, task.name, task.key)
@@ -393,7 +423,7 @@ class TaskController:
     def get_sub_tasks(self, parent_task):
         return self.tasks_storage.get_sub_tasks(parent_task)
 
-    # functions whick working with task params and in dependts of it change
+    # functions which working with task params and in depends of it change
     # status and notify users
     def check_terms_and_reminders(self, task, notified_tasks, failed_tasks):
         if task.status != TaskStatus.FAILED:

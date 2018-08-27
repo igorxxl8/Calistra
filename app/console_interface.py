@@ -1,7 +1,3 @@
-# TODO: 1) дописать документацию
-# TODO: 2) Рефакторинг
-# TODO: 3) Логирование
-# TODO: 4) еще можно выделить в сущность даже функции парсера!
 import sys
 import os
 import uuid
@@ -11,7 +7,6 @@ from app.help_functions import *
 from app.parser_args import ParserArgs
 from app.printer import Printer
 from app.user_wrapper import (
-    UserWrapper,
     UserWrapperStorage,
     UserWrapperController,
     LoginError,
@@ -19,7 +14,6 @@ from app.user_wrapper import (
     SaveUserError
 )
 
-from calistra_lib.storage.json_serializer import JsonDatabase
 from calistra_lib.user.json_user_storage import JsonUserStorage
 from calistra_lib.user.user_controller import UserController
 from calistra_lib.task.task import TaskStatus
@@ -54,8 +48,7 @@ def run() -> int:
     Start program
     :return: int - exit code
     """
-    # TODO: сделать функцию применения настроек
-    # program settings
+    # check for files and create it missed
     check_program_data_files(Files.FOLDER, Files.FILES)
 
     logger = get_logger().getChild('calistra_console')

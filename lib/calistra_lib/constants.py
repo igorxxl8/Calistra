@@ -15,8 +15,11 @@ class Files:
     USERS_FILE = os.path.join(FOLDER, 'users.json')
     AUTH_FILE = os.path.join(FOLDER, 'auth.json')
     ONLINE = os.path.join(FOLDER, 'online_user.json')
+
     LOG_FILE = os.path.join(FOLDER, 'logs.log')
     LOG_CONFIG = os.path.join(FOLDER, 'logger.config')
+
+    # this list of tuples contains data for init empty files
     FILES = [
         (TASKS_FILE, '[]'),
         (QUEUES_FILE, '[]'),
@@ -74,6 +77,9 @@ class Time:
 
     HOUR = timedelta(hours=1)
     TWO_HOURS = timedelta(hours=2)
+
+    # DELTA - time interval during which the task time attributes
+    # check is performed
     DELTA = timedelta(minutes=15)
     ZERO = timedelta(hours=0, days=0)
 
@@ -81,6 +87,7 @@ class Time:
     DATETIME_FORMAT = '%d.%m.%Y.%H:%M'
     EXTENDED_TIME_FORMAT = '%d.%m.%Y.%H:%M:%S'
 
+    # dictionary which puts in conformity task frequency and time interval
     Interval = {
         PlanPeriod.DAILY: DAY,
         PlanPeriod.WEEKLY: WEEK,

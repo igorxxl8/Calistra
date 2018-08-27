@@ -1,11 +1,6 @@
 import json
 
 
-# TODO: 1) дописать документацию
-# TODO: 2) Рефакторинг
-# TODO: 3) Логгирование
-# TODO: 4) все объединить в процедуру конкат
-
 def concat(*args):
     return ''.join(args)
 
@@ -26,17 +21,32 @@ class JsonDatabase:
     This class describe mechanism which parse data in json format
     """
     def __init__(self, filename, cls_seq=None):
+        """
+        Init method. Calling after creating instance
+        :param filename: file where instance stored
+        :param cls_seq:  sequence of classes represent nested objects
+        of instance
+        """
         if cls_seq is None:
             cls_seq = []
         self.cls_seq = cls_seq
         self.filename = filename
 
     def load(self) -> list:
+        """
+        This method parse from json object in python object
+        :return: instance
+        """
         with open(self.filename, 'r') as file:
             s = file.read()
         return from_json(self.cls_seq, s)
 
     def unload(self, instance):
+        """
+        This method parse python object to string in json format
+        :param instance: instance for parsing
+        :return: None
+        """
         with open(self.filename, 'w') as file:
             file.write(to_json(instance, indentation=4))
 
@@ -58,6 +68,8 @@ def array_to_json(array, ctrl_char, indent, level):
     for i in range(size):
         item = array[i]
         if i == size - 1:
+            # if array item is last in array to result string will be appended
+            #  right square bracket because json-string is ready
             result = ''.join(
                 [
                     result,
@@ -87,6 +99,8 @@ def to_json(instance=None, indentation=None, level=1) -> str:
     :param level: level of indentation
     :return: string in json format
     """
+
+    # try to parse object by default json parser
     try:
         res = json.dumps(instance, indent=indentation)
     except TypeError:
@@ -94,6 +108,7 @@ def to_json(instance=None, indentation=None, level=1) -> str:
     else:
         return res
 
+    # if indentation is define use it for parsing objects with indentation
     if indentation is None:
         indent = 0
         ctrl_char = ''
@@ -101,29 +116,40 @@ def to_json(instance=None, indentation=None, level=1) -> str:
         indent = indentation
         ctrl_char = '\n'
 
+    # parse non-list objects
     if not isinstance(instance, list):
+
+        # get instance args as dict if it possible else attrs will be defined
+        # as instance
         try:
             attrs = vars(instance).copy()
         except TypeError:
             attrs = instance
+
+        # form begin of result string in json format
         res = ''.join(['{', ctrl_char, ' ' * level * indent])
 
         while attrs:
+            # parse every instance attr in json format
             key, value = attrs.popitem()
             if isinstance(value, list):
+                # if attr is list parse it as array
                 res = ''.join(
                     [res, '"', key, '"', ': ',
                      array_to_json(value, ctrl_char, indent, level + 1)]
                 )
             elif isinstance(value, Serializable):
+                # if attr is Serializable object instance parse it as instance
                 res = ''.join(
                     [res, '"', key, '"', ': ', to_json(value, indent, level + 1)]
                 )
             elif isinstance(value, int):
+                # if attr is int, it append to result string
                 res = ''.join(
                     [res, '"', key, '"', ': ', str(value).lower()]
                 )
             elif value is None:
+                # if attr is None, append null to result
                 res = ''.join(
                     [res, '"', key, '"', ': ', 'null']
                 )
@@ -132,9 +158,12 @@ def to_json(instance=None, indentation=None, level=1) -> str:
                     [res, '"', key, '"', ': ', '"', str(value), '"']
                 )
             if attrs:
+                # if attrs not empty in string append comma
                 res = ''.join([res, ',', ctrl_char, ' ' * level * indent])
+        # end of parsing non list object
         return ''.join([res, ctrl_char, ' ' * (level-1) * indent, '}'])
 
+    # parse list objects
     return array_to_json(instance, ctrl_char, indentation, level)
 
 
@@ -146,15 +175,19 @@ def from_json(cls_seq: list, string):
     :return: instance
     """
     def set_dict_attr(instance, data, num):
+        """
+        This nested function set value of all instance attr
+        :param instance: instance to set it attrs
+        :param data:
+        :param num:
+        :return:
+        """
         for key, value in data.items():
             if isinstance(value, list):
-                # print('list in make_object')
                 instance[key] = make_objects_array(num + 1, value)
             elif isinstance(value, dict):
-                # print('obj in make_object')
                 instance[key] = make_object(num + 1, value)
             else:
-                # print('item in make object')
                 instance[key] = value
 
     def set_object_attr(instance, data, num):
@@ -167,13 +200,12 @@ def from_json(cls_seq: list, string):
         """
         for key, value in data.items():
             if isinstance(value, list):
-                # print('list in make_object')
+                # for key set result of making list of objects if value is list
                 setattr(instance, key, make_objects_array(num + 1, value))
             elif isinstance(value, dict):
-                # print('obj in make_object')
+                # for key set result of making simple object if value is dict
                 setattr(instance, key, make_object(num + 1, value))
             else:
-                # print('item in make object')
                 setattr(instance, key, value)
 
     def make_object(num, data):
@@ -184,9 +216,11 @@ def from_json(cls_seq: list, string):
         :return: instance
         """
         if cls_seq[num] is dict:
+            # if instance is dict, create a dict
             instance = dict.__new__(dict)
             set_dict_attr(instance, data, num)
         else:
+            # if instance is object, create object
             instance = object.__new__(cls_seq[num])
             set_object_attr(instance, data, num)
         return instance
@@ -200,18 +234,18 @@ def from_json(cls_seq: list, string):
         """
         entity = []
         for item in array:
-            # print(item)
             if isinstance(item, list):
-                # print('TO_LIST')
+                # append a list of nested instances objects
                 entity.append(make_objects_array(num + 1, item))
             elif isinstance(item, dict):
-                # print('TO_CLASS')
+                # append simple object
                 entity.append(make_object(num, item))
             else:
-                # print('SIMPLE_OBJECT')
                 entity.append(item)
         return entity
 
+    # using standart json library, from parse string in json format in
+    # set of dicts and lists
     py_objs = json.loads(string)
 
     if isinstance(py_objs, list):

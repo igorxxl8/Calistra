@@ -94,15 +94,22 @@ class PlanController:
         :return: planned tasks
         """
         planned_tasks = []
+
+        # for every plan check it activation and current time
         for plan in self.plans_storage.plans:
+            # check that activation time come
             if Time.NOW >= Time.get_date(plan.time):
                 time_diff = Time.NOW - Time.get_date(plan.time)
                 interval = Time.Interval[plan.period]
+                # check that activation time was recently
                 if time_diff < Time.DELTA:
+                    # add this plan to plans which be activated
                     planned_tasks.append(self.make_plan_task(plan))
+                    # change activation time by adding period time interval
+                    #  to current activation time
                     next_time_activation = Time.get_date_string(
-                        Time.get_date(plan.time) + interval
-                    )
+                        Time.get_date(plan.time) + interval)
+
                     plan.time = next_time_activation
         self.plans_storage.save_plans()
         return planned_tasks

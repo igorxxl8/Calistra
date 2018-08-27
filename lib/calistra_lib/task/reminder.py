@@ -29,7 +29,7 @@ class Reminder:
     @staticmethod
     def check_format(reminder):
         """
-        Method which check reminder format correctness and correct is if
+        Method which check reminder format correctness and correct it if
          possible
         :param reminder:
         :raise ValueError
@@ -60,6 +60,7 @@ class Reminder:
         except ValueError:
             return False
 
+        # reminder without repeating elements in correct format
         corrected_reminder = ':'.join([','.join(frequency), ','.join(times)])
 
         return corrected_reminder
@@ -72,20 +73,26 @@ class Reminder:
         :param task: task with reminder for checking
         :return: messages
         """
+        # auto reminder - reminders which notify user in define by program time
+        # this function collect all messages about necessary to notify user
         messages = []
         if task.start:
             start = Time.get_date(task.start)
             time_diff = start - Time.NOW
+            # check that the task start time is in an hour
             if Time.ZERO < time_diff < Time.HOUR:
                 messages.append(Messages.TASK_START_IN_A_HOUR.format(
                     task.name, task.key, start.time())
                 )
 
+            # check that the task start time is in an two hour and more
+            # than hour
             elif Time.HOUR < time_diff < Time.TWO_HOURS:
                 messages.append(Messages.TASK_START_IN_TWO_HOURS.format(
                     task.name, task.key, start.time())
                 )
 
+            # check that the task start time is in a day
             elif (time_diff < Time.DAY
                   and start.day != Time.NOW.day):
                 messages.append(Messages.TASK_START_TOMORROW.format(
@@ -95,16 +102,19 @@ class Reminder:
         if task.deadline:
             deadline = Time.get_date(task.deadline)
             time_diff = deadline - Time.NOW
+            # check that the task deadline time is in an hour
             if Time.ZERO < time_diff < Time.HOUR:
                 messages.append(Messages.TASK_DEADLINE_IN_A_HOUR.format(
                     task.name, task.key, deadline.time())
                 )
 
+            # check that the task deadline time is in an two hour
             elif Time.HOUR < time_diff < Time.TWO_HOURS:
                 messages.append(Messages.TASK_DEADLINE_IN_TWO_HOURS.format(
                     task.name, task.key, deadline.time())
                 )
 
+            # check that the task deadline time is in a day
             elif (time_diff < Time.DAY
                   and deadline.day != Time.NOW.day):
                 messages.append(Messages.TASK_DEADLINE_TOMORROW.format(
@@ -125,11 +135,15 @@ class Reminder:
         frequency = list(set(reminder[0].split(',')))
         times = list(set(reminder[1].split(',')))
 
+        # check that period is every day or today is defined by user day of
+        # week to remind user
         if (Frequency.EVERY_DAY in frequency or
                 Time.get_day_name(Time.NOW) in frequency):
 
             for time in times:
+                # check that the reminder time has come
                 reminder_time = Time.get_time(time).time()
+                # lower and upper bound - intervals for checking reminder time
                 lower_bound = (Time.NOW - Time.DELTA).time()
                 upper_bound = (Time.NOW + Time.DELTA).time()
                 if lower_bound < reminder_time < upper_bound:

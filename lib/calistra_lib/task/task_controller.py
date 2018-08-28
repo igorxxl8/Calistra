@@ -353,13 +353,24 @@ class TaskController:
             TaskController.attach_message('deadline: {}'.format(deadline))
 
     def edit_status(self, task: Task, status):
+        """
+        This method using for editing task status and check that status
+        changing does not contradict logic
+        :param task: edited task
+        :param status: new task status
+        :return: None
+        """
         if status:
+            # for task which has controller task it's impossible to change
+            # status
             if task.related and task.related.endswith(
                     RelatedTaskType.CONTROLLER):
                 raise TaskStatusError(
                     Messages.CANNOT_CHANGE_RELATED_TASK_STATUS.format(
-                        task.name, task.status))
 
+                      task.name, task.status))
+
+            # it's not necessary to change status if it already has it
             if status == task.status:
                 raise TaskStatusError(
                     Messages.CANNOT_SET_SAME_STATUS.format(
@@ -367,6 +378,8 @@ class TaskController:
                 )
 
             if status == TaskStatus.SOLVED:
+                # cannot set solved status for task which has unsolved blockers
+                # task
                 if self.is_task_has_unsolved_blockers(task):
                     raise TaskStatusError(
                         Messages.CANNOT_SOLVE_TASK_WITH_UNSOLVED_BLOCKERS
@@ -375,6 +388,7 @@ class TaskController:
                     raise TaskStatusError(
                         Messages.CANNOT_SET_STATUS_SOLVED_FOR_FAILED)
 
+                # task cannot be solved if it has unsolved sub tasks
                 for sub_task in self.get_sub_tasks(task):
                     if sub_task.status != TaskStatus.SOLVED:
                         raise TaskStatusError(
@@ -385,10 +399,15 @@ class TaskController:
                             Messages.CANNOT_SET_STATUS_SOLVED_FAILED_ST)
 
             if status == TaskStatus.OPENED:
+                # when user want to reopen task, this task checking for
+                # deadline correctness
                 if task.status == TaskStatus.FAILED:
                     if task.deadline and Time.get_date(task.deadline) < dt.now():
                         raise TaskStatusError(
                             Messages.CANNOT_SET_STATUS_OPENED_FOR_FAILED)
+
+                # when user want to reopen task, this task checking for open
+                # sub tasks if it has failed sub tasks appear error
                 for sub_task in self.get_sub_tasks(task):
                     if sub_task.status == TaskStatus.FAILED:
                         raise TaskStatusError(
@@ -399,6 +418,14 @@ class TaskController:
             TaskController.attach_message('status: {}'.format(status))
 
     def edit_parent(self, task, task_queue, parent):
+        """
+        This method check correctness of editing parent task
+        :param task: task for editing
+        :param task_queue: queue where task located
+        :param parent: new parent task
+        :raise TaskNotFoundError, SubTaskError
+        :return: None
+        """
         if parent:
             parent_task = self.tasks_storage.get_task_by_key(task.parent)
             new_parent_task = self.tasks_storage.get_task_by_key(parent)
@@ -416,6 +443,7 @@ class TaskController:
                 raise SubTaskError(Messages.PARENT_SAME_TASK)
 
             else:
+                # task cannot be one of it sub tasks
                 for subtask in task.sub_tasks:
                     if parent == subtask:
                         raise SubTaskError(Messages.PARENT_IS_TASK_SUBTASK)
@@ -473,6 +501,7 @@ class TaskController:
         """
         This method get task from storage by key
         :param key: access key
+        :raise TaskNotFoundError
         :return: requested task
         """
         task = self.tasks_storage.get_task_by_key(key)
@@ -480,11 +509,14 @@ class TaskController:
             raise TaskNotFoundError(Messages.SHOW_KEY.format(key))
         return task
 
-    def find_task(self, name=None, key=None):
+    def find_task(self, key=None, name=None, tag=None):
         if key is None:
-            if name is None:
+            if name is None and tag is None:
                 return None
-            return self.tasks_storage.get_task_by_name(name)
+            if name:
+                return self.tasks_storage.get_task_by_name(name)
+            if tag:
+                return self.tasks_storage.get_task_by_tag(tag)
         return self.tasks_storage.get_task_by_key(key)
 
     def get_sub_tasks(self, parent_task):

@@ -394,15 +394,18 @@ def _create_task_subparsers(task_parser):
         FormattedParser.active_sub_parser = show_subparsers
 
     elif ParserArgs.FIND in sys.argv:
-        # calistra task find <name>
-        find_subparsers.add_argument(
-            ParserArgs.TASK_NAME.name,
-            help=ParserArgs.TASK_NAME.help)
+        # calistra task find --name=<NAME>
+        args_group = find_subparsers.add_mutually_exclusive_group()
+        args_group.add_argument(
+            ParserArgs.TASK_NAME_OPTIONAL.long,
+            dest=ParserArgs.TASK_NAME_OPTIONAL.dest,
+            help=ParserArgs.TASK_NAME_OPTIONAL.help)
 
-        find_subparsers.add_argument(
+        # calistra task find --tag=<TAG>
+        args_group.add_argument(
             ParserArgs.TASK_TAGS.long,
             dest=ParserArgs.TASK_TAGS.dest,
-            help=ParserArgs.TASK_TAGS.help
+            help=ParserArgs.FIND_BY_TAG_HELP
         )
         FormattedParser.active_sub_parser = find_subparsers
 

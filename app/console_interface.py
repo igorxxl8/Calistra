@@ -181,7 +181,7 @@ def run() -> int:
             )
 
         if action == ParserArgs.FIND:
-            return _find_task(args.pop(ParserArgs.TASK_NAME.name), library)
+            return _find_task(args, library)
 
         if action == ParserArgs.ACTIVATE:
             key = args.pop(ParserArgs.KEY.name)
@@ -405,7 +405,6 @@ def _edit_queue(key, new_name, library):
 
 
 def _show_queue(library) -> int:
-    # TODO: сделать чтобы показывались все таски
     try:
         queues = library.get_user_queues()
     except AppError as e:
@@ -601,7 +600,7 @@ def _del_task(args, library) -> int:
 
 def _show_task(key, library, long) -> int:
     try:
-        task = library.find_task(key)
+        task = library.get_task(key)
     except AppError as e:
         sys.stderr.write(str(e))
         return ERROR_CODE
@@ -618,15 +617,15 @@ def _show_task(key, library, long) -> int:
     return 0
 
 
-def _find_task(name, library) -> int:
+def _find_task(task_params, library) -> int:
     try:
-        tasks = library.find_task(name=name)
+        tasks = library.find_task(task_params)
     except AppError as e:
         sys.stderr.write(str(e))
         return ERROR_CODE
 
     print('Search:')
-    Printer.print_tasks(tasks, 'Result for "{}"'.format(name))
+    Printer.print_tasks(tasks, 'Result:')
     return 0
 
 

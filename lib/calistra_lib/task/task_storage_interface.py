@@ -44,6 +44,14 @@ class ITaskStorage:
         """
         raise NotImplementedError()
 
+    def get_task_by_tag(self, tag):
+        """
+        This method using for getting task by tag from task storage
+        :param tag: task tag
+        :return: queried task
+        """
+        raise NotImplementedError()
+
     def save_tasks(self):
         """
         This method using for save task in database

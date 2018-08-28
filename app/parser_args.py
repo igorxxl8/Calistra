@@ -94,8 +94,17 @@ class ParserArgs:
     SHOW_TASK_HELP = 'show user\'s tasks'
     ACTIVATE_TASK_HELP = 'confirm participation (for responsible user only)'
     TASK_NAME = Argument(name='name', help='name for task')
+    FIND_BY_TAG_HELP = 'using name of tag to find tasks which tagged by this ' \
+                       'tag'
 
     # optional task params
+    TASK_NAME_OPTIONAL = OptionalArgument(
+        dest='name',
+        long='--name',
+        short='-tn',
+        help='name of task'
+    )
+
     NEW_NAME = OptionalArgument(
         dest='NEW_NAME',
         long='--new_name',
@@ -174,8 +183,8 @@ class ParserArgs:
     )
 
     TASK_TAGS = OptionalArgument(
-        dest='TAGS',
-        long='--tags',
+        dest='tag',
+        long='--tag',
         short='-t',
         help='marks for task, defines category or group. '
              'Format: "tag1,tag2,tag3" (avoid space near comma)'

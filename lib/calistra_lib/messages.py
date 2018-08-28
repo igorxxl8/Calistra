@@ -10,6 +10,7 @@ class Messages:
     TASK_WAS_FAILED_DEADLINE_PASSED = ('task "{}"({}) failed. '
                                        'The deadline has passed - {}')
 
+    TAGGED_TASKS_NOT_FOUND = 'Tasks with tag {} not found!'
     TASK_REOPENED = 'The task "{}" reopened by user "{}"'
     TASK_SOLVED = 'The task "{}" was solved by user "{}"'
     SHOW_KEY = 'key - {}'

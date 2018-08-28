@@ -62,6 +62,18 @@ class JsonTaskStorage(ITaskStorage):
                 tasks.append(task)
         return tasks
 
+    def get_task_by_tag(self, tag):
+        """
+        This method using for getting task by tag from task storage
+        :param tag: task tag
+        :return: tasks with tag
+        """
+        tasks = []
+        for task in self.tasks:
+            if task.tags and tag in task.tags:
+                tasks.append(task)
+        return tasks
+
     def save_tasks(self):
         """
         This method using for save task in database

@@ -4,22 +4,22 @@ in library
 
 from datetime import datetime as dt
 from calistra_lib.constants import Constants, Time
-from calistra_lib.messages import Messages
-from calistra_lib.queue.queue_controller import QueueController
-from calistra_lib.task.task import TaskStatus
-from calistra_lib.task.task_controller import TaskController
-from calistra_lib.exceptions.base_exception import AppError
-from calistra_lib.user.user_controller import UserController
-from calistra_lib.plan.plan_controller import PlanController
 from calistra_lib.exceptions.access_exceptions import AccessDeniedError
+from calistra_lib.exceptions.base_exception import AppError
+from calistra_lib.exceptions.queue_exceptions import (
+    AddingQueueError
+)
 from calistra_lib.exceptions.task_exceptions import (
     TaskNotFoundError,
     ActivationTaskError
 )
-from calistra_lib.exceptions.queue_exceptions import (
-    AddingQueueError
-)
 from calistra_lib.logger import log
+from calistra_lib.messages import Messages
+from calistra_lib.plan.plan_controller import PlanController
+from calistra_lib.queue.queue_controller import QueueController
+from calistra_lib.task.task import TaskStatus
+from calistra_lib.task.task_controller import TaskController
+from calistra_lib.user.user_controller import UserController
 
 
 class Interface:
@@ -482,19 +482,27 @@ class Interface:
         return task
 
     @log
-    def find_task(self, key=None, name=None):
+    def find_task(self, task_param):
         """
         This method using for getting task by key or by name
-        :param key: access key
-        :param name: access name
+        :param task_param: the parameter by which the search is performed
         :raise TaskNotFoundError, AccessDeniedError
         :return: tasks which approach request
         """
+        def _get_dict_value(key):
+            if key not in task_param:
+                return None
+            return task_param[key]
+
         user = self.get_online_user()
-        tasks = self.task_controller.find_task(key=key, name=name)
+        tasks = self.task_controller.find_task(
+            key=_get_dict_value('key'),
+            name=_get_dict_value('name'),
+            tag=_get_dict_value('tag')
+        )
 
         if tasks is None:
-            raise TaskNotFoundError(Messages.SHOW_KEY.format(key))
+            raise TaskNotFoundError('')
 
         if isinstance(tasks, list):
             for task in tasks[:]:

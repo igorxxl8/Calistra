@@ -126,7 +126,7 @@ $ calistra task add 'Sub task' --parent=0e723a3aada16c7e
 The status parameter is responsible for the status of the task:
 ```bash
 $ calistra task set <task_key> --status=solved
-
+```
 
 #### Removing task:
 
@@ -147,10 +147,12 @@ $ calistra task del <task_key> -r
 #### Creating a queue:
 ```bash
 $ calistra queue add 'My queue'
+```
 
 #### Adding task to the queue:
 ```bash
 $ calistra task set <task_key> --queue=<queue_key>
+```
 
 #### View queue content:
 

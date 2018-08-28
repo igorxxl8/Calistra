@@ -284,7 +284,6 @@ def _login(nick, password, users_storage, library) -> int:
 
 def _logout(users_storage) -> int:
     """
-
     :param users_storage:
     :return: error code or 0 in case success
     """

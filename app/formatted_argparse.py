@@ -12,15 +12,17 @@ class FormattedParser(ArgumentParser):
      message in case incorrect user console input"""
     active_sub_parser = None
 
-    def error(self, message):
+    def error(self, message, need_to_exit=True):
         """
         Print error message
+        :param need_to_exit:
         :param message: message to print
         :return: None
         """
         sys.stderr.write('error: {}\n'.format(message))
         self.help()
-        sys.exit(2)
+        if need_to_exit:
+            sys.exit(2)
 
     def help(self):
         """

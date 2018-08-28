@@ -14,8 +14,11 @@ def start():
     """Execute program
     :return: None
     """
+    logger = get_logger()
+    logger.info('Start program.')
+
     code = console_interface.run()
-    logger = get_logger().info('End program.\n')
+    logger.info('Process finished with exit code {}.\n'.format(code))
     sys.exit(code)
 
 

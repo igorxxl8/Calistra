@@ -3,7 +3,7 @@ in library
 """
 
 from datetime import datetime as dt
-from calistra_lib.constants import Constants, Time
+from calistra_lib.constants import Constants, Time, LoggingConstants
 from calistra_lib.exceptions.access_exceptions import AccessDeniedError
 from calistra_lib.exceptions.base_exception import AppError
 from calistra_lib.exceptions.queue_exceptions import (
@@ -13,7 +13,7 @@ from calistra_lib.exceptions.task_exceptions import (
     TaskNotFoundError,
     ActivationTaskError
 )
-from calistra_lib.logger import log
+from calistra_lib.logger import log_lib, get_logger
 from calistra_lib.messages import Messages
 from calistra_lib.plan.plan_controller import PlanController
 from calistra_lib.queue.queue_controller import QueueController
@@ -38,9 +38,10 @@ class Interface:
         self.plan_controller = plan_controller
         self.user_controller = user_controller
         self.online_user = self.user_controller.find_user(nick=online_user)
+        get_logger(is_library_logger=True)
 
     # functions for work with user instance
-    @log
+    @log_lib
     def get_online_user(self):
         """
         This method using for getting current online object
@@ -51,7 +52,7 @@ class Interface:
             raise AccessDeniedError(Messages.SIGN_IN)
         return self.online_user
 
-    @log
+    @log_lib
     def set_online_user(self, user_nick):
         """
         This method using for setting current online user
@@ -60,7 +61,7 @@ class Interface:
         """
         self.online_user = self.user_controller.find_user(nick=user_nick)
 
-    @log
+    @log_lib
     def add_user(self, nick, uid, queue_key):
         """
         This method using for creating new user
@@ -73,7 +74,7 @@ class Interface:
         self.add_queue(Constants.DEFAULT_QUEUE, queue_key, user)
         return user
 
-    @log
+    @log_lib
     def clear_notifications(self, quantity=None):
         """
         This method using for delete user notifications
@@ -87,7 +88,7 @@ class Interface:
         except ValueError as e:
             raise ValueError(e)
 
-    @log
+    @log_lib
     def clear_new_messages(self, user=None):
         """
         This method clear new messages and transfer it in notifications storage
@@ -98,7 +99,7 @@ class Interface:
             user = self.online_user
         self.user_controller.clear_new_messages(user)
 
-    @log
+    @log_lib
     def update_all(self):
         """
         This method verifies and updated deadlines and plans tasks and notify
@@ -166,7 +167,7 @@ class Interface:
                 Messages.TASK_BLOCKERS_WERE_SOLVED.format(task.name)
             )
 
-    @log
+    @log_lib
     def send_message_to_users(self, users, message, show_time=True):
         """
         This method using for sending message and notifications to users
@@ -202,7 +203,7 @@ class Interface:
             self.user_controller.link_user_with_queue(owner, queue)
             return queue
 
-    @log
+    @log_lib
     def edit_queue(self, key, new_name):
         """
         This method using for editing queue
@@ -217,7 +218,7 @@ class Interface:
         except AppError as e:
             raise e
 
-    @log
+    @log_lib
     def remove_queue(self, key, recursive):
         """
         This method using for removing queue
@@ -243,7 +244,7 @@ class Interface:
 
         return queue
 
-    @log
+    @log_lib
     def get_user_queues(self):
         """
         This method using for getting online user queues
@@ -256,7 +257,7 @@ class Interface:
             raise e
         return queues
 
-    @log
+    @log_lib
     def get_queue(self, queue_key, owner=None):
         """
         This method using for getting queue by key
@@ -274,7 +275,7 @@ class Interface:
             raise AccessDeniedError(Messages.CANNOT_USE_SOMEONE_ELSE_QUEUE)
         return queue
 
-    @log
+    @log_lib
     def find_queues(self, name):
         """
         This method using for getting queues by key
@@ -290,7 +291,7 @@ class Interface:
         return result
 
     # functions for work with task instance
-    @log
+    @log_lib
     def create_task(self, name, queue_key, description, parent, related,
                     responsible, priority, progress, start, deadline, tags,
                     reminder, key):
@@ -349,7 +350,7 @@ class Interface:
 
         return task
 
-    @log
+    @log_lib
     def edit_task(self, key, name, description, parent, related,
                   responsible, priority, progress, start, deadline, tags,
                   reminder, status):
@@ -465,7 +466,7 @@ class Interface:
 
             return task
 
-    @log
+    @log_lib
     def get_task(self, key, owner=None):
         """
         This method using for getting task by key
@@ -481,7 +482,7 @@ class Interface:
             raise AccessDeniedError(Messages.CANNOT_USE_SOMEONE_ELSE_TASK)
         return task
 
-    @log
+    @log_lib
     def find_task(self, task_param):
         """
         This method using for getting task by key or by name
@@ -514,7 +515,7 @@ class Interface:
             raise AccessDeniedError(Messages.CANNOT_SEE_TASK)
         return tasks
 
-    @log
+    @log_lib
     def remove_task(self, key, recursive, rem_que_flag=False):
         """
         This method using for removing task
@@ -543,7 +544,7 @@ class Interface:
         self.delete_link_with_users(tasks, remover, Messages.TASK_WAS_DELETED)
         return tasks
 
-    @log
+    @log_lib
     def delete_link_with_users(self, tasks, author, message):
         """
         This method is used to remove links between users and tasks
@@ -568,7 +569,7 @@ class Interface:
                                                                 task.key,
                                                                 task.author))
 
-    @log
+    @log_lib
     def activate_task(self, key):
         """
         This method using for activating task by responsible user
@@ -601,7 +602,7 @@ class Interface:
 
         return task
 
-    @log
+    @log_lib
     def get_user_tasks(self):
         """
         This get all online user tasks
@@ -622,7 +623,7 @@ class Interface:
                 responsible_tasks.append(task)
         return author_tasks, responsible_tasks
 
-    @log
+    @log_lib
     def get_responsible_diff(self, new, old):
         """
         This method is used to highlight users who are no longer in the list
@@ -645,7 +646,7 @@ class Interface:
                 diff_new.append(str_new)
         return diff_old, diff_new
 
-    @log
+    @log_lib
     def find_users_by_name_list(self, name_list):
         """
         This method using for get all users by names defined in list
@@ -665,7 +666,7 @@ class Interface:
         return users
 
     # functions for work with plans
-    @log
+    @log_lib
     def add_plan(self, key, name, period, time, reminder):
         """
         This method using for crating plan entity
@@ -680,7 +681,7 @@ class Interface:
         return self.plan_controller.create_plan(key, author, name, period,
                                                 time, reminder)
 
-    @log
+    @log_lib
     def del_plan(self, key):
         """
         This method using for deleting plan
@@ -689,12 +690,12 @@ class Interface:
         """
         return self.plan_controller.delete_plan(key)
 
-    @log
+    @log_lib
     def edit_plan(self, key, new_name, period, time, reminder):
         return self.plan_controller.edit_plan(key, new_name, period, time,
                                               reminder)
 
-    @log
+    @log_lib
     def get_plans(self):
         """
         This method using for getting online users plans

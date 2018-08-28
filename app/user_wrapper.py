@@ -5,6 +5,7 @@ for authenticate users in the console interface
 
 from calistra_lib.storage.json_serializer import JsonDatabase
 from calistra_lib.exceptions.base_exception import AppError
+from calistra_lib.logger import log_cli
 
 
 class UserWrapper:
@@ -36,6 +37,7 @@ class UserWrapperStorage:
         self.users = self.users_wrapper_db.load()
         self.__online_user = self.online_user_db.load()
 
+    @log_cli
     def add_user(self, nick, password):
         """
         Function for add user to database
@@ -52,6 +54,7 @@ class UserWrapperStorage:
         self.users.append(UserWrapper(nick, password))
         self.record_users()
 
+    @log_cli
     def record_users(self):
         """
         Record users to database
@@ -79,6 +82,7 @@ class UserWrapperStorage:
         else:
             self.online_user_db.unload(user.nick)
 
+    @log_cli
     def get_user(self, query: UserWrapper):
         """
         Get user by query
@@ -97,6 +101,7 @@ class UserWrapperController:
     def __init__(self, users_storage: UserWrapperStorage):
         self.users_storage = users_storage
 
+    @log_cli
     def login(self, nick, password):
         """
         Method for login in system
@@ -118,6 +123,7 @@ class UserWrapperController:
 
         self.users_storage.online_user = user
 
+    @log_cli
     def logout(self) -> None:
         """
         Method for logout

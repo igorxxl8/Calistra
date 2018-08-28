@@ -35,6 +35,8 @@ class LoggingConstants:
     """This class store constants which use logger"""
     LOG_FILE = os.path.join(Files.FOLDER, 'logs.log')
     LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    CONSOLE_LOGGER = 'console logger'
+    LIBRARY_LOGGER = 'library logger'
 
 
 class Constants:

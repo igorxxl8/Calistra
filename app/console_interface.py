@@ -1,6 +1,7 @@
-import sys
 import os
+import sys
 import uuid
+
 from app.command_parser import get_parsers
 from app.formatted_argparse import FormattedParser
 from app.help_functions import *
@@ -13,20 +14,19 @@ from app.user_wrapper import (
     LogoutError,
     SaveUserError
 )
-
-from calistra_lib.user.json_user_storage import JsonUserStorage
-from calistra_lib.user.user_controller import UserController
-from calistra_lib.task.task import TaskStatus
-from calistra_lib.task.json_task_storage import JsonTaskStorage
-from calistra_lib.task.task_controller import TaskController
-from calistra_lib.plan.json_plan_storage import JsonPlanStorage
-from calistra_lib.plan.plan_controller import PlanController
-from calistra_lib.queue.queue_controller import QueueController
-from calistra_lib.queue.json_queue_storage import JsonQueueStorage
+from calistra_lib.constants import Files, LoggingConstants
 from calistra_lib.exceptions.base_exception import AppError
 from calistra_lib.interface import Interface
-from calistra_lib.constants import Files
-from calistra_lib.logger import get_logger
+from calistra_lib.logger import log_cli, get_logger
+from calistra_lib.plan.json_plan_storage import JsonPlanStorage
+from calistra_lib.plan.plan_controller import PlanController
+from calistra_lib.queue.json_queue_storage import JsonQueueStorage
+from calistra_lib.queue.queue_controller import QueueController
+from calistra_lib.task.json_task_storage import JsonTaskStorage
+from calistra_lib.task.task import TaskStatus
+from calistra_lib.task.task_controller import TaskController
+from calistra_lib.user.json_user_storage import JsonUserStorage
+from calistra_lib.user.user_controller import UserController
 
 ERROR_CODE = 1
 TASK_KEY_BYTES = 8
@@ -48,11 +48,10 @@ def run() -> int:
     Start program
     :return: int - exit code
     """
-    # check for files and create it missed
+    # check for files and create it if they missed
     check_program_data_files(Files.FOLDER, Files.FILES)
-
-    logger = get_logger().getChild('calistra_console')
-    logger.info('Start program.')
+    # create loggers
+    cli_logger = get_logger()
 
     # load data from storage and create entities controllers
     users_wrapper_storage = UserWrapperStorage(Files.AUTH_FILE, Files.ONLINE)
@@ -79,11 +78,13 @@ def run() -> int:
 
     parser = get_parsers()
     args = vars(parser.parse_args())
+    cli_logger.debug('Console args: {}'.format(args))
 
     # check that target is defined
     target = args.pop(ParserArgs.TARGET.name)
     if target is None:
-        parser.error('target is required')
+        parser.error('target is required', need_to_exit=False)
+        return ERROR_CODE
 
     if target == ParserArgs.UPDATE.name:
         return 0
@@ -91,7 +92,9 @@ def run() -> int:
     # check that action is defined
     action = args.pop(ParserArgs.ACTION)
     if action is None:
-        FormattedParser.active_sub_parser.error('action is required')
+        FormattedParser.active_sub_parser.error(
+            'action is required', need_to_exit=False)
+        return ERROR_CODE
 
     # check that target is user and do action with it
     if target == ParserArgs.USER.name:
@@ -235,6 +238,7 @@ def run() -> int:
 # =================================================
 # functions for work with user's account instance =
 # =================================================
+@log_cli
 def _add_user(nick, password, users_storage, library: Interface):
     """
     Function for creating user. Use call from library interface for creating u
@@ -259,6 +263,7 @@ def _add_user(nick, password, users_storage, library: Interface):
     return 0
 
 
+@log_cli
 def _login(nick, password, users_storage, library) -> int:
     """
     Function for login user in system
@@ -282,6 +287,7 @@ def _login(nick, password, users_storage, library) -> int:
     return 0
 
 
+@log_cli
 def _logout(users_storage) -> int:
     """
     :param users_storage:
@@ -298,6 +304,7 @@ def _logout(users_storage) -> int:
     return 0
 
 
+@log_cli
 def _show_new_messages(library) -> int:
     if library.online_user is None:
         return ERROR_CODE
@@ -310,6 +317,7 @@ def _show_new_messages(library) -> int:
     return 0
 
 
+@log_cli
 def _show_messages(messages) -> int:
     if messages:
         reminders = []
@@ -325,6 +333,7 @@ def _show_messages(messages) -> int:
     return ERROR_CODE
 
 
+@log_cli
 def _del_notifications(library, _all, old) -> int:
     try:
         library.clear_notifications(old)
@@ -337,6 +346,7 @@ def _del_notifications(library, _all, old) -> int:
     return 0
 
 
+@log_cli
 def _show_user_tasks(library, long, sortby) -> int:
     try:
         print('User: "{}".'.format(library.get_online_user().nick))
@@ -362,6 +372,7 @@ def _show_user_tasks(library, long, sortby) -> int:
 # =================================================
 # functions for work with queue instance          =
 # =================================================
+@log_cli
 def _add_queue(name, library):
     key = os.urandom(QUEUE_KEY_BYTES).hex()
     try:
@@ -374,6 +385,7 @@ def _add_queue(name, library):
     return 0
 
 
+@log_cli
 def _del_queue(key, recursive, library):
     try:
         deleted_queue = library.remove_queue(
@@ -387,6 +399,7 @@ def _del_queue(key, recursive, library):
     return 0
 
 
+@log_cli
 def _edit_queue(key, new_name, library):
     try:
         new_name = check_str_len(new_name)
@@ -404,6 +417,7 @@ def _edit_queue(key, new_name, library):
     return 0
 
 
+@log_cli
 def _show_queue(library) -> int:
     try:
         queues = library.get_user_queues()
@@ -416,6 +430,7 @@ def _show_queue(library) -> int:
     return 0
 
 
+@log_cli
 def _show_queue_tasks(key, library, opened, archive, failed, long, sortby):
     def load_tasks(task_keys):
         _tasks = []
@@ -453,6 +468,7 @@ def _show_queue_tasks(key, library, opened, archive, failed, long, sortby):
     return 0
 
 
+@log_cli
 def _find_queues(name, library: Interface) -> int:
     queues = library.find_queues(name)
     print('Search:')
@@ -463,6 +479,7 @@ def _find_queues(name, library: Interface) -> int:
 # =================================================
 # functions for work with task instance           =
 # =================================================
+@log_cli
 def _add_task(args, library) -> int:
     key = os.urandom(TASK_KEY_BYTES).hex()
     queue_key = args.pop(ParserArgs.TASK_QUEUE.dest)
@@ -521,6 +538,7 @@ def _add_task(args, library) -> int:
     return 0
 
 
+@log_cli
 def _edit_task(args, library) -> int:
     key = args.pop(ParserArgs.KEY.name)
 
@@ -582,6 +600,7 @@ def _edit_task(args, library) -> int:
     return 0
 
 
+@log_cli
 def _del_task(args, library) -> int:
     try:
         tasks = library.remove_task(
@@ -598,6 +617,7 @@ def _del_task(args, library) -> int:
     return 0
 
 
+@log_cli
 def _show_task(key, library, long) -> int:
     try:
         task = library.get_task(key)
@@ -617,6 +637,7 @@ def _show_task(key, library, long) -> int:
     return 0
 
 
+@log_cli
 def _find_task(task_params, library) -> int:
     try:
         tasks = library.find_task(task_params)
@@ -629,6 +650,7 @@ def _find_task(task_params, library) -> int:
     return 0
 
 
+@log_cli
 def _activate_task(key, library) -> int:
     try:
         task = library.activate_task(key)
@@ -643,7 +665,7 @@ def _activate_task(key, library) -> int:
 # =================================================
 # functions for work with plan instance           =
 # =================================================
-
+@log_cli
 def _add_plan(name, activation_time, period, reminder, library) -> int:
     key = os.urandom(PLAN_KEY_BYTES).hex()
     try:
@@ -665,6 +687,7 @@ def _add_plan(name, activation_time, period, reminder, library) -> int:
     return 0
 
 
+@log_cli
 def _edit_plan(key, new_name, period, activation_time, reminder,
                library) -> int:
     try:
@@ -685,6 +708,7 @@ def _edit_plan(key, new_name, period, activation_time, reminder,
     return 0
 
 
+@log_cli
 def _show_plans(library) -> int:
     plans = library.get_plans()
     if plans:
@@ -697,6 +721,7 @@ def _show_plans(library) -> int:
     return 0
 
 
+@log_cli
 def _delete_plan(key, library) -> int:
     try:
         plan = library.del_plan(key)

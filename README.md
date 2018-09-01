@@ -67,14 +67,19 @@ $ calistra config set settings --path=/home
 
 You can also edit logger configuration:
 1. Level of configuration:
+
     ```bash
     $ calistra config set logger --level=WARNING
-    ```
+    ```  
+    
 2. File for logs:
+
     ```bash
     $ calistra config set logger --file=/home/user/Desctop/my_program_logs.log
-    ``` 
+    ```  
+     
 3. Enable or disable logger:
+
     ```bash
     $ calistra config set logger --enabled=True
     ```

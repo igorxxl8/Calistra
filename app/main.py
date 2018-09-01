@@ -7,18 +7,13 @@ from app import console_interface
 import sys
 from calistra_lib.logger import get_logger
 
-# TODO: 1) Логирование
-
 
 def start():
     """Execute program
     :return: None
     """
-    logger = get_logger()
-    logger.info('Start program.')
-
     code = console_interface.run()
-    logger.info('Process finished with exit code {}.\n'.format(code))
+    get_logger().info('Process finished with exit code {}.\n'.format(code))
     sys.exit(code)
 
 

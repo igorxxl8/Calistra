@@ -3,7 +3,7 @@ in library
 """
 
 from datetime import datetime as dt
-from calistra_lib.constants import Constants, Time, LoggingConstants
+from calistra_lib.constants import Constants, Time
 from calistra_lib.exceptions.access_exceptions import AccessDeniedError
 from calistra_lib.exceptions.base_exception import AppError
 from calistra_lib.exceptions.queue_exceptions import (

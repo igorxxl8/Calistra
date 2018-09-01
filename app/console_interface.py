@@ -2,6 +2,7 @@ import os
 import sys
 import uuid
 
+from app.configuration import Files, Configuration
 from app.command_parser import get_parsers
 from app.formatted_argparse import FormattedParser
 from app.help_functions import *
@@ -14,10 +15,14 @@ from app.user_wrapper import (
     LogoutError,
     SaveUserError
 )
-from calistra_lib.constants import Files, LoggingConstants
 from calistra_lib.exceptions.base_exception import AppError
 from calistra_lib.interface import Interface
-from calistra_lib.logger import log_cli, get_logger
+from calistra_lib.logger import (
+    log_cli,
+    get_logger,
+    set_logger_config_file,
+    set_logger_enabled
+)
 from calistra_lib.plan.json_plan_storage import JsonPlanStorage
 from calistra_lib.plan.plan_controller import PlanController
 from calistra_lib.queue.json_queue_storage import JsonQueueStorage
@@ -48,10 +53,22 @@ def run() -> int:
     Start program
     :return: int - exit code
     """
+    # check settings
+    Configuration.apply_settings()
+    set_logger_enabled(Configuration.is_logger_enabled())
+
     # check for files and create it if they missed
     check_program_data_files(Files.FOLDER, Files.FILES)
-    # create loggers
+
+    # set logging configuration
+    if os.path.exists(Files.LOG_CONFIG):
+        set_logger_config_file(Files.LOG_CONFIG)
+    else:
+        set_logger_config_file(Files.DEFAULT_LOG_CONFIG_FILE)
+
+    # create loggers and
     cli_logger = get_logger()
+    cli_logger.info('Start program.')
 
     # load data from storage and create entities controllers
     users_wrapper_storage = UserWrapperStorage(Files.AUTH_FILE, Files.ONLINE)
@@ -95,6 +112,15 @@ def run() -> int:
         FormattedParser.active_sub_parser.error(
             'action is required', need_to_exit=False)
         return ERROR_CODE
+
+    # check that target is config and do action with it
+    if target == ParserArgs.CONFIG.name:
+        if action == ParserArgs.SET:
+            return _set_configuration(args)
+
+        if action == ParserArgs.RESET:
+            conf_type_obj = args.pop(ParserArgs.CONFIG_TYPE.name)
+            return _reset_configuration(conf_type_obj)
 
     # check that target is user and do action with it
     if target == ParserArgs.USER.name:
@@ -233,6 +259,54 @@ def run() -> int:
                 _all=args.pop(ParserArgs.ALL.dest),
                 old=args.pop(ParserArgs.OLD.dest)
             )
+
+
+# =================================================
+# functions for work with user's account instance =
+# =================================================
+@log_cli
+def _set_configuration(args):
+    """
+    This method using for set configurations of program and logger
+    :param args: arguments from user console input
+    :return: exit code
+    """
+    conf_type_obj = args.pop(ParserArgs.CONFIG_TYPE.name)
+    if conf_type_obj == ParserArgs.SETTINGS.name:
+        storage_path = args.pop(ParserArgs.STORAGE_PATH.dest)
+        try:
+            Configuration.edit_settings(storage_path)
+        except Exception as e:
+            sys.stderr.write(str(e))
+            return ERROR_CODE
+        print('Program settings edited...')
+
+    elif conf_type_obj == ParserArgs.LOGGER.name:
+        level = args.pop(ParserArgs.LOGGER_LEVEL.dest)
+        enabled = args.pop(ParserArgs.ENABLED_LOGGER.dest)
+        log_file_path = args.pop(ParserArgs.LOG_FILE_PATH.dest)
+
+        Configuration.edit_logger_configs(Files.LOG_CONFIG, level, enabled,
+                                          log_file_path)
+        print('Logger configs edited...')
+    return 0
+
+
+@log_cli
+def _reset_configuration(conf_type_obj):
+    if (conf_type_obj == ParserArgs.LOGGER.name and
+            os.path.exists(Files.LOG_CONFIG)):
+
+        os.remove(Files.LOG_CONFIG)
+        print('Logger configs reset...')
+
+    if (conf_type_obj == ParserArgs.SETTINGS.name and
+            os.path.exists(Files.SETTINGS)):
+        Files.set_default()
+        Configuration.reset_settings()
+        os.remove(Files.SETTINGS)
+        print('Program settings reset...')
+    return 0
 
 
 # =================================================

@@ -3,40 +3,6 @@
 from datetime import timedelta
 from datetime import datetime
 import calendar
-import os
-
-
-class Files:
-    """This class store all program files paths"""
-    FOLDER = os.path.join(os.environ['HOME'], 'calistra_data')
-    TASKS_FILE = os.path.join(FOLDER, 'tasks.json')
-    PLANS_FILE = os.path.join(FOLDER, 'plans.json')
-    QUEUES_FILE = os.path.join(FOLDER, 'queues.json')
-    USERS_FILE = os.path.join(FOLDER, 'users.json')
-    AUTH_FILE = os.path.join(FOLDER, 'auth.json')
-    ONLINE = os.path.join(FOLDER, 'online_user.json')
-
-    LOG_FILE = os.path.join(FOLDER, 'logs.log')
-    LOG_CONFIG = os.path.join(FOLDER, 'logger.config')
-
-    # this list of tuples contains data for init empty files
-    FILES = [
-        (TASKS_FILE, '[]'),
-        (QUEUES_FILE, '[]'),
-        (PLANS_FILE, '[]'),
-        (USERS_FILE, '[]'),
-        (AUTH_FILE, '[]'),
-        (ONLINE, '""'),
-        (LOG_FILE, '')
-    ]
-
-
-class LoggingConstants:
-    """This class store constants which use logger"""
-    LOG_FILE = os.path.join(Files.FOLDER, 'logs.log')
-    LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    CONSOLE_LOGGER = 'console logger'
-    LIBRARY_LOGGER = 'library logger'
 
 
 class Constants:

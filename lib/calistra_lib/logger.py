@@ -2,10 +2,22 @@
 
 import functools
 import logging
-from calistra_lib.constants import LoggingConstants
+import logging.config
 
 console_logger = None
 library_logger = None
+config_file = None
+is_enabled = True
+
+
+def set_logger_config_file(configuration):
+    global config_file
+    config_file = configuration
+
+
+def set_logger_enabled(value):
+    global is_enabled
+    is_enabled = value
 
 
 def get_logger(is_library_logger=False):
@@ -13,37 +25,34 @@ def get_logger(is_library_logger=False):
     This function for creating program logger
     :return logger
     """
-    global console_logger, library_logger
+    global console_logger, library_logger, config_file
     if is_library_logger and library_logger:
         return library_logger
     if is_library_logger is False and console_logger:
         return console_logger
 
-    if is_library_logger:
-        logger = logging.getLogger(LoggingConstants.LIBRARY_LOGGER)
-    else:
-        logger = logging.getLogger(LoggingConstants.CONSOLE_LOGGER)
-
-    file = logging.FileHandler(LoggingConstants.LOG_FILE)
-    formatter = logging.Formatter(LoggingConstants.LOG_FORMAT)
-    file.setFormatter(formatter)
-    logger.addHandler(file)
-    logger.setLevel(logging.DEBUG)
+    logging.config.fileConfig(config_file)
 
     if is_library_logger:
+        logger = logging.getLogger('library_logger')
         library_logger = logger
     else:
+        logger = logging.getLogger('console_logger')
         console_logger = logger
-
+    if is_enabled is False:
+        logging.disable(logging.CRITICAL)
     return logger
 
 
 def log_lib(func):
     @functools.wraps(func)
     def logger_func(*args, **kwargs):
+        if is_enabled is False:
+            return func(*args, **kwargs)
+
         global library_logger
         if library_logger is None:
-            library_logger = get_logger(LoggingConstants.LIBRARY_LOGGER)
+            library_logger = get_logger(True)
 
         try:
             library_logger.debug('Call function: {}, module - {}'.format(
@@ -74,9 +83,11 @@ def log_cli(func):
 
     @functools.wraps(func)
     def logger_func(*args, **kwargs):
+        if is_enabled is False:
+            return func(*args, **kwargs)
         global console_logger
         if console_logger is None:
-            console_logger = get_logger(LoggingConstants.CONSOLE_LOGGER)
+            console_logger = get_logger()
 
         try:
             console_logger.debug('Call function: {}, module - {}'.format(

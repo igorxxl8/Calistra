@@ -20,6 +20,12 @@ def get_parsers():
         dest=ParserArgs.TARGET.name,
         help=ParserArgs.TARGET.help)
 
+    # for parsing configuration settings
+    config_parser = subparsers.add_parser(
+        name=ParserArgs.CONFIG.name,
+        help=ParserArgs.CONFIG.help
+    )
+
     # create next level parsers for different targets
     user_parser = subparsers.add_parser(
         name=ParserArgs.USER.name,
@@ -48,7 +54,11 @@ def get_parsers():
     )
 
     # check console args, create subparsers for necessary args
-    if ParserArgs.USER.name in sys.argv:
+    if ParserArgs.CONFIG.name in sys.argv:
+        FormattedParser.active_sub_parser = config_parser
+        _create_config_subparsers(config_parser)
+
+    elif ParserArgs.USER.name in sys.argv:
         FormattedParser.active_sub_parser = user_parser
         _create_user_subparsers(user_parser)
 
@@ -77,6 +87,97 @@ def get_parsers():
 # ===============================================================
 # private functions. Don't use outside this module, as possible! =
 # ===============================================================
+def _create_config_subparsers(config_parser):
+    """
+    Create subparsers for processing configuration data
+    :param config_parser: high level parser
+    :return: None
+    """
+    config_subparsers = config_parser.add_subparsers(
+        dest=ParserArgs.ACTION,
+        help=ParserArgs.CONFIG_ACTION
+    )
+
+    # calistra config set
+    set_subparsers = config_subparsers.add_parser(
+        name=ParserArgs.SET,
+        help=ParserArgs.SET_CONFIG_HELP
+    )
+
+    # calistra config reset
+    reset_subparsers = config_subparsers.add_parser(
+        name=ParserArgs.RESET,
+        help=ParserArgs.CONFIG_RESET_HELP
+    )
+
+    if ParserArgs.SET in sys.argv:
+        # calistra config set <CONFIG_TYPE>
+        type_subparsers = set_subparsers.add_subparsers(
+            dest=ParserArgs.CONFIG_TYPE.name,
+            help=ParserArgs.CONFIG_TYPE.help
+        )
+
+        settings_subparsers = type_subparsers.add_parser(
+            name=ParserArgs.SETTINGS.name,
+            help=ParserArgs.SETTINGS.help,
+        )
+
+        logger_subparsers = type_subparsers.add_parser(
+            name=ParserArgs.LOGGER.name,
+            help=ParserArgs.LOGGER.help
+        )
+        if ParserArgs.SETTINGS.name in sys.argv:
+
+            # calistra config set settings --path=<PATH_TO_DATA>
+            settings_subparsers.add_argument(
+                ParserArgs.STORAGE_PATH.long,
+                dest=ParserArgs.STORAGE_PATH.dest,
+                help=ParserArgs.STORAGE_PATH.help
+            )
+
+            FormattedParser.active_sub_parser = settings_subparsers
+
+        elif ParserArgs.LOGGER.name in sys.argv:
+
+            # calistra config set logger --level=<LOGGER_LEVEL>
+            logger_subparsers.add_argument(
+                ParserArgs.LOGGER_LEVEL.long,
+                dest=ParserArgs.LOGGER_LEVEL.dest,
+                choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL',
+                         'NOTSET'],
+                help=ParserArgs.LOGGER_LEVEL.help
+            )
+
+            # calistra config set logger --path=<PATH_TO_LOG_FILE>
+            logger_subparsers.add_argument(
+                ParserArgs.LOG_FILE_PATH.long,
+                dest=ParserArgs.LOG_FILE_PATH.dest,
+                help=ParserArgs.LOG_FILE_PATH.help
+            )
+
+            # calistra config set logger --enabled=<
+            logger_subparsers.add_argument(
+                ParserArgs.ENABLED_LOGGER.long,
+                dest=ParserArgs.ENABLED_LOGGER.dest,
+                choices=['True', 'False'],
+                help=ParserArgs.ENABLED_LOGGER.help
+            )
+
+            FormattedParser.active_sub_parser = logger_subparsers
+
+        else:
+            set_subparsers.error('Type of configurated object is needed')
+
+    elif ParserArgs.RESET in sys.argv:
+        # calistra config reset <CONFIG_TYPE>
+        reset_subparsers.add_argument(
+            dest=ParserArgs.CONFIG_TYPE.name,
+            help=ParserArgs.CONFIG_TYPE.help,
+            choices=[ParserArgs.SETTINGS.name, ParserArgs.LOGGER.name]
+        )
+        FormattedParser.active_sub_parser = reset_subparsers
+
+
 def _create_user_subparsers(user_parser):
     """
     Create subparsers for processing user's data

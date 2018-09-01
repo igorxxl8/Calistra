@@ -69,6 +69,44 @@ class ParserArgs:
     SORT_BY_CHOICES = ['deadline', 'priority', 'progress', 'editing_time',
                        'name']
 
+    RESET = 'reset'
+    CONFIG_TYPE = Argument(name='type', help='select a type of object '
+                                             'for configuration')
+    SETTINGS = Argument(name='settings', help='using for set program settings')
+    STORAGE_PATH = OptionalArgument(
+        dest='path',
+        long='--path',
+        short='-ph',
+        help='path to folder with data files'
+    )
+
+    LOGGER = Argument(name='logger', help='using for set logger configs')
+    LOGGER_LEVEL = OptionalArgument(
+        dest='logger_level',
+        long='--level',
+        short='-ll',
+        help='level of logger'
+    )
+
+    ENABLED_LOGGER = OptionalArgument(
+        dest='enabled_logger',
+        long='--enabled',
+        short='-e',
+        help='enable/disable logging.'
+    )
+
+    LOG_FILE_PATH = OptionalArgument(
+        dest='logger_file',
+        long='--file',
+        short='-lf',
+        help='set path to file where record log messages'
+    )
+
+    CONFIG = Argument(name='config', help='setting the program configuration')
+    CONFIG_ACTION = 'action with configuration'
+    CONFIG_RESET_HELP = 'reset configuration and set default settings'
+    SET_CONFIG_HELP = 'set configuration'
+
     # Constants, which represent user parser commands and settings
     USER = Argument(name='user', help='work with user\'s account')
     USER_ACTION = 'action with user'

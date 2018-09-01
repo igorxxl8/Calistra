@@ -58,6 +58,33 @@ $ calistra task add --help
 
 ### First steps
 
+#### Configuration
+
+You can determine where the data is stored in the computer. The default is the home directory:
+```bash
+$ calistra config set settings --path=/home
+```
+
+You can also edit logger configuration:
+1. Level of configuration:
+    ```bash
+    $ calistra config set logger --level=WARNING
+    ```
+2. File for logs:
+    ```bash
+    $ calistra config set logger --file=/home/user/Desctop/my_program_logs.log
+    ``` 
+3. Enable or disable logger:
+    ```bash
+    $ calistra config set logger --enabled=True
+    ```
+    ```bash
+    $ calistra config set logger --enabled=False
+    ```
+
+
+#### User account
+
 After that you can create account, which you will use in the process of working in the program
 
 ```bash

@@ -5,6 +5,9 @@
 class IUserStorage:
     """This class represent basic interface for implementing classes which
     store users in database"""
+    def __init__(self, users):
+        self.users = users
+
     def get_user_by_nick(self, nick):
         """
         This method getting user from database by his nick

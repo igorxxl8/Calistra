@@ -5,6 +5,9 @@
 class IPlanStorage:
     """This class represent basic interface for implementing classes for plan
      storage instances"""
+    def __init__(self, plans):
+        self.plans = plans
+
     def add_plan(self, plan):
         """
         This method add plan in plan storage

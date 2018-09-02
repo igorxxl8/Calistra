@@ -12,7 +12,7 @@ class JsonQueueStorage(IQueueStorage):
     """This class represent instance for store queues in json format"""
     def __init__(self, path_to_queue_file):
         self.queue_db = JsonDatabase(path_to_queue_file, cls_seq=[Queue])
-        self.queues = self.queue_db.load()
+        super().__init__(self.queue_db.load())
 
     def save_queues(self):
         """

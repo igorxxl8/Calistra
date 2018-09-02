@@ -11,7 +11,7 @@ class JsonTaskStorage(ITaskStorage):
     """
     def __init__(self, path_to_tasks_file):
         self.tasks_db = JsonDatabase(path_to_tasks_file, [Task])
-        self.tasks = self.tasks_db.load()
+        super().__init__(self.tasks_db.load())
 
     def add_task(self, task):
         """This method append task to tasks list

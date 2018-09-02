@@ -12,7 +12,7 @@ class JsonPlanStorage(IPlanStorage):
      which store plans in file in json format"""
     def __init__(self, path_to_plans_file):
         self.plans_db = JsonDatabase(path_to_plans_file, cls_seq=[Plan])
-        self.plans = self.plans_db.load()
+        super().__init__(self.plans_db.load())
 
     def add_plan(self, plan):
         """

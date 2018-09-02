@@ -5,6 +5,9 @@ class ITaskStorage:
     """This class represent basic interface for all classes implemented
     task storage instance
     """
+    def __init__(self, tasks):
+        self.tasks = tasks
+
     def add_task(self, task):
         """This method append task to tasks list
         :param: task: task for adding

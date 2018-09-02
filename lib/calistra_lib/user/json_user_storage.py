@@ -11,7 +11,7 @@ class JsonUserStorage(IUserStorage):
     file in json format"""
     def __init__(self, users_file):
         self.users_db = JsonDatabase(users_file, [User])
-        self.users = self.users_db.load()
+        super().__init__(self.users_db.load())
 
     def get_user_by_nick(self, nick):
         """

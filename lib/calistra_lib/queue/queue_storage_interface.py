@@ -9,6 +9,8 @@ class IQueueStorage:
     This class represent basic interface for classes realized
     queue storage logic
     """
+    def __init__(self, queues):
+        self.queues = queues
 
     def save_queues(self):
         """

@@ -39,7 +39,7 @@ class Time:
     NOW = datetime.now()
 
     YEAR = timedelta(days=get_year_days_num())
-    MONTH = calendar.mdays[NOW.month]
+    MONTH = timedelta(calendar.mdays[NOW.month])
     WEEK = timedelta(days=7)
     DAY = timedelta(days=1)
 

@@ -2,14 +2,13 @@
 with plans
 """
 
-
-from .queue import Queue
-from calistra_lib.task.task import Task
 from calistra_lib.constants import Constants
-from calistra_lib.messages import Messages
-from calistra_lib.exceptions.queue_exceptions import *
 from calistra_lib.exceptions.access_exceptions import *
+from calistra_lib.exceptions.queue_exceptions import *
+from calistra_lib.messages import Messages
+from calistra_lib.queue.queue import Queue
 from calistra_lib.queue.queue_storage_interface import IQueueStorage
+from calistra_lib.task.task import Task
 
 
 class QueueController:
@@ -25,7 +24,8 @@ class QueueController:
         :param owner: user who create queue
         :return: added queue
         """
-        queue = self.queue_storage.add_queue(name, key, owner.uid)
+        queue = Queue(name, key, owner.uid)
+        self.queue_storage.add_queue(queue)
         self.queue_storage.save_queues()
         return queue
 

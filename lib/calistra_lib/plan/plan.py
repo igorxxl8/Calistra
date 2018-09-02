@@ -3,7 +3,7 @@
 
 class Plan:
     """This class describe single plan entity"""
-    def __init__(self, key, author, name, period, activation_time, reminder):
+    def __init__(self, key, author, name, period, activation_time, reminder=None):
 
         self.author = author
         self.name = name

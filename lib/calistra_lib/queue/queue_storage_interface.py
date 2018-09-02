@@ -19,13 +19,11 @@ class IQueueStorage:
         """
         raise NotImplementedError()
 
-    def add_queue(self, name, key, owner):
+    def add_queue(self, queue):
         """
         This method append queue in list of queues
-        :param name: queue name
-        :param key: access key
-        :param owner: author of queue
-        :return: added queue
+        :param queue for adding
+        :return: None
         """
         raise NotImplementedError()
 

@@ -31,7 +31,7 @@ class JsonUserStorage(IUserStorage):
         """
         for user in self.users:
             if user.uid == uid:
-                return uid
+                return user
 
     def save_users(self):
         """

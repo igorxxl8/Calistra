@@ -15,7 +15,8 @@ class PlanController:
     def __init__(self, plan_storage: IPlanStorage):
         self.plans_storage = plan_storage
 
-    def create_plan(self, key, author, name, period, activation_time, reminder):
+    def create_plan(self, key, author, name, period, activation_time,
+                    reminder=None):
         """
         This method create plan
         :param key: plan key
@@ -32,7 +33,7 @@ class PlanController:
         self.plans_storage.save_plans()
         return plan
 
-    def edit_plan(self, key, new_name, period, time, reminder):
+    def edit_plan(self, key, new_name, period, time, reminder=None):
         """
         This method delete task by key
         :param key: plan key

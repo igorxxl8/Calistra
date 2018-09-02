@@ -21,16 +21,13 @@ class JsonQueueStorage(IQueueStorage):
         """
         self.queue_db.unload(self.queues)
 
-    def add_queue(self, name, key, owner):
+    def add_queue(self, queue):
         """
         This method append queue in list of queues
-        :param name: queue name
-        :param key: access key
-        :param owner: author of queue
+        :param queue for adding
         :return: added queue
         """
-        self.queues.append(Queue(name, key, owner))
-        return self.queues[-1]
+        self.queues.append(queue)
 
     def remove_queue(self, queue):
         """

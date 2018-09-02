@@ -21,7 +21,7 @@ class UserController:
         self.users_storage.save_users()
         return user
 
-    def clear_user_notifications(self, user, quantity):
+    def clear_user_notifications(self, user, quantity=None):
         """This method delete all user notifications
         :param user:
         :param quantity: number of deleting notifications
@@ -32,7 +32,7 @@ class UserController:
             if quantity > len(user.notifications):
                 raise ValueError('')
             for i in range(quantity):
-                user.notifications.pop(i)
+                user.notifications.pop(0)
         self.users_storage.save_users()
 
     def clear_new_messages(self, user):

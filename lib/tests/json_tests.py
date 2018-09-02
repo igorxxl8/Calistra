@@ -84,9 +84,27 @@ class JsonTests(unittest.TestCase):
 
         json_str = '{"string": "5"}'
         actual = from_json([Obj], json_str)
-        print(actual)
         expected = Obj("5")
-        print(expected)
+        self.assertEqual(expected, actual)
+
+    def test_obj_with_attrs_objs_from_json(self):
+        class Obj1:
+            def __init__(self, string: str):
+                self.string = string
+
+            def __eq__(self, other):
+                return type(self) == type(other) and self.string == other.string
+
+        class Obj2:
+            def __init__(self):
+                self.obj = Obj1('privet')
+
+            def __eq__(self, other):
+                return type(self) == type(other) and self.obj == other.obj
+
+        json_str = '{"obj": {"string": "privet"}}'
+        actual = from_json([Obj2, Obj1], json_str)
+        expected = Obj2()
         self.assertEqual(expected, actual)
 
 

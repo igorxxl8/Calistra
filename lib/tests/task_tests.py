@@ -12,9 +12,6 @@ from calistra_lib.exceptions.access_exceptions import AccessDeniedError
 
 
 class TestTaskStorage(ITaskStorage):
-    def __init__(self):
-        self.tasks = []
-
     def remove_task(self, task):
         self.tasks.remove(task)
 
@@ -54,7 +51,7 @@ class TestTaskStorage(ITaskStorage):
 class TaskTests(TestCase):
 
     def setUp(self):
-        self.storage = TestTaskStorage()
+        self.storage = TestTaskStorage([])
         self.controller = TaskController(self.storage)
         self.author = User('tester', 0)
         self.responsible = User('resp', 1)

@@ -66,6 +66,7 @@ $ calistra config set settings --path=/home
 ```
 
 You can also edit logger configuration:
+
 1. Level of configuration:
 
     ```bash
@@ -83,6 +84,7 @@ You can also edit logger configuration:
     ```bash
     $ calistra config set logger --enabled=True
     ```
+    
     ```bash
     $ calistra config set logger --enabled=False
     ```

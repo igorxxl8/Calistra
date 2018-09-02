@@ -12,5 +12,6 @@ setup(
         'console_scripts': [
             'calistra = app.main:start'
         ]
-    }
+    },
+    test_suite='tests'
 )

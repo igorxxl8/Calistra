@@ -75,6 +75,16 @@ class TaskTests(TestCase):
         self.storage.tasks.append(self.test_task)
         self.storage.tasks.append(self.parent_task)
 
+    def tearDown(self):
+        self.storage = None
+        self.controller = None
+        self.author = None
+        self.responsible = None
+        self.queue = None
+        self.test_task = None
+        self.parent_task = None
+        self.controller_task = None
+
     # tests for task controller
     def test_add_simple_task(self):
         task = self.controller.add_task(

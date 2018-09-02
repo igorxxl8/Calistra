@@ -3,8 +3,12 @@ with task reminder mechanism"""
 
 
 from collections import namedtuple
-from calistra_lib.constants import Time
-from calistra_lib.messages import Messages
+try:
+    from calistra_lib.constants import Time
+    from calistra_lib.messages import Messages
+except ImportError:
+    from lib.calistra_lib.constants import Time
+    from lib.calistra_lib.messages import Messages
 
 
 class Frequency:

@@ -1,9 +1,14 @@
 """This module contains functions for check user console input on correctness"""
 
 from datetime import datetime as dt
-from calistra_lib.task.reminder import Reminder
-from calistra_lib.constants import Constants, Time, PlanPeriod
-from calistra_lib.task.task import TaskStatus, RelatedTaskType
+try:
+    from calistra_lib.task.reminder import Reminder
+    from calistra_lib.constants import Constants, Time, PlanPeriod
+    from calistra_lib.task.task import TaskStatus, RelatedTaskType
+except ImportError:
+    from lib.calistra_lib.task.reminder import Reminder
+    from lib.calistra_lib.constants import Constants, Time, PlanPeriod
+    from lib.calistra_lib.task.task import TaskStatus, RelatedTaskType
 
 ADD = 'add'
 

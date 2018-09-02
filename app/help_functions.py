@@ -39,7 +39,7 @@ def check_str_len(string):
     :param string: string for checking
     :return: string
     """
-    if isinstance(string, str) and 100 < len(string) < 1:
+    if isinstance(string, str) and (100 < len(string) or len(string) < 1):
         raise ValueError('calistra: description and name must not '
                          'exceed 100 characters or be empty.\n')
     return string

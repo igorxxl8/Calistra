@@ -7,11 +7,12 @@ creating, manipulating, editing users entities
 from datetime import datetime as dt
 from calistra_lib.constants import Time
 from calistra_lib.user.user import User
+from calistra_lib.user.user_storage_interface import IUserStorage
 
 
 class UserController:
     """This class describe instance and methods for work with user entities"""
-    def __init__(self, users_storage):
+    def __init__(self, users_storage: IUserStorage):
         self.users_storage = users_storage
 
     def add_user(self, nick, uid):

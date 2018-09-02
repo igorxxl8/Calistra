@@ -4,7 +4,7 @@
 from datetime import datetime as dt
 
 from .task import Task, TaskStatus, RelatedTaskType
-from .json_task_storage import JsonTaskStorage
+from .task_storage_interface import ITaskStorage
 from calistra_lib.task.reminder import Reminder
 from calistra_lib.constants import Constants, Time
 from calistra_lib.messages import Messages
@@ -19,7 +19,7 @@ class TaskController:
     """
     EDITING_MESSAGE = ""
 
-    def __init__(self, task_storage: JsonTaskStorage):
+    def __init__(self, task_storage: ITaskStorage):
         self.tasks_storage = task_storage
 
     @classmethod
@@ -40,9 +40,10 @@ class TaskController:
         self.tasks_storage.add_task(task)
         self.tasks_storage.save_tasks()
 
-    def add_task(self, author, name, queue, description, parent, related,
-                 responsible, priority, progress, start, deadline, tags,
-                 reminder, key, creating_time):
+    def add_task(self, author, name, queue, description=None, parent=None,
+                 related=None, responsible=None, priority=None, progress=None,
+                 start=None, deadline=None, tags=None, reminder=None, key=None,
+                 creating_time=None):
         """
         This method created task entity and append it to other tasks
         :param author:
@@ -131,9 +132,10 @@ class TaskController:
                         task.name, task.key)
                 )
 
-    def edit_task(self, task, task_queue, editor, name, description, parent,
-                  related, responsible, priority, progress, start, deadline,
-                  tags, reminder, status, editing_time):
+    def edit_task(self, task, task_queue, editor, name=None, description=None,
+                  parent=None, related=None, responsible=None, priority=None,
+                  progress=None, start=None, deadline=None, tags=None,
+                  reminder=None, status=None, editing_time=None):
         """
         This method using for editing task and its attributes
         :param task: edited task
@@ -465,7 +467,7 @@ class TaskController:
             task.status = TaskStatus.ACTIVATED
         self.tasks_storage.save_tasks()
 
-    def remove_task(self, task: Task, remover, recursive):
+    def remove_task(self, task: Task, remover, recursive=False):
         """
         This method delete task from storage
         :param task: task for removing

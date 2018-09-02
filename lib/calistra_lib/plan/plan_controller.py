@@ -3,7 +3,7 @@
 
 from calistra_lib.constants import Time
 from calistra_lib.exceptions.plan_exceptions import PlanNotFoundError
-from calistra_lib.plan.json_plan_storage import JsonPlanStorage
+from calistra_lib.plan.plan_storage_interface import IPlanStorage
 from calistra_lib.task.task import Task
 from calistra_lib.plan.plan import Plan
 
@@ -12,7 +12,7 @@ class PlanController:
     """
     This class describe entity for work with periodic plans.
     """
-    def __init__(self, plan_storage: JsonPlanStorage):
+    def __init__(self, plan_storage: IPlanStorage):
         self.plans_storage = plan_storage
 
     def create_plan(self, key, author, name, period, activation_time, reminder):

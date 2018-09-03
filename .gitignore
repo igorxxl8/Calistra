@@ -5,3 +5,4 @@ __pycache__
 starter.py
 lib/calistra_lib.egg-info/
 calistra.egg-info/
+env/

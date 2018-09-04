@@ -181,6 +181,7 @@ class Interface:
             self.user_controller.notify_user(user, message, show_time)
 
     # functions for work with queue instance
+    @log_lib
     def add_queue(self, name, key, owner=None):
         """
         This method using for creating queue

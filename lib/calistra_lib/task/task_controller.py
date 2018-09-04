@@ -507,7 +507,7 @@ class TaskController:
         :return: requested task
         """
         task = self.tasks_storage.get_task_by_key(key)
-        if task is None:
+        if not task:
             raise TaskNotFoundError(Messages.SHOW_KEY.format(key))
         return task
 

@@ -37,8 +37,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # other apps
+    'bootstrap3',
+
     # my apps
-    'web_tracker'
+    'web_tracker',
 ]
 
 MIDDLEWARE = [
@@ -102,6 +105,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LOGIN_URL = '/users/login/'
+
+# settings for bootstrap3
+BOOTSTRAP3 = {
+    'include_jquery': True,
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/

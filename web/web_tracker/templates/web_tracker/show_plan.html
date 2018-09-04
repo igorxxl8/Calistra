@@ -1,0 +1,14 @@
+{% extends 'web_tracker/base.html' %}
+
+{% block content %}
+
+    <p>Queue: {{plan}}</p>
+    <p>Name: {{plan.name}}</p>
+    <p>Key: {{plan.key}}</p>
+    <p>Time: {{plan.time}}</p>
+
+    <a href="{% url 'web_tracker:edit_plan' plan.key %}">
+        <button>Edit plan</button>
+    </a>
+
+{% endblock content %}

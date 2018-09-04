@@ -6,3 +6,4 @@ starter.py
 lib/calistra_lib.egg-info/
 calistra.egg-info/
 env/
+web/db.sqlite3-journal

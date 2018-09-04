@@ -31,6 +31,7 @@ class QueueForm(forms.ModelForm):
 class PlanForm(forms.ModelForm):
     class Meta:
         model = Plan
-        fields = ['name', 'time', 'reminder']
+        fields = ['name', 'time', 'period', 'reminder']
         labels = {'name': 'Name', 'reminder': 'Reminder',
-                  'time': 'Activation time'}
+                  'time': 'Activation time',
+                  'period': 'Period'}

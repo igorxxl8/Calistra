@@ -1,0 +1,11 @@
+{% extends "web_tracker/base.html" %}
+
+{% block content %}
+<p>New task</p>
+ <form action="{% url 'web_tracker:show_task' %}" method="get">
+     {% csrf_token %}
+     {{ form.as_p }}
+     <button name="submit">Add task</button>
+ </form>
+
+{% endblock content %}

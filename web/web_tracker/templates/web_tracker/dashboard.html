@@ -1,0 +1,34 @@
+{% extends "web_tracker/base.html" %}
+
+{% block content %}
+<p>Queues</p>
+<ul>
+    {% for queue in queues %}
+        <li>{{queue.name}}</li>
+    {% empty %}
+        <li>No queues have been added yet.</li>
+    {% endfor %}
+</ul>
+<p>I am author:</p>
+<ul>
+    {% for task in author_tasks %}
+    <li>{{task.name}}</li>
+
+    {% empty %}
+        <li>There is no task!</li>
+    {% endfor %}
+</ul>
+
+<p>I am responsible:</p>
+<ul>
+    {% for task in responsible_tasks %}
+    <li>{{task.name}}</li>
+
+    {% empty %}
+        <li>There is no task!</li>
+    {% endfor %}
+</ul>
+
+<a href="{% url 'web_tracker:new_task' %}">Add task</a>
+
+{% endblock content %}

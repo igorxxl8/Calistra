@@ -1,0 +1,12 @@
+{% extends "web_tracker/base.html" %}
+
+{% block content %}
+
+    <form method="post" action="{% url 'web_tracker:register' %}">
+        {% csrf_token %}
+        {{form.as_p}}
+        <button name="submit">Register</button>
+        <input type="hidden" name="next" value="{% url 'web_tracker:index' %}"/>
+    </form>
+
+{% endblock content %}

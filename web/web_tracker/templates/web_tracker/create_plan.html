@@ -1,0 +1,11 @@
+{% extends "web_tracker/base.html" %}
+
+{% block content %}
+<p>Creating plan</p>
+    <form action="{% url 'web_tracker:create_plan' %}" method="post">
+     {% csrf_token %}
+     {{ form.as_p }}
+        <button name="submit">Add plan</button>
+    </form>
+
+{% endblock content %}

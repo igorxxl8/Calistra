@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{% block title %}Calistra{% endblock %}</title>
+</head>
+
+<body>
+    <div id="sidebar">
+        {% block sidebar %}
+        <p>
+            <a href="{% url 'web_tracker:title' %}">Calistra</a>
+            <a href="{% url 'web_tracker:new_task' %}">
+                <button>New task</button>
+            </a>
+            <a href="{% url 'web_tracker:new_queue' %}">
+                <button>New queue</button>
+            </a>
+            <a href="{% url 'web_tracker:create_plan' %}">
+                <button>Create plan</button>
+            </a>
+            {% if user.is_authenticated %}
+              Hello, {{user.username}}.
+              <a href="{% url 'web_tracker:logout' %}">Log out</a>
+            {% else %}
+                <a href="{% url 'web_tracker:register' %}">Register</a>
+                <a href="{% url 'web_tracker:login' %}">Log in</a>
+            {% endif %}
+        </p>
+        {% endblock %}
+    </div>
+
+    <div id="content">
+        {% block content %}{% endblock content %}
+    </div>
+</body>
+</html>

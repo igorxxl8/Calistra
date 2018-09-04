@@ -1,5 +1,6 @@
 from calistra_lib.task.task_storage_interface import ITaskStorage
 from web_tracker.models import Task
+from django.shortcuts import get_object_or_404
 
 
 class ORMTaskStorage(ITaskStorage):
@@ -32,10 +33,12 @@ class ORMTaskStorage(ITaskStorage):
         self.tasks.get(key=task.key).delete()
 
     def get_sub_tasks(self, task):
-        keys = eval(self.tasks.filter(key=task.key).sub_tasks())
+        keys = task.sub_tasks.split(',')
         tasks = []
         for key in keys:
-            tasks.append(self.tasks.get(key=key))
+            task = self.get_task_by_key(key)
+            if task:
+                tasks.append(task)
         return tasks
 
     def get_task_by_key(self, key):
@@ -47,9 +50,48 @@ class ORMTaskStorage(ITaskStorage):
     def get_task_by_name(self, name):
         return self.tasks.filter(name=name)
 
+    def get_task_by_author(self, author):
+        return self.tasks.filter(author=author.nick)
+
+    def get_task_by_responsible(self, responsible):
+        tasks = []
+        for task in self.tasks:
+            temp = task.responsible.split(',')
+            if responsible.nick in temp:
+                tasks.append(task)
+
+        return tasks
+
     def get_task_by_tag(self, tag):
         return self.tasks.filter(tags=tag)
 
     def save_tasks(self):
         for task in self.tasks:
             task.save()
+
+    def get_opened_tasks(self, queue):
+        temp = queue.opened_tasks.split(',')
+        tasks = []
+        for key in temp:
+            task = self.get_task_by_key(key)
+            if task is not None:
+                tasks.append(task)
+        return tasks
+
+    def get_solved_tasks(self, queue):
+        temp = queue.solved_tasks.split(',')
+        tasks = []
+        for key in temp:
+            task = self.get_task_by_key(key)
+            if task is not None:
+                tasks.append(task)
+        return tasks
+
+    def get_failed_tasks(self, queue):
+        temp = queue.failed_tasks.split(',')
+        tasks = []
+        for key in temp:
+            task = self.get_task_by_key(key)
+            if task is not None:
+                tasks.append(task)
+        return tasks

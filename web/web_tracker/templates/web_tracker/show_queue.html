@@ -1,0 +1,46 @@
+{% extends 'web_tracker/base.html' %}
+
+{% block content %}
+
+    <p>Queue: {{queue}}</p>
+    <p>Name: {{queue.name}}</p>
+    <p>Key: {{queue.key}}</p>
+    <p>Opened tasks:</p>
+        <ul>
+        {% for task in opened_tasks %}
+        <li>
+            <a href="{% url 'web_tracker:show_task' task.key %}">{{task.name}}</a>
+        </li>
+
+        {% empty %}
+            <li>There is no tasks!</li>
+        {% endfor %}
+        </ul>
+    <p>Solved tasks:</p>
+        <ul>
+        {% for task in solved_tasks %}
+        <li>
+            <a href="{% url 'web_tracker:show_task' task.key %}">{{task.name}}</a>
+        </li>
+
+        {% empty %}
+            <li>There is no tasks!</li>
+        {% endfor %}
+        </ul>
+    <p>Failed tasks:</p>
+        <ul>
+        {% for task in failed_tasks %}
+        <li>
+            <a href="{% url 'web_tracker:show_task' task.key %}">{{task.name}}</a>
+        </li>
+
+        {% empty %}
+            <li>There is no tasks!</li>
+        {% endfor %}
+        </ul>
+
+    <a href="{% url 'web_tracker:edit_queue' queue.key %}">
+        <button>Edit queue</button>
+    </a>
+
+{% endblock content %}

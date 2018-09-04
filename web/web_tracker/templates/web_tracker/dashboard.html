@@ -1,34 +1,177 @@
 {% extends "web_tracker/base.html" %}
 
 {% block content %}
-<p>Queues</p>
-<ul>
-    {% for queue in queues %}
-        <li>{{queue.name}}</li>
-    {% empty %}
-        <li>No queues have been added yet.</li>
-    {% endfor %}
-</ul>
-<p>I am author:</p>
-<ul>
-    {% for task in author_tasks %}
-    <li>{{task.name}}</li>
+<div>
+    <div>
+        <h1>
+            Queues
+            <button title="Show_hide_queue" onclick="showhide('queues')">^</button>
+        </h1>
+    </div>
+    <div id="queues" style="display:none;">
+        <ul>
+            {% for queue in queues %}
+                <li>
+                    <a href="{% url 'web_tracker:show_queue' queue.key %}">{{queue.name}}</a>
+                </li>
+            {% empty %}
+                <li>No queues have been added yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+<div>
+    <div>
+        <h1>
+            Tasks
+            <button title="Show_hide_tasks" onclick="showhide('tasks')">^</button>
+        </h1>
 
-    {% empty %}
-        <li>There is no task!</li>
-    {% endfor %}
-</ul>
+    </div>
+    <div id="tasks" style="display:none;">
+        <div>
+            <div>
+                <h2>
+                    I am author
+                    {% if author_count %}
+                    <span>{{author_count}}</span>
+                    {% endif %}
+                    <button title="Hide" onclick="showhide('author_table')">^</button>
+                </h2>
+                <hr>
+            </div>
+            <div id="author_table" style="display:none;">
+                <table>
+                    {% if author_tasks %}
+                    <thead>
+                        <tr>
+                            <th>
+                                <a>Queue</a>
+                            </th>
+                            <th>
+                                <div>Task</div>
+                            </th>
+                            <th>
+                                <div>
+                                    <a>Status</a>
+                                </div>
+                            </th>
+                            <th>
+                                <div>
+                                    <a>Updated</a>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for task in author_tasks %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'web_tracker:show_queue' task.queue %}">{{task.queue}}</a>
+                            </td>
+                            <td>
+                                <a href="{% url 'web_tracker:show_task' task.key %}">{{task.name}}</a>
+                            </td>
+                            <td>
+                                <a>{{task.status}}</a>
+                            </td>
+                            <td>
+                                <a>{{task.editing_time}}</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
 
-<p>I am responsible:</p>
-<ul>
-    {% for task in responsible_tasks %}
-    <li>{{task.name}}</li>
+                    {% else %}
+                        <p>There is no tasks!</p>
+                    {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div>
+            <div>
+                <h2>
+                    I am responsible
+                    {% if responsible_count %}
+                    <span>{{responsible_count}}</span>
+                    {% endif %}
+                    <button title="Hide" onclick="showhide('responsible_table')">^</button>
+                </h2>
+                <hr>
+            </div>
+            <div id="responsible_table" style="display:none;">
+                <table>
+                        {% if responsible_tasks %}
+                        <thead>
+                            <tr>
+                                <th>
+                                    <a>Queue</a>
+                                </th>
+                                <th>
+                                    <div>Task</div>
+                                </th>
+                                <th>
+                                    <div>
+                                        <a>Status</a>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div>
+                                        <a>Updated</a>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for task in responsible_tasks %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'web_tracker:show_queue' task.queue %}">{{task.queue}}</a>
+                                </td>
+                                <td>
+                                    <a href="{% url 'web_tracker:show_task' task.key %}">{{task.name}}</a>
+                                </td>
+                                <td>
+                                    <a>{{task.status}}</a>
+                                </td>
+                                <td>
+                                    <a>{{task.editing_time}}</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        {% else %}
+                            <p>There is no task!</p>
+                        {% endif %}
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
-    {% empty %}
-        <li>There is no task!</li>
-    {% endfor %}
-</ul>
+<div>
+    <div>
+        <div>
+            <h1>
+                Plans
+                <button title="Show_hide_plans" onclick="showhide('plans')">^</button>
+            </h1>
+        </div>
+    </div>
+    <div id="plans" style="display:none;">
+        <ul>
+            {% for plan in plans %}
 
-<a href="{% url 'web_tracker:new_task' %}">Add task</a>
+            <li>
+                <a href="{% url 'web_tracker:show_plan' plan.key %}">{{plan.name}}</a>
+            </li>
+
+            {% empty %}
+                <li>There is no plans!</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
 
 {% endblock content %}

@@ -1,11 +1,48 @@
 {% extends "web_tracker/base.html" %}
 
 {% block content %}
-<p>New task</p>
- <form action="{% url 'web_tracker:show_task' %}" method="get">
-     {% csrf_token %}
-     {{ form.as_p }}
-     <button name="submit">Add task</button>
- </form>
+<p>Key: {{task.key}}</p>
+<p>Name: {{task.name}}</p>
+<p>
+    Queue:
+    <a href="{% url 'web_tracker:show_queue' queue.key %}">{{queue.name}}</a>
+</p>
+<p>Description: {{task.description}}</p>
+<p>
+    {% if parent_task %}
+    Parent: <a href="{% url 'web_tracker:show_task' parent_task.key %}">{{parent_task.name}}</a>
+    {% else %}
+    Parent: No parent.
+    {% endif %}
+</p>
+
+<p>Sub tasks: </p>
+    <ul>
+    {% for task in sub_tasks %}
+    <li>
+        <a href="{% url 'web_tracker:show_task' task.key %}">{{task.name}}</a>
+    </li>
+
+    {% empty %}
+        <li>Not found!</li>
+    {% endfor %}
+</ul>
+<p>Related: {{task.related}}</p>
+<p>Author: {{task.author}}</p>
+<p>Priority: {{task.priority}}</p>
+<p>Progress: {{task.progress}}</p>
+<p>Start: {{task.start}}</p>
+<p>Deadline: {{task.deadline}}</p>
+<p>Tags: {{task.tags}}</p>
+<p>Reminder: {{task.reminder}}</p>
+<p>Status: {{task.status}}</p>
+<p>Creating time: {{task.creating_time}}</p>
+<p>Editing time: {{task.editing_time}}</p>
+<p>Responsible: {{task.responsible}}</p>
+
+<a href="{% url 'web_tracker:edit_task' task.key %}">
+    <button>Edit task</button>
+</a>
+
 
 {% endblock content %}

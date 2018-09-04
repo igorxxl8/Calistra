@@ -20,6 +20,29 @@ urlpatterns = [
 
     # login page
     url(r'^users/login/$', login, {'template_name': 'users/login.html'}, name='login'),
+
+    # logout page
     url(r'^users/logout/$', views.logout_view, name='logout'),
-    url(r'^users/register/$', views.register, name='register')
+
+    # register page
+    url(r'^users/register/$', views.register, name='register'),
+
+    # page with info about single queue
+    url(r'^queues/(?P<queue_key>[\w.@+-]+)/$', views.show_queue, name='show_queue'),
+
+    # page with info about single plan
+    url(r'^plans/(?P<plan_key>[\w.@+-]+)/$', views.show_plan, name='show_plan'),
+
+    url(r'^tasks/(?P<task_key>[\w.@+-]+)/$', views.show_task, name='show_task'),
+
+    # page for editing task
+    url(r'^edit_task/(?P<task_key>[\w.@+-]+)/$', views.edit_task, name='edit_task'),
+
+    # page for editing queue
+    url(r'^edit_queue/(?P<queue_key>[\w.@+-]+)/$', views.edit_queue, name='edit_queue'),
+
+    # page for editing plan
+    url(r'^edit_plan/(?P<plan_key>[\w.@+-]+)/$', views.edit_plan, name='edit_plan')
+
+
 ]

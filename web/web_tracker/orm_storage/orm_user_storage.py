@@ -1,5 +1,5 @@
 from calistra_lib.user.user_storage_interface import IUserStorage
-from web_tracker.models import User
+from ..models import User
 
 
 class ORMUserStorage(IUserStorage):

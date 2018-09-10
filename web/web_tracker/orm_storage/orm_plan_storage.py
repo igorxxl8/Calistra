@@ -1,5 +1,5 @@
 from calistra_lib.plan.plan_storage_interface import IPlanStorage
-from web_tracker.models import Plan
+from ..models import Plan
 
 
 class ORMPlanStorage(IPlanStorage):
@@ -12,7 +12,8 @@ class ORMPlanStorage(IPlanStorage):
             name=plan.name,
             period=plan.period,
             time=plan.time,
-            key=plan.key
+            key=plan.key,
+            reminder=plan.reminder
         )
 
     def remove_plan(self, plan):
@@ -27,4 +28,7 @@ class ORMPlanStorage(IPlanStorage):
             return self.plans.get(key=key)
         except Exception:
             return None
+
+    def get_user_plans(self, user):
+        return self.plans.filter(author=user.nick)
 

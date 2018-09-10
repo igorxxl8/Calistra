@@ -1,6 +1,6 @@
+from ..models import Queue
+
 from calistra_lib.queue.queue_storage_interface import IQueueStorage
-from web_tracker.models import Queue
-from django.shortcuts import get_object_or_404
 
 
 class ORMQueueStorage(IQueueStorage):
@@ -11,12 +11,19 @@ class ORMQueueStorage(IQueueStorage):
         for queue in self.queues:
             queue.save()
 
+    @staticmethod
+    def save_queue(queue):
+        queue.save()
+
     def add_queue(self, queue):
         self.queues.create(
             name=queue.name,
             key=queue.key,
             owner=queue.owner
         )
+
+    def get_user_queues(self, user):
+        return self.queues.filter(owner=user.uid)
 
     def remove_queue(self, queue):
         self.queues.filter(key=queue.key).delete()
@@ -39,4 +46,4 @@ class ORMQueueStorage(IQueueStorage):
         return self.queues.get(name=name)
 
     def get_user_default_queue(self, user):
-        return self.queues.filter(owner=user.uid).get(name='default')
+        return self.queues.filter(owner=user.uid).get(name='DEFAULT')

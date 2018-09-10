@@ -1,6 +1,5 @@
 from calistra_lib.task.task_storage_interface import ITaskStorage
-from web_tracker.models import Task
-from django.shortcuts import get_object_or_404
+from ..models import Task
 
 
 class ORMTaskStorage(ITaskStorage):
@@ -50,10 +49,10 @@ class ORMTaskStorage(ITaskStorage):
     def get_task_by_name(self, name):
         return self.tasks.filter(name=name)
 
-    def get_task_by_author(self, author):
+    def get_tasks_by_author(self, author):
         return self.tasks.filter(author=author.nick)
 
-    def get_task_by_responsible(self, responsible):
+    def get_tasks_by_responsible(self, responsible):
         tasks = []
         for task in self.tasks:
             temp = task.responsible.split(',')
@@ -95,3 +94,10 @@ class ORMTaskStorage(ITaskStorage):
             if task is not None:
                 tasks.append(task)
         return tasks
+
+    def delete_queue_tasks(self, queue):
+        tasks = (self.get_opened_tasks(queue) +
+                 self.get_solved_tasks(queue) +
+                 self.get_failed_tasks(queue))
+        for task in tasks:
+            self.remove_task(task)

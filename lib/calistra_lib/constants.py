@@ -13,6 +13,7 @@ class Constants:
 
 class PlanPeriod:
     """Class whick represent period param of plan"""
+    HOURLY = 'hourly'
     DAILY = 'daily'
     WEEKLY = 'weekly'
     MONTHLY = 'monthly'
@@ -57,6 +58,7 @@ class Time:
 
     # dictionary which puts in conformity task frequency and time interval
     Interval = {
+        PlanPeriod.HOURLY: HOUR,
         PlanPeriod.DAILY: DAY,
         PlanPeriod.WEEKLY: WEEK,
         PlanPeriod.MONTHLY: MONTH,

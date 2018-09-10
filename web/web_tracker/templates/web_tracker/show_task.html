@@ -1,48 +1,160 @@
 {% extends "web_tracker/base.html" %}
 
 {% block content %}
-<p>Key: {{task.key}}</p>
-<p>Name: {{task.name}}</p>
-<p>
-    Queue:
-    <a href="{% url 'web_tracker:show_queue' queue.key %}">{{queue.name}}</a>
-</p>
-<p>Description: {{task.description}}</p>
-<p>
-    {% if parent_task %}
-    Parent: <a href="{% url 'web_tracker:show_task' parent_task.key %}">{{parent_task.name}}</a>
-    {% else %}
-    Parent: No parent.
-    {% endif %}
-</p>
+<div class="form-div">
+    <h1>{{task.name}}</h1>
 
-<p>Sub tasks: </p>
-    <ul>
-    {% for task in sub_tasks %}
-    <li>
-        <a href="{% url 'web_tracker:show_task' task.key %}">{{task.name}}</a>
-    </li>
+    <div class="ticket-info">
+        <div class="inline-child">
+            <p>{{task.key}}</p>
+        </div>
+        <div class="inline-child ticket-b">
+            <p>{{task.status}}</p>
+        </div>
+        <div class="inline-child">
+            <p>Created {{task.creating_time}}</p>
+        </div>
+        <div class="inline-child">
+            <p>Edited {{task.editing_time}}</p>
+        </div>
+    </div>
 
-    {% empty %}
-        <li>Not found!</li>
-    {% endfor %}
-</ul>
-<p>Related: {{task.related}}</p>
-<p>Author: {{task.author}}</p>
-<p>Priority: {{task.priority}}</p>
-<p>Progress: {{task.progress}}</p>
-<p>Start: {{task.start}}</p>
-<p>Deadline: {{task.deadline}}</p>
-<p>Tags: {{task.tags}}</p>
-<p>Reminder: {{task.reminder}}</p>
-<p>Status: {{task.status}}</p>
-<p>Creating time: {{task.creating_time}}</p>
-<p>Editing time: {{task.editing_time}}</p>
-<p>Responsible: {{task.responsible}}</p>
+    <div class="widget-div">
 
-<a href="{% url 'web_tracker:edit_task' task.key %}">
-    <button>Edit task</button>
-</a>
+        {% if can_edit %}
+        <div>
+            <a href="{% url 'web_tracker:edit_task' task.key %}">
+                <button class="btn btn-outline-warning ">Edit task</button>
+            </a>
+
+            <a href="{% url 'web_tracker:delete_task' task.key %}">
+                <button data-toggle="modal" data-target="#success_deleted"
+                        class="btn btn-outline-danger">Delete task
+                </button>
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
+    <div class="widget-div">
+        <p>
+            {% if can_edit %}
+            Queue:
+            <a href="{% url 'web_tracker:show_queue' queue.key %}">{{queue.name}}</a>
+            {% endif %}
+        </p>
+        {% if task.desciption %}
+        <p>Description: {{task.description}}</p>
+        {% endif %}
+        <p>
+            {% if can_show_parent %}
+            {% if parent_task %}
+            Parent: <a href="{% url 'web_tracker:show_task' parent_task.key %}">{{parent_task.name}}</a>
+            {% else %}
+            Parent: <a>{{parent_task.name}}</a>
+            {% endif %}
+            {% endif %}
+        </p>
+        {% if sub_tasks %}
+        <p>Sub tasks: </p>
+        <ul>
+            {% for task in sub_tasks %}
+            <li>
+                <a href="{% url 'web_tracker:show_task' task.key %}">{{task.name}}</a>
+            </li>
+
+            {% empty %}
+            <li>Not found!</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% if task.related %}
+        <p>Related: {{task.related}}</p>
+        {% endif %}
+
+        <p>Author: {{task.author}}</p>
+        <p>Priority: {{task.priority}}</p>
+        <p>Progress: {{task.progress}}%</p>
+
+        {% if task.start %}
+        <p>Start: {{task.start}}</p>
+        {% endif %}
+
+        {% if task.deadline %}
+        <p>Deadline: {{task.deadline}}</p>
+        {% endif %}
+
+        {% if task.tags %}
+        <p>Tags: {{task.tags}}</p>
+        {% endif %}
+
+        {% if task.reminder %}
+        <p>Reminder: {{task.reminder}}</p>
+        {% endif %}
+
+        {% if task.responsible %}
+        <p>Responsible: {{task.responsible}}</p>
+        {% endif %}
+    </div>
+
+
+
+    <div class="modal fade" id="confirm_deletion">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    Warning
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-hidden="true">×
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Queue has tasks! Do you want to remove the queue with tasks?
+                    This action is irreversible!
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button" class="btn btn-success"
+                            data-toggle="modal" data-target="#success_deleted">
+                        Yes
+                    </button>
+                    <button type="button" class="btn btn-danger"
+                            data-dismiss="modal">No
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="success_deleted">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    Success
+                    <button type="button" class="close" data-dismiss="modal"
+                            aria-hidden="true">×
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Queue "{{queue.name}}" was deleted
+                </div>
+
+                <div class="modal-footer">
+                    <a href="{% url 'web_tracker:delete_task' task.key %}">
+                        <button type="button" class="btn btn-danger"
+                        >OK
+                        </button>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
 
 
 {% endblock content %}

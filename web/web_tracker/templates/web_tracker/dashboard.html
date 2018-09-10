@@ -1,55 +1,120 @@
 {% extends "web_tracker/base.html" %}
 
-{% block content %}
-<div>
-    <div>
-        <h1>
-            Queues
-            <button title="Show_hide_queue" onclick="showhide('queues')">^</button>
-        </h1>
-    </div>
-    <div id="queues" style="display:none;">
-        <ul>
-            {% for queue in queues %}
-                <li>
-                    <a href="{% url 'web_tracker:show_queue' queue.key %}">{{queue.name}}</a>
-                </li>
-            {% empty %}
-                <li>No queues have been added yet.</li>
-            {% endfor %}
-        </ul>
-    </div>
-</div>
-<div>
-    <div>
-        <h1>
-            Tasks
-            <button title="Show_hide_tasks" onclick="showhide('tasks')">^</button>
-        </h1>
+{% block header %}
 
+<div class="dashboard-div link">
+    <div class="link">
+        <h1>My dashboard</h1>
+        <p>
+            <a href="{% url 'web_tracker:notify' %}">
+                <button class="btn btn-info btn-lg">Notifications</button>
+            </a>
+        </p>
     </div>
-    <div id="tasks" style="display:none;">
-        <div>
+    <div class="widget-div widget-div-color_1 widget-div-type_1">
+        <div id="queues" class="table-responsive collapse show">
             <div>
-                <h2>
-                    I am author
-                    {% if author_count %}
-                    <span>{{author_count}}</span>
+                <h1>
+                    Queues
+                    {% if queues.count %}
+                    <span><i>{{queues.count}}</i></span>
                     {% endif %}
-                    <button title="Hide" onclick="showhide('author_table')">^</button>
-                </h2>
+                    <button title="show/hide"
+                            data-target="#queues_table"
+                            data-toggle="collapse"
+                            aria-expanded="false"
+                            class="btn btn-info float-right"
+                            onclick='imgsrc("image6")'>
+
+                        <img id="image6" src="/static/img/hide.png">
+                    </button>
+                </h1>
                 <hr>
             </div>
-            <div id="author_table" style="display:none;">
-                <table>
-                    {% if author_tasks %}
+
+            <div id="queues_table" class="table-responsive collapse show">
+                <table class="table table-striped table-sm">
+                    {% if queues %}
                     <thead>
+                    <tr>
+                        <th>
+                            <div>Name</div>
+                        </th>
+                        <th>
+                            <div>Key</div>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for queue in queues %}
+
+                    <tr>
+                        <td>
+                            <a href="{% url 'web_tracker:show_queue' queue.key %}">{{queue.name}}</a>
+                        </td>
+                        <td>
+                            <a>{{queue.key}}</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <p>There is no queues!</p>
+                    {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="widget-div widget-div-color_2 widget-div-type_1">
+        <div class="panel-heading">
+            <h1>
+                Tasks
+                {% if tasks_count %}
+                <span class=""><i>{{tasks_count}}</i></span>
+                {% endif %}
+                <button title="Show/hide tasks" data-target="#tasks"
+                        data-toggle="collapse"
+                        aria-expanded="false"
+                        class="btn btn-info float-right"
+                        onclick='imgsrc("image0")'>
+
+                    <img id="image0" src="/static/img/hide.png">
+                </button>
+            </h1>
+            <hr>
+        </div>
+        <div id="tasks" class="panel-body collapse show">
+            <div class="widget-div widget-div-color_4 widget-div-type_2">
+                <div>
+                    <h2>
+                        I am author
+                        {% if author_count %}
+                        <span class=""><i>{{author_count}}</i></span>
+                        {% endif %}
+                        <button title="show/hide" data-toggle="collapse"
+                                data-target="#author_table"
+                                aria-expanded="false"
+                                class="btn btn-info float-right"
+                                onclick='imgsrc("image1")'>
+
+                            <img id="image1" src="/static/img/hide.png">
+                        </button>
+
+
+                    </h2>
+                </div>
+                <div id="author_table"
+                     class="table-responsive collapse show">
+                    <table class="table table-striped table-sm">
+                        {% if author_tasks %}
+                        <thead>
                         <tr>
                             <th>
-                                <a>Queue</a>
+                                <div>Task</div>
                             </th>
                             <th>
-                                <div>Task</div>
+                                <a>Queue</a>
                             </th>
                             <th>
                                 <div>
@@ -62,15 +127,15 @@
                                 </div>
                             </th>
                         </tr>
-                    </thead>
-                    <tbody>
-                    {% for task in author_tasks %}
+                        </thead>
+                        <tbody>
+                        {% for task in author_tasks %}
                         <tr>
                             <td>
-                                <a href="{% url 'web_tracker:show_queue' task.queue %}">{{task.queue}}</a>
+                                <a href="{% url 'web_tracker:show_task' task.key %}">{{task.name}}</a>
                             </td>
                             <td>
-                                <a href="{% url 'web_tracker:show_task' task.key %}">{{task.name}}</a>
+                                <a href="{% url 'web_tracker:show_queue' task.queue %}">{{task.queue}}</a>
                             </td>
                             <td>
                                 <a>{{task.status}}</a>
@@ -79,99 +144,158 @@
                                 <a>{{task.editing_time}}</a>
                             </td>
                         </tr>
-                    {% endfor %}
+                        {% endfor %}
 
-                    {% else %}
+                        {% else %}
                         <p>There is no tasks!</p>
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="widget-div widget-div-color_5 widget-div-type_2">
+                <div>
+                    <h2>
+                        I am responsible
+                        {% if responsible_count %}
+                        <span><i>{{responsible_count}}</i></span>
+                        {% endif %}
+                        <button title="show/hide"
+                                data-target="#responsible_table"
+                                data-toggle="collapse"
+                                aria-expanded="false"
+                                class="btn btn-info float-right"
+                                onclick='imgsrc("image2")'>
+
+                            <img id="image2" src="/static/img/hide.png">
+                        </button>
+                    </h2>
+                </div>
+
+                <div id="responsible_table"
+                     class="table-responsive collapse show">
+                    <table class="table table-striped table-sm">
+                        {% if responsible_tasks %}
+                        <thead>
+                        <tr>
+                            <th>
+                                <div>Task</div>
+                            </th>
+                            <th>
+                                <a>Queue</a>
+                            </th>
+                            <th>
+                                <div>
+                                    <a>Status</a>
+                                </div>
+                            </th>
+                            <th>
+                                <div>
+                                    <a>Updated</a>
+                                </div>
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for task in responsible_tasks %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'web_tracker:show_task' task.key %}">{{task.name}}</a>
+                            </td>
+                            <td>
+                                <a href="{% url 'web_tracker:show_queue' task.queue %}">{{task.queue}}</a>
+                            </td>
+                            <td>
+                                <a>{{task.status}}</a>
+                            </td>
+                            <td>
+                                <a>{{task.editing_time}}</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <p>There is no tasks!</p>
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="widget-div widget-div-color_3 widget-div-type_1">
+        <div id="plans" class="table-responsive collapse show">
+            <div>
+                <h1>
+                    Plans
+                    {% if plans.count %}
+                    <span><i>{{plans.count}}</i></span>
                     {% endif %}
+                    <button title="show/hide"
+                            data-target="#plans_table"
+                            data-toggle="collapse"
+                            aria-expanded="false"
+                            class="btn btn-info float-right"
+                            onclick='imgsrc("image5")'>
+
+                        <img id="image5" src="/static/img/hide.png">
+                    </button>
+                </h1>
+                <hr>
+            </div>
+
+            <div id="plans_table" class="table-responsive collapse show">
+                <table class="table table-striped table-sm">
+                    {% if plans %}
+
+                    <thead>
+                    <tr>
+                        <th>
+                            <div>Name</div>
+                        </th>
+                        <th>
+                            <div>
+                                <a>Period</a>
+                            </div>
+                        </th>
+                        <th>
+                            <div>
+                                <a>Activation time</a>
+                            </div>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for plan in plans %}
+
+                    <tr>
+
+                        <td>
+                            <a href="{% url 'web_tracker:show_plan' plan.key %}">{{plan.name}}</a>
+                        </td>
+                        <td>
+                            <a>{{plan.period}}</a>
+                        </td>
+                        <td>
+                            <a>{{plan.time}}</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <p>There is no plans!</p>
+                    {% endif %}
+
+                    <div>
+
+
+                    </div>
                     </tbody>
                 </table>
             </div>
         </div>
-        <div>
-            <div>
-                <h2>
-                    I am responsible
-                    {% if responsible_count %}
-                    <span>{{responsible_count}}</span>
-                    {% endif %}
-                    <button title="Hide" onclick="showhide('responsible_table')">^</button>
-                </h2>
-                <hr>
-            </div>
-            <div id="responsible_table" style="display:none;">
-                <table>
-                        {% if responsible_tasks %}
-                        <thead>
-                            <tr>
-                                <th>
-                                    <a>Queue</a>
-                                </th>
-                                <th>
-                                    <div>Task</div>
-                                </th>
-                                <th>
-                                    <div>
-                                        <a>Status</a>
-                                    </div>
-                                </th>
-                                <th>
-                                    <div>
-                                        <a>Updated</a>
-                                    </div>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for task in responsible_tasks %}
-                            <tr>
-                                <td>
-                                    <a href="{% url 'web_tracker:show_queue' task.queue %}">{{task.queue}}</a>
-                                </td>
-                                <td>
-                                    <a href="{% url 'web_tracker:show_task' task.key %}">{{task.name}}</a>
-                                </td>
-                                <td>
-                                    <a>{{task.status}}</a>
-                                </td>
-                                <td>
-                                    <a>{{task.editing_time}}</a>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                        {% else %}
-                            <p>There is no task!</p>
-                        {% endif %}
-                        </tbody>
-                </table>
-            </div>
-        </div>
     </div>
 </div>
+{% endblock header %}
 
-<div>
-    <div>
-        <div>
-            <h1>
-                Plans
-                <button title="Show_hide_plans" onclick="showhide('plans')">^</button>
-            </h1>
-        </div>
-    </div>
-    <div id="plans" style="display:none;">
-        <ul>
-            {% for plan in plans %}
-
-            <li>
-                <a href="{% url 'web_tracker:show_plan' plan.key %}">{{plan.name}}</a>
-            </li>
-
-            {% empty %}
-                <li>There is no plans!</li>
-            {% endfor %}
-        </ul>
-    </div>
-</div>
-
+{% block content %}
 
 {% endblock content %}

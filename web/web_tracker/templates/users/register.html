@@ -1,12 +1,59 @@
 {% extends "web_tracker/base.html" %}
+{% load bootstrap3 %}
+{% block header %}
+{% endblock header %}
 
 {% block content %}
+<div class="container">
+    <div class="sub-div">
+        <div class="panel">
+            <h2 class="h2 mb-3 font-weight-normal text-center">Register
+                account</h2>
+            <p class="h3 mb-3 font-weight-normal text-center">Please enter
+                nickname and password</p>
+        </div>
+        <form id="Login" method="post"
+              action="{% url 'web_tracker:register' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <input class="form-control" name="username" autofocus=""
+                       id="id_username" required="" type="text"
+                       placeholder="Username">
+            </div>
+            <div class="form-group">
+                <input type="password" class="form-control" name="password1"
+                       autofocus="" id="id_password1" required=""
+                       placeholder="Password">
+            </div>
 
-    <form method="post" action="{% url 'web_tracker:register' %}">
-        {% csrf_token %}
-        {{form.as_p}}
-        <button name="submit">Register</button>
-        <input type="hidden" name="next" value="{% url 'web_tracker:index' %}"/>
-    </form>
+            <div class="form-group">
+                <input type="password" class="form-control" name="password2"
+                       autofocus="" id="id_password" required=""
+                       placeholder="Confirm password">
+            </div>
 
+            {% for field in form %}
+            {% for error in field.errors %}
+            <div class="alert alert-danger alert-dismissable alert-link">
+                <button class="close" type="button" data-dismiss="alert"
+                        aria-hidden="true">×
+                </button>
+                {{error}}
+            </div>
+            {% endfor %}
+            {% endfor %}
+            <button name="submit" class="btn btn-lg btn-primary btn-block">
+                Register
+            </button>
+            <input class="form-control" type="hidden" name="next"
+                   value="{% url 'web_tracker:index' %}"/>
+        </form>
+        <h5 class="h5 mb-3 font-weight-normal text-center">
+            Have an account?
+            <a href="/users/login">
+                <u>Log in</u>
+            </a>
+        </h5>
+    </div>
+</div>
 {% endblock content %}

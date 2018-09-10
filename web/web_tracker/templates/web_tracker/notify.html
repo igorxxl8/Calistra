@@ -1,0 +1,30 @@
+{% extends 'web_tracker/base.html' %}
+
+{% block content %}
+<div class="form-div">
+    {% if messages %}
+    <p>New messages</p>
+    <div>
+        {% for message in messages %}
+        <p>
+            {% if message %}
+            <button class="btn btn-outline-warning btn-sm">{{message}}</button>
+            {% endif %}
+        </p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <p>Notifications</p>
+    <div>
+        {% for notify in notifications %}
+        <p>
+            {% if notify %}
+            <button class="btn btn-outline-warning btn-sm">{{notify}}</button>
+            {% endif %}
+        </p>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock content %}

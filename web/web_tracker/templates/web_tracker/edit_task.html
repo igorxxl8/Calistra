@@ -1,18 +1,14 @@
 {% extends "web_tracker/base.html" %}
 {% load bootstrap3 %}
 
-{% block header %}
-
-{% endblock header %}
-
 {% block content %}
+
 <div class="form-div">
     <div class="container">
-        <h2> Add a new task:</h2>
-        <form novalidate action="{% url 'web_tracker:new_task' %}" method="post"
-              class="form">
+        <h2> Edit task:</h2>
+        <form action="{% url 'web_tracker:edit_task' task.key %}" method="post">
             {% csrf_token %}
-            {% for field in form %}
+           {% for field in form %}
             <p>
                 {{ field.label_tag }} {{ field }}
 
@@ -29,15 +25,13 @@
             <p>
 
                 {% endfor %}
-                {% buttons %}
-            </p>
-            <button name="submit" class="btn btn-success btn-lg">Add task
+            <button name="submit" class="btn btn-success btn-lg">Save changes
             </button>
-            <a href="/" class="float-right">
-                <button class="btn btn-warning btn-lg" name="cancel">Cancel
+            <a href="{% url 'web_tracker:show_task' task.key %}">
+                <button name="cancel"
+                        class="btn btn-warning btn-lg float-right">Cancel
                 </button>
             </a>
-            {% endbuttons %}
         </form>
     </div>
 </div>

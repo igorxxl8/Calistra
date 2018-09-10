@@ -1,14 +1,26 @@
 {% extends 'web_tracker/base.html' %}
 
 {% block content %}
-
-    <p>Queue: {{plan}}</p>
-    <p>Name: {{plan.name}}</p>
+<div class="form-div">
+    <h1>{{plan.name}}</h1>
     <p>Key: {{plan.key}}</p>
-    <p>Time: {{plan.time}}</p>
+    <div class="widget-div">
+        <a href="{% url 'web_tracker:edit_plan' plan.key %}">
+            <button class="btn btn-outline-success btn-sm">Edit plan</button>
+        </a>
+        <a href="{% url 'web_tracker:delete_plan' plan.key %}">
+            <button class="btn btn-outline-danger btn-sm">Delete plan</button>
+        </a>
 
-    <a href="{% url 'web_tracker:edit_plan' plan.key %}">
-        <button>Edit plan</button>
-    </a>
+
+    </div>
+    <div class="widget-div">
+        <h2 class="">Next activation time: {{plan.time}}</h2>
+        <h2>Period: {{plan.period}}</h2>
+        {% if plan.reminder %}
+        <h2>Reminder: {{plan.reminder}}</h2>
+        {% endif %}
+    </div>
+</div>
 
 {% endblock content %}

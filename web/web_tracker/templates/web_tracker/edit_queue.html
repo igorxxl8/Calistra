@@ -1,13 +1,10 @@
 {% extends "web_tracker/base.html" %}
 {% load bootstrap3 %}
 
-{% block header %}
-{% endblock header %}
-
 {% block content %}
 <div class="form-div">
-    <h2> Add a new queue:</h2>
-    <form action="{% url 'web_tracker:new_queue' %}" method="post">
+    <h2> Edit queue:</h2>
+    <form action="{% url 'web_tracker:edit_queue' queue.key  %}" method="post">
         {% csrf_token %}
         {% for field in form %}
         <p>
@@ -25,12 +22,11 @@
         {% endfor %}
 
         {% buttons %}
-        <button class="btn btn-success btn-lg" name="submit">Add queue</button>
+        <button class="btn btn-success btn-lg" name="submit">Save</button>
         <a href="/" class="float-right">
             <button class="btn btn-warning btn-lg" name="cancel">Cancel</button>
         </a>
         {% endbuttons %}
     </form>
-
 </div>
 {% endblock content %}

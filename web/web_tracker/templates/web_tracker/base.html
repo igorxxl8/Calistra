@@ -1,43 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet"
+          href="/static/css/bootstrap_4_1_3.css"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+          crossorigin="anonymous">
+    <link rel="stylesheet" href="/static/css/base_style.css">
+    <link rel="stylesheet" href="/static/css/links.css">
     <title>{% block title %}Calistra{% endblock %}</title>
-    <script type="text/javascript">
-    function showhide(id) {
-       	var e = document.getElementById(id);
-       	e.style.display = (e.style.display == 'block') ? 'none' : 'block';
-     }
+
+
+    <script src="/static/js/jquery-3.3.1.slim.min.js"
+            integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+            crossorigin="anonymous"></script>
+    <script src="/static/js/ajax_popper.min.js"
+            integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+            crossorigin="anonymous"></script>
+    <script src="/static/js/bootstrap.min.js"
+            integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+            crossorigin="anonymous"></script>
+
+
+    <script language="javascript">
+         var imgs=new Array("/static/img/hide.png","/static/img/show.png");
+            function imgsrc(id) {
+            var el = document.getElementById(id);
+                if (el.src.indexOf(imgs[0]) != -1)
+                    el.src = imgs[1]
+                else
+                    el.src = imgs[0]
+            }
+
+
 
     </script>
+
 </head>
 
-<body>
-    <div id="sidebar">
-        {% block sidebar %}
-        <p>
-            <a href="{% url 'web_tracker:title' %}">Calistra</a>
-            <a href="{% url 'web_tracker:new_task' %}">
-                <button>New task</button>
-            </a>
-            <a href="{% url 'web_tracker:new_queue' %}">
-                <button>New queue</button>
-            </a>
-            <a href="{% url 'web_tracker:create_plan' %}">
-                <button>Create plan</button>
-            </a>
-            {% if user.is_authenticated %}
-              Hello, {{user.username}}.
-              <a href="{% url 'web_tracker:logout' %}">Log out</a>
-            {% else %}
-                <a href="{% url 'web_tracker:register' %}">Register</a>
-                <a href="{% url 'web_tracker:login' %}">Log in</a>
-            {% endif %}
-        </p>
-        {% endblock %}
-    </div>
+<body class="b-page__body_font bg-light" id="LoginForm">
+<nav class="navbar navbar-expand-sm navbar-dark bg-dark">
+    <a class="navbar-brand" href="{% url 'web_tracker:title' %}">
+        <img src="/static/img/logo_1.png"/>
+        <img src="/static/img/logo_2.png"/>
+    </a>
+    <div class="collapse navbar-collapse">
+        <a class="nav-link " href="{% url 'web_tracker:new_task' %}">
+            <button class="btn btn-primary">New task</button>
+        </a>
+        <a class="nav-link" href="{% url 'web_tracker:new_queue' %}">
+            <button class="btn btn-primary">New queue</button>
+        </a>
 
-    <div id="content">
+        <a class="nav-link" href="{% url 'web_tracker:create_plan' %}">
+            <button class="btn btn-primary">Create plan</button>
+        </a>
+
+        <ul class="navbar-nav flex-row ml-md-auto d-none d-md-flex">
+            {% if user.is_authenticated %}
+            <li class="nav-item dropdown ">
+                <a id="dropdown3"
+                   data-toggle="dropdown" aria-haspopup="true"
+                   aria-expanded="false"
+                   class="navbar-brand nav-link dropdown-toggle">
+                    {{user.username}}
+                    <img src="/static/img/ninja.png">
+                </a>
+                <div class="dropdown-menu" aria-labelledby="dropdown3">
+                    <a class="dropdown-item"
+                       href="{% url 'web_tracker:logout' %}">Log out</a>
+                </div>
+            </li>
+            {% else %}
+            <li class="nav-item">
+                <a class="nav-link p-2" href="{% url 'web_tracker:register' %}">Register</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link p-2" href="{% url 'web_tracker:login' %}">Log
+                    in</a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
+
+<div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+
+    <div class="page-header">
+        {% block header%}{% endblock header %}
+    </div>
+    <div>
         {% block content %}{% endblock content %}
     </div>
+</div>
+
 </body>
 </html>

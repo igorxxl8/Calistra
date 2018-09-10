@@ -1,11 +1,30 @@
 {% extends "web_tracker/base.html" %}
 
 {% block content %}
-<p>Creating plan</p>
+
+<div class="form-div">
+    <h2>Creating plan:</h2>
     <form action="{% url 'web_tracker:create_plan' %}" method="post">
-     {% csrf_token %}
-     {{ form.as_p }}
-        <button name="submit">Add plan</button>
+    {% csrf_token %}
+    {% for field in form %}
+    <p>
+        {{ field.label_tag }}<br>
+        {{ field }}
+        {% for error in field.errors %}
+    <div class="alert alert-danger alert-dismissable alert-link">
+        <button class="close" type="button" data-dismiss="alert"
+                aria-hidden="true">×
+        </button>
+        {{error}}
+    </div>
+    {% endfor %}
+    </p>
+    {% endfor %}
+    <button name="submit" class="btn btn-success btn-lg">Create</button>
+    <a href="/" class="float-right">
+        <button class="btn btn-warning btn-lg" name="cancel">Cancel</button>
+    </a>
     </form>
+</div>
 
 {% endblock content %}

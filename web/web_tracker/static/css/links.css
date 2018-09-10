@@ -1,0 +1,39 @@
+.s13 {
+  color:#34495e;
+  line-height: 1.2;
+  position: relative;
+  padding: 0 14px;
+}
+.s13:after {
+  content: "";
+  height: 100%;
+  min-width: 4px;
+  background: #34495e;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  transition: .5s;
+}
+.s13:hover:after {
+  min-width: 100%;
+  background: #95a5a6;
+  opacity: .35;
+}
+
+.s11 {
+  color: #1E3A52;
+  padding-bottom: 3px;
+  padding: 30px 15px 5px 15px
+}
+
+
+
+    .link {
+     width: 100%;
+    }
+    .link a {
+     display: block;
+     height: 100%;
+     color: #666;
+    }
+

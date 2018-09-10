@@ -1,3 +1,194 @@
-.format {
-    float: right;
-}
+
+        body#LoginForm{
+            background-image:url(/static/img/bg.jpg);
+            background-position:center;
+            background-size:cover;
+            padding:5px;
+        }
+
+       tbody td:hover {
+        background: #f3bd48; /* Цвет фона при наведении */
+        color: #fff; /
+       }
+
+        .form-heading { color:#fff; font-size:23px;}
+        .panel h2{ color:#444444; font-size:18px; margin:0 0 8px 0;}
+        .panel p { color:#777777; font-size:14px; margin-bottom:30px; line-height:24px;}
+        .login-form .form-control {
+          background: #f7f7f7 none repeat scroll 0 0;
+          border: 1px solid #d4d4d4;
+          border-radius: 4px;
+          font-size: 14px;
+          height: 50px;
+          line-height: 50px;
+        }
+        .main-div {
+          background: #ffffff none repeat scroll 0 0;
+          border-radius: 2px;
+          margin: 200px auto 40px;
+          max-width: 100%;
+          padding: 30px 30px 30px 31px;
+        }
+
+        .sub-div {
+          background: #ffffff none repeat scroll 0 0;
+          border-radius: 2px;
+          margin: 200px auto 40px;
+          max-width: 50%;
+          padding: 30px 30px 30px 31px;
+        }
+
+        .form-div {
+          background: #ffffff none repeat scroll 0 0;
+          border-radius: 2px;
+          margin: 1px auto 10px;
+          padding: 50px 70px 70px 71px;
+        }
+
+        .index-div {
+          background: #ffffff none repeat scroll 0 0;
+          border-radius: 1px;
+          margin: 1px auto 1px;
+          max-width: 68%;
+          padding: 30px 30px 30px 51px;
+        }
+
+        .dashboard-div {
+          background: #DCDCDC none repeat scroll 0 0;
+          border-radius: 1px;
+          margin: 1px auto 10px;
+          max-height: 100%;
+          padding: 20px 30px 20px 21px;
+        }
+
+        .widget-div {
+          background: #f6f5f3 none repeat scroll 0 0;
+          border-radius: 1px;
+          margin: 1px auto 10px;
+          max-width: 100%;
+          padding: 10px 20px 10px 20px;
+          border: -1px solid #e7e6e4
+        }
+
+        .widget-div-type_2{
+            background: #FFFFFF
+        }
+
+        .b-page__body_font {
+            font-family: Helvetica,Arial,sans-serif;
+        }
+
+        .icon_collapse_widget {
+            position: relative;
+        }
+
+        .icon_collapse_widget::before {
+            content: "\f102";
+        }
+
+        .full-input {
+            width: 100%
+        }
+
+        .widget-div-color_1::before{
+            background-color: #d68b82;
+        }
+
+        .widget-div-color_2::before{
+            background-color: #008000;
+        }
+
+        .widget-div-color_3::before{
+            background-color: #191970;
+        }
+
+        .widget-div-color_4::before{
+            background-color: #ADFF2F;
+        }
+
+        .widget-div-color_5::before{
+            background-color: #808000;
+        }
+
+        .widget-div-color_6::before{
+            background-color: #FFFF00;
+        }
+
+
+        .widget-div::before {
+            z-index: 2;
+            top: -3px;
+            left: -1px;
+            display: block;
+            width: 100%;
+            height: 6px;
+            padding: 0 1px;
+            content: '\00a0';
+        }
+
+        .inline-child {
+            display: inline-block
+        }
+
+        .ticket-info {
+            list-style: none;
+            color: #666;
+        }
+
+        .ticket-b {
+            font-weight: 700
+        }
+
+        .no-resize {
+            resize: none
+        }
+
+        .login-form .form-group {
+          margin-bottom:10px;
+        }
+        .login-form{ text-align:center;}
+        .forgot a {
+          color: #777777;
+          font-size: 14px;
+          text-decoration: underline;
+        }
+        .login-form  .btn.btn-primary {
+          background: #f0ad4e none repeat scroll 0 0;
+          border-color: #f0ad4e;
+          color: #ffffff;
+          font-size: 14px;
+          width: 100%;
+          height: 50px;
+          line-height: 50px;
+          padding: 0;
+        }
+        .forgot {
+          text-align: left; margin-bottom:30px;
+        }
+        .bottom-text {
+          color: #ffffff;
+          font-size: 14px;
+          margin: auto;
+        }
+        .login-form .btn.btn-primary.reset {
+          background: #ff9900 none repeat scroll 0 0;
+        }
+        .back { text-align: left; margin-top:10px;}
+        .back a {color: #444444; font-size: 13px;text-decoration: none;}
+
+        html,body {
+                  height: 100%;
+                }
+
+                body {
+                  display: flex;
+                  flex-direction: column;
+                }
+
+        .footer-content {
+          flex: 1 0 auto;
+        }
+
+        #footer {
+          flex: 0 0 auto;
+        }

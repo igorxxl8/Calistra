@@ -295,13 +295,12 @@ class TaskController:
         :return: None
         """
         if start:
-            deadline_time = Time.get_date(task.deadline)
             start_time = Time.get_date(start)
             if start == Constants.UNDEFINED:
                 task.start = None
             # when start deadline time bigger than deadline time or new
             # deadline time appear error
-            elif (task.deadline and deadline_time < start_time
+            elif (task.deadline and Time.get_date(task.deadline) < start_time
                   and deadline and Time.get_date(deadline) < start_time):
 
                 raise TaskDeadlineError(Messages.DEADLINE_CANNOT_EARLIER_START)

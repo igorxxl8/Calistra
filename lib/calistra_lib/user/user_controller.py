@@ -128,3 +128,18 @@ class UserController:
         if user:
             user.new_messages.append(message)
             self.users_storage.save_users()
+
+    @staticmethod
+    def can_show(user, task):
+        if user.nick == task.author or user.nick in task.responsible.split(','):
+            return True
+
+    @staticmethod
+    def can_edit(user, task):
+        if user.nick == task.author:
+            return True
+
+    @staticmethod
+    def can_show_parent(user, parent):
+        if parent and user.nick in parent.responsible.split(','):
+            return True

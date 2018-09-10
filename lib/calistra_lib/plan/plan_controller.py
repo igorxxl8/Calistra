@@ -1,6 +1,5 @@
 """This module contains PlanController class for working with periodic plans"""
 
-
 from calistra_lib.constants import Time
 from calistra_lib.exceptions.plan_exceptions import PlanNotFoundError
 from calistra_lib.plan.plan_storage_interface import IPlanStorage
@@ -12,6 +11,7 @@ class PlanController:
     """
     This class describe entity for work with periodic plans.
     """
+
     def __init__(self, plan_storage: IPlanStorage):
         self.plans_storage = plan_storage
 
@@ -103,17 +103,19 @@ class PlanController:
                 time_diff = Time.NOW - Time.get_date(plan.time)
                 interval = Time.Interval[plan.period]
                 # check that activation time was recently
-                if time_diff < Time.DELTA:
-                    # add this plan to plans which be activated
-                    planned_tasks.append(self.make_plan_task(plan))
-                    # change activation time by adding period time interval
-                    #  to current activation time
-                    next_time_activation = Time.get_date_string(
-                        Time.get_date(plan.time) + interval)
+                # if time_diff < Time.DELTA:
+                # add this plan to plans which be activated
+                planned_tasks.append(self.make_plan_task(plan))
+                # change activation time by adding period time interval
+                #  to current activation time
+                next_time_activation = Time.get_date_string(
+                    Time.get_date(plan.time) + interval)
 
-                    plan.time = next_time_activation
+                plan.time = next_time_activation
+
         self.plans_storage.save_plans()
         return planned_tasks
+
 
     @staticmethod
     def make_plan_task(plan):

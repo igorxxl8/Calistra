@@ -118,6 +118,7 @@ class Interface:
             #  and notified him
             user = self.user_controller.find_user(nick=task.author)
             queue = self.queue_controller.get_user_default_queue(user)
+            task.queue = queue.key
             self.task_controller.connect_planed_task(task)
             self.queue_controller.link_queue_with_task(queue, task)
             self.user_controller.link_author_with_task(user, task)

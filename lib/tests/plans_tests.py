@@ -120,7 +120,7 @@ class PlanTests(TestCase):
             author=self.author,
             name='plan for create task',
             period='daily',
-            activation_time='20.09.2018.9:00'
+            activation_time='01.09.2018.9:00'
         )
         Time.NOW = dt(2018, 9, 1, 9, 0)
         actual = self.controller.make_plan_task(plan)
@@ -128,6 +128,8 @@ class PlanTests(TestCase):
                         author='tester', start='01.09.2018.09:00',
                         deadline='02.09.2018.09:00',
                         creating_time='01.09.2018.09:00')
+        print(actual.__dict__)
+        print(expected.__dict__)
         self.assertEqual(actual.__dict__, expected.__dict__)
 
     def test_planned_tasks(self):
@@ -138,12 +140,16 @@ class PlanTests(TestCase):
             period='monthly',
             activation_time='20.09.2018.9:00'
         )
+
         Time.NOW = dt(2018, 9, 20, 9, 0)
         planned_tasks = self.controller.update_all_plans()
+
         expected_task = Task(key='1', name='test plan', reminder=None,
                              author='tester', start='20.09.2018.09:00',
                              deadline='20.10.2018.09:00',
                              creating_time='20.09.2018.09:00')
+        print(expected_task.__dict__)
+        print(planned_tasks[0].__dict__)
         self.assertDictEqual(expected_task.__dict__, planned_tasks[0].__dict__)
 
 
